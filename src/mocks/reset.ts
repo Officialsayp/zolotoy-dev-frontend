@@ -1,9 +1,12 @@
 import { resetScenario } from './scenario-registry'
+import { resetOrderMockState } from '@/modules/orders/mocks/order-store'
 
 /**
  * Returns mock infrastructure to its deterministic baseline (MASTER_FRONTEND_PLAN §10).
- * Reapplies the default scenario so a reload/reset produces stable demo state.
+ * Reapplies the default scenario and rebuilds service mock stores so a
+ * reload/reset produces stable demo state.
  */
 export function resetMockScenario(): void {
   resetScenario()
+  resetOrderMockState()
 }

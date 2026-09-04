@@ -2,6 +2,8 @@
 export const ROUTE_NAMES = {
   overview: 'overview',
   orders: 'orders',
+  orderNew: 'order-new',
+  orderDetail: 'order-detail',
   auth: 'auth',
   notifications: 'notifications',
   shortener: 'shortener',

@@ -16,8 +16,20 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'orders',
         name: ROUTE_NAMES.orders,
-        component: () => import('@/modules/orders/pages/orders-overview.vue'),
+        component: () => import('@/modules/orders/pages/orders-list-page.vue'),
         meta: { title: 'Orders' },
+      },
+      {
+        path: 'orders/new',
+        name: ROUTE_NAMES.orderNew,
+        component: () => import('@/modules/orders/pages/order-create-page.vue'),
+        meta: { title: 'Create order' },
+      },
+      {
+        path: 'orders/:orderId',
+        name: ROUTE_NAMES.orderDetail,
+        component: () => import('@/modules/orders/pages/order-detail-page.vue'),
+        meta: { title: 'Order detail' },
       },
       {
         path: 'auth',
