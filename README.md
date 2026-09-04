@@ -70,6 +70,11 @@ Runtime mode comes from `VITE_API_MODE`:
 Switching modes never requires Vue component changes; both share the same typed
 HTTP boundary.
 
+In `mock` mode, requests to a configured backend service origin are **fail
+closed**: if no deterministic MSW handler is registered, the request is answered
+locally with HTTP `501` and error code `MOCK_UNHANDLED_REQUEST` instead of being
+forwarded to a live backend. Non-service requests are bypassed normally.
+
 ## Environment
 
 Copy the template and adjust (the template is committed as `env.example`):
@@ -112,8 +117,9 @@ npm run test:e2e           # Playwright (chromium)
 ## Demo scenarios (mock mode)
 
 In mock mode the shell header shows a **Demo scenario** switcher. Scenarios are
-deterministic baselines (e.g. `Default`, `Degraded`) served by MSW. Reloading or
-resetting returns to the pipeline baseline.
+deterministic baselines (e.g. `Default`, `Degraded`) served by MSW. Changing a
+scenario invalidates active TanStack Query data so the visible shell state
+refreshes immediately. Reloading or resetting returns to the pipeline baseline.
 
 ## Repository layout (Foundation)
 

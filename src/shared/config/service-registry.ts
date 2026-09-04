@@ -66,6 +66,12 @@ const GUARANTEED_SHARED: { healthLivePath: string; healthReadyPath: string; swag
   swaggerPath: '/swagger.json',
 }
 
+const SHARED_RESOURCE_ENV = {
+  githubUrl: 'VITE_GITHUB_REPO_URL',
+  grafanaUrl: 'VITE_GRAFANA_URL',
+  apiDocsUrl: 'VITE_API_DOCS_URL',
+} as const
+
 const DESCRIPTORS: Record<ServiceId, ServiceDescriptors> = {
   order: {
     entry: {
@@ -77,7 +83,10 @@ const DESCRIPTORS: Record<ServiceId, ServiceDescriptors> = {
       routePath: '/orders',
       focus: 'State machines, transactions, idempotency, optimistic concurrency, outbox.',
     },
-    env: { baseUrl: 'VITE_ORDER_API_BASE_URL', githubUrl: 'VITE_GITHUB_REPO_URL' },
+    env: {
+      baseUrl: 'VITE_ORDER_API_BASE_URL',
+      ...SHARED_RESOURCE_ENV,
+    },
   },
   auth: {
     entry: {
@@ -89,7 +98,10 @@ const DESCRIPTORS: Record<ServiceId, ServiceDescriptors> = {
       routePath: '/auth',
       focus: 'Token/session lifecycle, rotation and replay detection, RBAC, rate limiting.',
     },
-    env: { baseUrl: 'VITE_AUTH_API_BASE_URL', githubUrl: 'VITE_GITHUB_REPO_URL' },
+    env: {
+      baseUrl: 'VITE_AUTH_API_BASE_URL',
+      ...SHARED_RESOURCE_ENV,
+    },
   },
   notification: {
     entry: {
@@ -101,7 +113,10 @@ const DESCRIPTORS: Record<ServiceId, ServiceDescriptors> = {
       routePath: '/notifications',
       focus: 'Kafka at-least-once processing, durable jobs, retry/DLQ, workers.',
     },
-    env: { baseUrl: 'VITE_NOTIFICATION_API_BASE_URL', githubUrl: 'VITE_GITHUB_REPO_URL' },
+    env: {
+      baseUrl: 'VITE_NOTIFICATION_API_BASE_URL',
+      ...SHARED_RESOURCE_ENV,
+    },
   },
   shortener: {
     entry: {
@@ -116,7 +131,7 @@ const DESCRIPTORS: Record<ServiceId, ServiceDescriptors> = {
     env: {
       baseUrl: 'VITE_SHORTENER_API_BASE_URL',
       publicBaseUrl: 'VITE_SHORTENER_PUBLIC_BASE_URL',
-      githubUrl: 'VITE_GITHUB_REPO_URL',
+      ...SHARED_RESOURCE_ENV,
     },
   },
 }

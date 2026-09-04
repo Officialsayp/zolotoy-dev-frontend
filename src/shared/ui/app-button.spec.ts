@@ -30,4 +30,17 @@ describe('AppButton', () => {
     await wrapper.get('button').trigger('click')
     expect(wrapper.emitted('click')).toBeUndefined()
   })
+
+  it('exposes focus on the underlying native button', () => {
+    const wrapper = mount(AppButton, {
+      attachTo: document.body,
+      slots: { default: 'Focus me' },
+    })
+
+    const instance = wrapper.vm as unknown as { focus: (options?: FocusOptions) => void }
+    instance.focus()
+
+    expect(document.activeElement).toBe(wrapper.get('button').element)
+    wrapper.unmount()
+  })
 })

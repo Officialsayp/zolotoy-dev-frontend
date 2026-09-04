@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useQueryClient } from '@tanstack/vue-query'
 
 import {
   DEMO_SCENARIOS,
@@ -8,11 +9,21 @@ import {
   type DemoScenarioId,
 } from '@/mocks/scenario-registry'
 
+const queryClient = useQueryClient()
 const current = computed<DemoScenarioId>(() => getScenario())
 
-function onChange(event: Event): void {
+async function onChange(event: Event): Promise<void> {
   const target = event.target as HTMLSelectElement
-  setScenario(target.value as DemoScenarioId)
+  const next = target.value as DemoScenarioId
+
+  if (next === getScenario()) return
+
+  setScenario(next)
+
+  // Scenario changes represent a new deterministic mock baseline. Mark active
+  // server-state queries stale and refetch them immediately so the UI does not
+  // keep showing data from the previous scenario until stale/refetch timers fire.
+  await queryClient.invalidateQueries()
 }
 </script>
 

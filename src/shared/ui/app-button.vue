@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { LoaderCircle } from 'lucide-vue-next'
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
@@ -24,10 +25,19 @@ withDefaults(
 )
 
 const emit = defineEmits<{ (e: 'click', event: MouseEvent): void }>()
+
+const buttonEl = ref<HTMLButtonElement | null>(null)
+
+function focus(options?: FocusOptions): void {
+  buttonEl.value?.focus(options)
+}
+
+defineExpose({ focus })
 </script>
 
 <template>
   <button
+    ref="buttonEl"
     :class="['app-button', `app-button--${variant}`, `app-button--${size}`, { 'app-button--block': fullWidth }]"
     :type="type"
     :disabled="disabled || loading"

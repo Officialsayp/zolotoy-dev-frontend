@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, useId, watch } from 'vue'
+import { onMounted, ref, useId, watch } from 'vue'
 
 import AppButton from './app-button.vue'
 
@@ -28,23 +28,39 @@ const emit = defineEmits<{
   (e: 'cancel'): void
 }>()
 
+interface FocusableButton {
+  focus(options?: FocusOptions): void
+}
+
 const titleId = useId()
 const dialogEl = ref<HTMLDialogElement | null>(null)
-const cancelEl = ref<HTMLButtonElement | null>(null)
+const cancelEl = ref<FocusableButton | null>(null)
+
+function syncDialogState(isOpen: boolean): void {
+  const dialog = dialogEl.value
+  if (!dialog) return
+
+  if (isOpen && !dialog.open) {
+    dialog.showModal()
+    cancelEl.value?.focus()
+    return
+  }
+
+  if (!isOpen && dialog.open) {
+    dialog.close()
+  }
+}
 
 watch(
   () => props.open,
-  async (isOpen) => {
-    if (!dialogEl.value) return
-    if (isOpen && !dialogEl.value.open) {
-      dialogEl.value.showModal()
-      // Move focus into the dialog (native <dialog> modal already traps focus).
-      cancelEl.value?.focus()
-    } else if (!isOpen && dialogEl.value.open) {
-      dialogEl.value.close()
-    }
+  (isOpen) => {
+    syncDialogState(isOpen)
   },
 )
+
+onMounted(() => {
+  syncDialogState(props.open)
+})
 
 function onDialogClose(): void {
   emit('update:open', false)
