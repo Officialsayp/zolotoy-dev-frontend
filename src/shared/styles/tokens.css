@@ -1,0 +1,132 @@
+/*
+ * Design tokens for zolotoy.dev.
+ * One shared, restrained technical palette. Status is always communicated with
+ * text/icon as well as color (accessibility baseline).
+ *
+ * Theme model:
+ *   - light is the default;
+ *   - the dark palette applies when the OS prefers dark mode OR when an explicit
+ *     `<html data-theme="dark">` override is set by the theme store.
+ */
+
+:root {
+  /* Spacing (4px rhythm) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Typography */
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 32px;
+
+  /* Layout */
+  --sidebar-width: 240px;
+  --content-max-width: 1440px;
+  --header-height: 56px;
+
+  /* Motion */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+
+  /* Focus */
+  --focus-ring: 0 0 0 3px var(--c-focus-ring);
+
+  /* Shadows (limited) */
+  --shadow-sm: 0 1px 2px rgba(16, 20, 26, 0.06);
+  --shadow-md: 0 4px 12px rgba(16, 20, 26, 0.08);
+
+  /* Light palette (default) */
+  --c-bg: #f6f7f9;
+  --c-surface: #ffffff;
+  --c-surface-raised: #ffffff;
+  --c-surface-muted: #f0f2f5;
+  --c-border: #e2e6eb;
+  --c-border-strong: #c7cdd5;
+  --c-text: #1a1d22;
+  --c-text-muted: #5a6370;
+  --c-text-subtle: #8a93a1;
+  --c-accent: #2f6fed;
+  --c-accent-strong: #1e57c2;
+  --c-accent-contrast: #ffffff;
+  --c-accent-soft: rgba(47, 111, 237, 0.1);
+  --c-info: #2f6fed;
+  --c-success: #1d9d5e;
+  --c-warning: #a8680f;
+  --c-danger: #c84040;
+  --c-focus-ring: rgba(47, 111, 237, 0.4);
+  --c-overlay: rgba(15, 17, 22, 0.45);
+
+  /* Semantic surface shortcuts */
+  --surface-card: var(--c-surface);
+  --surface-skeleton: var(--c-surface-muted);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    /* Dark palette */
+    --c-bg: #121417;
+    --c-surface: #1a1d21;
+    --c-surface-raised: #212428;
+    --c-surface-muted: #26292f;
+    --c-border: #2b2f36;
+    --c-border-strong: #3b414b;
+    --c-text: #e8eaed;
+    --c-text-muted: #a4abba;
+    --c-text-subtle: #6d7583;
+    --c-accent: #5b8ef5;
+    --c-accent-strong: #7aa3f7;
+    --c-accent-contrast: #0f1216;
+    --c-accent-soft: rgba(91, 142, 245, 0.16);
+    --c-info: #5b8ef5;
+    --c-success: #35b878;
+    --c-warning: #e0a13c;
+    --c-danger: #e45858;
+    --c-focus-ring: rgba(91, 142, 245, 0.45);
+    --c-overlay: rgba(0, 0, 0, 0.6);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+  }
+}
+
+:root[data-theme='dark'] {
+  /* Dark palette (explicit override) */
+  --c-bg: #121417;
+  --c-surface: #1a1d21;
+  --c-surface-raised: #212428;
+  --c-surface-muted: #26292f;
+  --c-border: #2b2f36;
+  --c-border-strong: #3b414b;
+  --c-text: #e8eaed;
+  --c-text-muted: #a4abba;
+  --c-text-subtle: #6d7583;
+  --c-accent: #5b8ef5;
+  --c-accent-strong: #7aa3f7;
+  --c-accent-contrast: #0f1216;
+  --c-accent-soft: rgba(91, 142, 245, 0.16);
+  --c-info: #5b8ef5;
+  --c-success: #35b878;
+  --c-warning: #e0a13c;
+  --c-danger: #e45858;
+  --c-focus-ring: rgba(91, 142, 245, 0.45);
+  --c-overlay: rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+}

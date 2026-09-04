@@ -1,12 +1,19 @@
 node_modules/
 dist/
+dist-ssr/
 coverage/
 playwright-report/
 test-results/
+.pw-browsers/
 
 .env
 .env.*
 !.env.example
+.env.local
+.env.*.local
+
+*.tsbuildinfo
+node_modules/.tmp/
 
 .DS_Store
 .idea/
