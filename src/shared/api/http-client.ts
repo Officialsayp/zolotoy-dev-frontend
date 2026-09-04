@@ -1,5 +1,6 @@
 import type { AppError } from './api-error'
 import { errorFromResponse, mapNetworkError } from './error-mapper'
+import { isAppErrorOfKind, type RefreshCoordinator } from './refresh-coordinator'
 
 /**
  * Shared typed native-`fetch` transport boundary (MASTER_FRONTEND_PLAN §9).
@@ -28,6 +29,18 @@ export interface HttpRequestOptions<TBody = unknown> {
   timeoutMs?: number
   /** External cancellation; an internal timeout is ignored when provided. */
   signal?: AbortSignal
+  /**
+   * Do not attach the in-memory Bearer token to this request. Public/cookie-only
+   * auth endpoints such as login/register/refresh/logout must use this so an
+   * expired access token cannot interfere with the refresh-cookie flow.
+   */
+  skipAccessToken?: boolean
+  /**
+   * Opt out of the shared `401 → refresh → retry` flow for this request.
+   * Used by public auth commands (login/register/refresh/logout) so an auth
+   * error there is never interpreted as an expired access token.
+   */
+  skipAuthRetry?: boolean
 }
 
 export interface HttpClientConfig {
@@ -36,11 +49,17 @@ export interface HttpClientConfig {
   /** Returns the in-memory access token or null when anonymous. */
   getAccessToken?: () => string | null | Promise<string | null>
   /**
-   * Called when a transport-level 401 is encountered. The Auth stage plugs the
-   * single-flight refresh coordinator / logout here. Returning nothing; the
-   * request itself always surfaces the normalized auth error.
+   * Optional informational 401 hook. The Auth stage wires the single-flight
+   * refresh coordinator here and sets `coordinator`; when a coordinator is
+   * present, 401 recovery is handled by it (single-flight refresh + one retry).
    */
-  onUnauthorized?: (error: AppError) => void
+  onUnauthorized?: (error: AppError) => void | Promise<boolean>
+  /**
+   * Shared single-flight refresh coordinator (Foundation primitive). When set,
+   * protected calls (those carrying an access token) are wrapped so a 401
+   * triggers exactly one shared refresh and a single retry with the new token.
+   */
+  coordinator?: RefreshCoordinator
   credentials?: RequestCredentials
   timeoutMs?: number
 }
@@ -78,7 +97,7 @@ export function createHttpClient(config: HttpClientConfig): HttpClient {
     return token && token.length > 0 ? token : null
   }
 
-  async function request<T>(options: HttpRequestOptions): Promise<T> {
+  async function doRequest<T>(options: HttpRequestOptions): Promise<T> {
     const method = options.method ?? 'GET'
     const url = joinUrl(baseUrl, options.path) + buildQueryString(options.query ?? {})
     const headers = new Headers(options.headers)
@@ -90,7 +109,7 @@ export function createHttpClient(config: HttpClientConfig): HttpClient {
       headers.set('Content-Type', 'application/json')
     }
 
-    const token = await getAccessToken()
+    const token = options.skipAccessToken === true ? null : await getAccessToken()
     if (token && !headers.has('Authorization')) {
       headers.set('Authorization', `Bearer ${token}`)
     }
@@ -140,6 +159,29 @@ export function createHttpClient(config: HttpClientConfig): HttpClient {
     } catch {
       return text as unknown as T
     }
+  }
+
+  /**
+   * Entry point. When a shared refresh coordinator is configured and this is a
+   * protected call (a Bearer access token is present and neither
+   * `skipAuthRetry` nor `skipAccessToken` is set), wrap the attempt so a 401
+   * runs one single-flight refresh and retries
+   * the request once with the refreshed token. Anonymous calls (no token) and
+   * explicitly opted-out auth commands never trigger refresh.
+   */
+  async function request<T>(options: HttpRequestOptions): Promise<T> {
+    const coordinator = config.coordinator
+    if (coordinator && options.skipAuthRetry !== true && options.skipAccessToken !== true) {
+      const token = await getAccessToken()
+      const isProtected = token !== null
+      if (isProtected) {
+        return coordinator.runWithAuthRetry(
+          () => doRequest<T>(options),
+          (error) => isAppErrorOfKind(error, 'authentication'),
+        )
+      }
+    }
+    return doRequest<T>(options)
   }
 
   return { request }

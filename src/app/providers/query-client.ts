@@ -46,3 +46,18 @@ export function createQueryClient(): QueryClient {
     },
   })
 }
+
+/**
+ * The app-wide QueryClient instance, captured at bootstrap so non-component
+ * code (auth refresh/logout teardown) can clear authenticated server-state
+ * caches without a component context.
+ */
+let appQueryClient: QueryClient | undefined
+
+export function setAppQueryClient(client: QueryClient): void {
+  appQueryClient = client
+}
+
+export function getAppQueryClient(): QueryClient | undefined {
+  return appQueryClient
+}

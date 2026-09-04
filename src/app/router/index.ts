@@ -38,6 +38,36 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Auth' },
       },
       {
+        path: 'auth/login',
+        name: ROUTE_NAMES.authLogin,
+        component: () => import('@/modules/auth/pages/auth-login-page.vue'),
+        meta: { title: 'Sign in', public: true },
+      },
+      {
+        path: 'auth/register',
+        name: ROUTE_NAMES.authRegister,
+        component: () => import('@/modules/auth/pages/auth-register-page.vue'),
+        meta: { title: 'Create account', public: true },
+      },
+      {
+        path: 'auth/profile',
+        name: ROUTE_NAMES.authProfile,
+        component: () => import('@/modules/auth/pages/auth-profile-page.vue'),
+        meta: { title: 'Profile', requiresAuth: true },
+      },
+      {
+        path: 'auth/sessions',
+        name: ROUTE_NAMES.authSessions,
+        component: () => import('@/modules/auth/pages/auth-sessions-page.vue'),
+        meta: { title: 'Sessions', requiresAuth: true },
+      },
+      {
+        path: 'auth/admin',
+        name: ROUTE_NAMES.authAdmin,
+        component: () => import('@/modules/auth/pages/auth-admin-page.vue'),
+        meta: { title: 'Admin demo', requiresAuth: true, requiredRole: 'admin' },
+      },
+      {
         path: 'notifications',
         name: ROUTE_NAMES.notifications,
         component: () => import('@/modules/notifications/pages/notifications-overview.vue'),

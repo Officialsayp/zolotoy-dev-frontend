@@ -5,7 +5,7 @@ import { VueQueryPlugin } from '@tanstack/vue-query'
 import App from '@/app/app.vue'
 import { router } from '@/app/router'
 import { installAppGuards } from '@/app/router/guards'
-import { createQueryClient } from '@/app/providers/query-client'
+import { createQueryClient, setAppQueryClient } from '@/app/providers/query-client'
 import { useAppStore } from '@/app/stores/app-store'
 import { useThemeStore } from '@/app/stores/theme-store'
 import { useSessionStore } from '@/modules/auth/store/session-store'
@@ -51,23 +51,33 @@ async function bootstrap(): Promise<void> {
 
   const app = createApp(App)
   const pinia = createPinia()
+  const queryClient = createQueryClient()
+  setAppQueryClient(queryClient)
   app.use(pinia)
-  app.use(VueQueryPlugin, { queryClient: createQueryClient() })
-  app.use(router)
-  installAppGuards(router)
+  app.use(VueQueryPlugin, { queryClient })
 
   useAppStore(pinia).initialize(config.apiMode, config.deployEnv)
   useThemeStore(pinia).initialize()
 
-  // Mock mode intercepts the network BEFORE mount so no request escapes unhandled.
+  // Mock mode must intercept the network before auth bootstrap can issue the
+  // cookie refresh request. Starting the router earlier would let its initial
+  // guard trigger bootstrap before MSW is ready.
   if (config.apiMode === 'mock') {
     await startMockWorker()
   }
 
-  app.mount('#app')
+  const session = useSessionStore(pinia)
+  // Begin bootstrap once, after the network boundary is ready. The initial route
+  // guard below waits for this same single-flight promise, so even public service
+  // pages cannot start protected resource queries while auth is still unknown.
+  void session.bootstrap()
 
-  // Minimal session bootstrap (anonymous until the Auth stage wires real refresh).
-  void useSessionStore(pinia).bootstrap()
+  // Vue Router starts the initial navigation during `app.use(router)`, therefore
+  // guards must already be registered at that point.
+  installAppGuards(router)
+  app.use(router)
+
+  app.mount('#app')
 }
 
 void bootstrap()

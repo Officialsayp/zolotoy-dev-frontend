@@ -3,6 +3,7 @@ import type { HttpHandler } from 'msw'
 import { healthHandlers } from './handlers/health'
 import { failClosedHandler } from './handlers/fail-closed'
 import { orderHandlers } from '@/modules/orders/mocks/order-handlers'
+import { authHandlers } from '@/modules/auth/mocks/auth-handlers'
 
 /**
  * Root handler composition. Each service module contributes its own handlers;
@@ -14,4 +15,9 @@ import { orderHandlers } from '@/modules/orders/mocks/order-handlers'
  * IMPORTANT: `failClosedHandler` must remain LAST. Service-specific handlers
  * added by later stages must be inserted before it.
  */
-export const handlers: HttpHandler[] = [...healthHandlers, ...orderHandlers, failClosedHandler]
+export const handlers: HttpHandler[] = [
+  ...healthHandlers,
+  ...orderHandlers,
+  ...authHandlers,
+  failClosedHandler,
+]

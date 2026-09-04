@@ -20,6 +20,17 @@ export type DemoScenarioId =
   | 'orders-empty'
   | 'orders-forbidden'
   | 'orders-rate-limited'
+  | 'auth-anonymous'
+  | 'auth-active-user'
+  | 'auth-active-admin'
+  | 'auth-invalid-credentials'
+  | 'auth-duplicate-email'
+  | 'auth-blocked'
+  | 'auth-access-expired-refresh-success'
+  | 'auth-refresh-expired'
+  | 'auth-session-revoked'
+  | 'auth-reuse-detected'
+  | 'auth-rate-limited'
 
 export interface DemoScenario {
   id: DemoScenarioId
@@ -82,6 +93,61 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
     id: 'orders-rate-limited',
     label: 'Orders · rate limited',
     description: 'Order write commands return 429 with Retry-After.',
+  },
+  {
+    id: 'auth-anonymous',
+    label: 'Auth · anonymous',
+    description: 'No browser session — sign-in is required for protected routes.',
+  },
+  {
+    id: 'auth-active-user',
+    label: 'Auth · active user',
+    description: 'Deterministic normal-user session baseline (A1/A3).',
+  },
+  {
+    id: 'auth-active-admin',
+    label: 'Auth · active admin',
+    description: 'Deterministic admin session baseline for RBAC (A6).',
+  },
+  {
+    id: 'auth-invalid-credentials',
+    label: 'Auth · invalid credentials',
+    description: 'All logins return one generic invalid-credentials response.',
+  },
+  {
+    id: 'auth-duplicate-email',
+    label: 'Auth · duplicate email',
+    description: 'Register with an existing email returns a duplicate conflict.',
+  },
+  {
+    id: 'auth-blocked',
+    label: 'Auth · blocked user',
+    description: 'Blocked account cannot sign in and is flagged blocked.',
+  },
+  {
+    id: 'auth-access-expired-refresh-success',
+    label: 'Auth · access expired → refresh',
+    description: 'Expired access token triggers a silent successful refresh (A2).',
+  },
+  {
+    id: 'auth-refresh-expired',
+    label: 'Auth · refresh expired',
+    description: 'Refresh session has expired — sign-in is required again.',
+  },
+  {
+    id: 'auth-session-revoked',
+    label: 'Auth · session revoked',
+    description: 'Current session was revoked — sign-in is required again.',
+  },
+  {
+    id: 'auth-reuse-detected',
+    label: 'Auth · refresh replay detected',
+    description: 'Refresh token replay revokes the family and requires sign-in (A5).',
+  },
+  {
+    id: 'auth-rate-limited',
+    label: 'Auth · login rate limited',
+    description: 'Login returns 429 with Retry-After guidance.',
   },
 ]
 
