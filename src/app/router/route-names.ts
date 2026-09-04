@@ -11,6 +11,8 @@ export const ROUTE_NAMES = {
   authSessions: 'auth-sessions',
   authAdmin: 'auth-admin',
   notifications: 'notifications',
+  notificationDetail: 'notification-detail',
+  notificationEvent: 'notification-event',
   shortener: 'shortener',
   notFound: 'not-found',
 } as const

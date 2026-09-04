@@ -70,8 +70,20 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'notifications',
         name: ROUTE_NAMES.notifications,
-        component: () => import('@/modules/notifications/pages/notifications-overview.vue'),
+        component: () => import('@/modules/notifications/pages/notifications-list-page.vue'),
         meta: { title: 'Notifications' },
+      },
+      {
+        path: 'notifications/events/:eventId',
+        name: ROUTE_NAMES.notificationEvent,
+        component: () => import('@/modules/notifications/pages/notification-event-page.vue'),
+        meta: { title: 'Notification event' },
+      },
+      {
+        path: 'notifications/:notificationId',
+        name: ROUTE_NAMES.notificationDetail,
+        component: () => import('@/modules/notifications/pages/notification-detail-page.vue'),
+        meta: { title: 'Notification detail' },
       },
       {
         path: 'shortener',

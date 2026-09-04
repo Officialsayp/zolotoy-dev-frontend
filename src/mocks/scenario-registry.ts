@@ -31,6 +31,16 @@ export type DemoScenarioId =
   | 'auth-session-revoked'
   | 'auth-reuse-detected'
   | 'auth-rate-limited'
+  | 'notifications-happy-sent'
+  | 'notifications-duplicate-event'
+  | 'notifications-retry-then-sent'
+  | 'notifications-rate-limited-retry-wait'
+  | 'notifications-retry-to-dead'
+  | 'notifications-permanent-error-dead'
+  | 'notifications-manual-retry-success'
+  | 'notifications-empty'
+  | 'notifications-forbidden'
+  | 'notifications-service-unavailable'
 
 export interface DemoScenario {
   id: DemoScenarioId
@@ -148,6 +158,56 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
     id: 'auth-rate-limited',
     label: 'Auth · login rate limited',
     description: 'Login returns 429 with Retry-After guidance.',
+  },
+  {
+    id: 'notifications-happy-sent',
+    label: 'Notifications · happy sent',
+    description: 'A single order.paid delivery job completed successfully (N1).',
+  },
+  {
+    id: 'notifications-duplicate-event',
+    label: 'Notifications · duplicate event',
+    description: 'A duplicate order.paid event was durably deduplicated — one job only (N2).',
+  },
+  {
+    id: 'notifications-retry-then-sent',
+    label: 'Notifications · retryable 500 → success',
+    description: 'Provider 500 was retried with backoff and then succeeded (N3).',
+  },
+  {
+    id: 'notifications-rate-limited-retry-wait',
+    label: 'Notifications · 429 → retry wait',
+    description: 'Provider 429 schedules a retry using backoff / Retry-After semantics.',
+  },
+  {
+    id: 'notifications-retry-to-dead',
+    label: 'Notifications · timeout/retries → dead',
+    description: 'Retryable timeouts exhausted the retry budget — job is dead (N4).',
+  },
+  {
+    id: 'notifications-permanent-error-dead',
+    label: 'Notifications · permanent error → dead',
+    description: 'Invalid recipient is permanent: terminal dead, no further retry (N6).',
+  },
+  {
+    id: 'notifications-manual-retry-success',
+    label: 'Notifications · dead → manual retry → sent',
+    description: 'A dead job is retried manually and delivered (N7).',
+  },
+  {
+    id: 'notifications-empty',
+    label: 'Notifications · empty',
+    description: 'No notification jobs exist.',
+  },
+  {
+    id: 'notifications-forbidden',
+    label: 'Notifications · forbidden',
+    description: 'Admin/read endpoints return 403.',
+  },
+  {
+    id: 'notifications-service-unavailable',
+    label: 'Notifications · service unavailable',
+    description: 'Admin/read endpoints return 503.',
   },
 ]
 
