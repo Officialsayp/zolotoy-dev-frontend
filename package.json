@@ -20,7 +20,9 @@
     "test:unit:run": "vitest run",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "msw:init": "msw init public/ --save"
+    "msw:init": "msw init public/ --save",
+    "deploy": "npx --yes wrangler@4.102.0 deploy",
+    "deploy:preview": "npx --yes wrangler@4.102.0 versions upload"
   },
   "dependencies": {
     "@tanstack/vue-query": "^5.78.0",
