@@ -47,7 +47,7 @@ function emptyToUndefined(value: string): string | undefined {
       </select>
     </label>
 
-    <label class="notification-filters__field">
+    <label class="notification-filters__field notification-filters__field--event">
       <span class="notification-filters__label">Event type</span>
       <select
         class="notification-filters__select"
@@ -64,13 +64,14 @@ function emptyToUndefined(value: string): string | undefined {
 
 <style scoped>
 .notification-filters {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-3);
 }
 
 .notification-filters__field {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: 4px;
 }
@@ -81,6 +82,8 @@ function emptyToUndefined(value: string): string | undefined {
 }
 
 .notification-filters__select {
+  width: 100%;
+  min-width: 0;
   padding: 6px var(--space-2);
   border: 1px solid var(--c-border-strong);
   border-radius: var(--radius-sm);
@@ -88,5 +91,25 @@ function emptyToUndefined(value: string): string | undefined {
   color: var(--c-text);
   font-size: var(--text-sm);
   font-family: inherit;
+}
+
+@media (max-width: 760px) {
+  .notification-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .notification-filters__field--event {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 420px) {
+  .notification-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .notification-filters__field--event {
+    grid-column: auto;
+  }
 }
 </style>

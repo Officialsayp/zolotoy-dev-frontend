@@ -7,10 +7,16 @@ import type { NotificationJobDto } from '../models/notification-dto'
 import NotificationStatusBadge from './notification-status-badge.vue'
 
 defineProps<{ jobs: NotificationJobDto[] }>()
+
+function shortId(value: string): string {
+  if (value.length <= 18) return value
+  return `${value.slice(0, 8)}…${value.slice(-4)}`
+}
 </script>
 
 <template>
   <CardPanel class="notification-list" padding="none">
+    <!-- Desktop/tablet: dense operational table. -->
     <div class="notification-list__scroll">
       <table class="notification-list__table">
         <caption class="notification-list__caption">
@@ -32,9 +38,15 @@ defineProps<{ jobs: NotificationJobDto[] }>()
         <tbody>
           <tr v-for="job in jobs" :key="job.id">
             <td>
-              <RouterLink :to="`/notifications/${job.id}`" class="notification-list__link">
-                <CodeValue :value="job.id" />
-              </RouterLink>
+              <div class="notification-list__job-ref">
+                <CodeValue :value="job.id" :display="shortId(job.id)" />
+                <RouterLink
+                  :to="`/notifications/${job.id}`"
+                  class="notification-list__link notification-list__open-link"
+                >
+                  Open
+                </RouterLink>
+              </div>
             </td>
             <td>
               <RouterLink :to="`/notifications/events/${job.event_id}`" class="notification-list__link">
@@ -55,12 +67,83 @@ defineProps<{ jobs: NotificationJobDto[] }>()
         </tbody>
       </table>
     </div>
+
+    <!-- Mobile: one job per card so all operational fields are readable without horizontal scrolling. -->
+    <div class="notification-list__cards" role="list" aria-label="Delivery jobs, newest first">
+      <article v-for="job in jobs" :key="job.id" class="notification-list__card" role="listitem">
+        <header class="notification-list__card-header">
+          <div class="notification-list__card-job">
+            <span class="notification-list__field-label">Job</span>
+            <div class="notification-list__job-ref">
+              <CodeValue :value="job.id" :display="shortId(job.id)" />
+              <RouterLink
+                :to="`/notifications/${job.id}`"
+                class="notification-list__link notification-list__open-link"
+              >
+                Open
+              </RouterLink>
+            </div>
+          </div>
+          <NotificationStatusBadge :status="job.status" />
+        </header>
+
+        <dl class="notification-list__details">
+          <div class="notification-list__detail notification-list__detail--wide">
+            <dt>Event</dt>
+            <dd>
+              <RouterLink :to="`/notifications/events/${job.event_id}`" class="notification-list__link">
+                <code class="notification-list__mono notification-list__wrap">{{ job.event_type }}</code>
+              </RouterLink>
+            </dd>
+          </div>
+
+          <div class="notification-list__detail">
+            <dt>Channel</dt>
+            <dd>{{ CHANNEL_LABELS[job.channel] }}</dd>
+          </div>
+
+          <div class="notification-list__detail">
+            <dt>Attempts</dt>
+            <dd>{{ job.attempt_count }}</dd>
+          </div>
+
+          <div class="notification-list__detail notification-list__detail--wide">
+            <dt>Recipient</dt>
+            <dd class="notification-list__wrap">{{ maskRecipient(job.recipient, job.channel) }}</dd>
+          </div>
+
+          <div class="notification-list__detail notification-list__detail--wide">
+            <dt>Last error</dt>
+            <dd>
+              <code v-if="job.last_error_code" class="notification-list__mono notification-list__wrap">
+                {{ job.last_error_code }}
+              </code>
+              <span v-else>—</span>
+            </dd>
+          </div>
+
+          <div class="notification-list__detail notification-list__detail--wide">
+            <dt>Next attempt</dt>
+            <dd class="notification-list__wrap">{{ job.next_attempt_at || '—' }}</dd>
+          </div>
+
+          <div class="notification-list__detail notification-list__detail--wide">
+            <dt>Created</dt>
+            <dd class="notification-list__wrap">{{ job.created_at }}</dd>
+          </div>
+        </dl>
+      </article>
+    </div>
   </CardPanel>
 </template>
 
 <style scoped>
 .notification-list__scroll {
   overflow-x: auto;
+}
+
+.notification-list__cards {
+  display: none;
 }
 
 .notification-list__caption {
@@ -95,13 +178,32 @@ defineProps<{ jobs: NotificationJobDto[] }>()
   text-align: right !important;
 }
 
+.notification-list__job-ref {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.notification-list__job-ref :deep(.code-value) {
+  min-width: 0;
+}
+
 .notification-list__link {
   color: inherit;
   text-decoration: none;
 }
 
-.notification-list__link:hover {
+.notification-list__link:hover,
+.notification-list__link:focus-visible {
   color: var(--c-accent);
+}
+
+.notification-list__open-link {
+  flex: 0 0 auto;
+  color: var(--c-accent);
+  font-size: var(--text-xs);
+  font-weight: 600;
 }
 
 .notification-list__mono {
@@ -111,5 +213,84 @@ defineProps<{ jobs: NotificationJobDto[] }>()
 
 .notification-list__recipient {
   white-space: nowrap;
+}
+
+.notification-list__wrap {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 760px) {
+  .notification-list__scroll {
+    display: none;
+  }
+
+  .notification-list__cards {
+    display: block;
+  }
+
+  .notification-list__card {
+    padding: var(--space-4);
+  }
+
+  .notification-list__card + .notification-list__card {
+    border-top: 1px solid var(--c-border);
+  }
+
+  .notification-list__card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .notification-list__card-job {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+  }
+
+  .notification-list__field-label,
+  .notification-list__detail dt {
+    color: var(--c-text-muted);
+    font-size: var(--text-xs);
+    font-weight: 600;
+  }
+
+  .notification-list__details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3) var(--space-4);
+    margin: var(--space-4) 0 0;
+  }
+
+  .notification-list__detail {
+    min-width: 0;
+  }
+
+  .notification-list__detail--wide {
+    grid-column: 1 / -1;
+  }
+
+  .notification-list__detail dt,
+  .notification-list__detail dd {
+    margin: 0;
+  }
+
+  .notification-list__detail dd {
+    margin-top: 2px;
+    color: var(--c-text);
+    line-height: 1.45;
+  }
+}
+
+@media (max-width: 420px) {
+  .notification-list__details {
+    grid-template-columns: 1fr;
+  }
+
+  .notification-list__detail--wide {
+    grid-column: auto;
+  }
 }
 </style>
