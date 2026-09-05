@@ -81,8 +81,10 @@ async function onSubmit(): Promise<void> {
   const request: CreateShortLinkRequest = { url: url.value.trim() }
   if (customAlias.value.trim()) request.custom_alias = customAlias.value.trim()
   if (expiresAt.value) {
-    const iso = new Date(expiresAt.value).toISOString()
-    if (!Number.isNaN(Date.parse(iso))) request.expires_at = iso
+    // Convert only genuinely parseable datetimes; a malformed value must not
+    // throw before the mutation itself is attempted.
+    const parsed = new Date(expiresAt.value)
+    if (!Number.isNaN(parsed.getTime())) request.expires_at = parsed.toISOString()
   }
 
   try {

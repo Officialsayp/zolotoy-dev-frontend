@@ -11,10 +11,9 @@ service modules:
 - Notification (`/notifications`)
 - URL Shortener (`/shortener`)
 
-The shell and shared infrastructure are built in Stage 00 (Foundation). Service
-business screens land in their own sequential stages (01–05) and reuse this
-foundation — no module re-creates the router, HTTP client, error model, design
-tokens or mock runtime.
+The shell and shared infrastructure were established in Stage 00 and all service
+modules reuse that foundation — no module re-creates the router, HTTP client,
+error model, design tokens, query client or mock runtime.
 
 ## Stack
 
@@ -75,6 +74,9 @@ closed**: if no deterministic MSW handler is registered, the request is answered
 locally with HTTP `501` and error code `MOCK_UNHANDLED_REQUEST` instead of being
 forwarded to a live backend. Non-service requests are bypassed normally.
 
+MSW is loaded only for the mock runtime path; the real-mode production entry does
+not statically import the browser worker and mock handler graph.
+
 ## Environment
 
 Copy the template and adjust (the template is committed as `env.example`):
@@ -107,27 +109,63 @@ npm run lint               # ESLint
 npm run type-check         # vue-tsc project type check
 npm run test               # Vitest run
 npm run test:unit          # Vitest watch
-npm run build              # type-check + production build
+npm run build              # type-check + production Vite build
 npm run preview            # preview the production build
-npm run test:e2e           # Playwright (chromium)
+npm run test:e2e           # Playwright
+npm run deploy:preview     # upload a Cloudflare preview version
+npm run deploy             # deploy through Wrangler
 ```
 
-> E2E requires Playwright browsers: `npx playwright install chromium`.
+> E2E requires the Playwright browser/runtime dependencies to be installed in the
+> environment where the suite is executed.
+
+## Cloudflare deployment
+
+Cloudflare is the external build/deployment gate used by the project. Preview and
+production pipelines run the repository build before the corresponding Wrangler
+deploy command.
+
+For a local/manual verification before deployment:
+
+```bash
+npm run build
+```
+
+Preview upload:
+
+```bash
+npm run deploy:preview
+```
+
+Production deploy:
+
+```bash
+npm run deploy
+```
+
+A Cloudflare failure while restoring build/dependency cache **before**
+`npm clean-install` or `npm run build` is an environment/cache failure rather
+than evidence of a source-code build failure. Clearing the Cloudflare build cache
+and retrying has resolved that failure mode in this project.
 
 ## Demo scenarios (mock mode)
 
 In mock mode the shell header shows a **Demo scenario** switcher. Scenarios are
-deterministic baselines (e.g. `Default`, `Degraded`) served by MSW. Changing a
-scenario invalidates active TanStack Query data so the visible shell state
-refreshes immediately. Reloading or resetting returns to the pipeline baseline.
+deterministic baselines served by MSW. Changing a scenario invalidates active
+TanStack Query data so the visible shell state refreshes immediately. Resetting
+restores the deterministic baseline for the selected demo flow.
 
-## Repository layout (Foundation)
+The service scenarios cover Order lifecycle/payment/concurrency, Auth sessions
+and RBAC, Notification retry/deduplication states, and URL Shortener management
+and analytics cases without requiring the Go services to be running.
+
+## Repository layout
 
 ```text
 public/mockServiceWorker.js
 src/
   app/            router, shell, providers, root pages
-  modules/        orders, auth, notifications, shortener (placeholders in 00)
+  modules/        orders, auth, notifications, shortener
   shared/         api, config, ui, lib, styles
   mocks/          MSW bootstrap, handlers, scenario registry, reset
   tests/          vitest setup
@@ -136,10 +174,16 @@ e2e/              Playwright specs
 openapi/          per-service OpenAPI (populated as contracts stabilize)
 ```
 
-## Status
+## Implementation status
 
-- **Stage 00 — Foundation**: implemented (this branch of the repo state).
-- Stages 01–05: service modules (Order → Auth → Notification → Shortener →
-  Final Integration) reuse this foundation.
+- **Stage 00 — Foundation**: implemented.
+- **Stage 01 — Order Service**: implemented.
+- **Stage 02 — Auth Service**: implemented.
+- **Stage 03 — Notification Service**: implemented.
+- **Stage 04 — URL Shortener**: implemented.
+- **Stage 05 — Final Integration**: integration/regression hardening completed in the current implementation cycle.
 
-See [`docs/codex/`](docs/codex/) for the current stage prompt.
+Backend/API points that remain explicitly marked `TBD` or `PROPOSED CONTRACT` in
+the architecture documents are intentionally not guessed by the frontend. See
+[`docs/frontend/MASTER_FRONTEND_PLAN.md`](docs/frontend/MASTER_FRONTEND_PLAN.md)
+for the current contract register and service-specific constraints.

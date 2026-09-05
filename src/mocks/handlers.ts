@@ -9,10 +9,10 @@ import { shortenerHandlers } from '@/modules/shortener/mocks/shortener-handlers'
 
 /**
  * Root handler composition. Each service module contributes its own handlers;
- * the shell health handlers are the only infrastructure smoke examples in
- * Foundation. Components never import these — interception happens at the
- * network boundary. This module is transport-agnostic so the same handlers can
- * be used by the browser worker or a node server in tests.
+ * the shell health handlers are shared infrastructure. Components never import
+ * these — interception happens at the network boundary. This module is
+ * transport-agnostic so the same handlers can be used by the browser worker or
+ * a node server in tests.
  *
  * IMPORTANT: `failClosedHandler` must remain LAST. Service-specific handlers
  * added by later stages must be inserted before it.

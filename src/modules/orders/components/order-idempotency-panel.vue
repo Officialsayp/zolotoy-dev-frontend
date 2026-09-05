@@ -23,7 +23,7 @@ function shortKey(key: string | null): string {
     <p class="idem-panel__body">
       Last idempotency key: <code class="idem-panel__key">{{ shortKey(lastKey) }}</code>
     </p>
-    <AppButton variant="secondary" size="sm" :disabled="!lastKey || busy || undefined" @click="emit('replay')">
+    <AppButton variant="secondary" size="sm" :disabled="!lastKey || busy" @click="emit('replay')">
       Replay exact request (same key)
     </AppButton>
     <p class="idem-panel__hint">

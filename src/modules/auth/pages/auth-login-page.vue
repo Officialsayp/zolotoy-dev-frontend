@@ -100,7 +100,13 @@ async function submit(): Promise<void> {
         />
       </FormField>
 
-      <p v-if="serverError" class="auth-form__error" role="alert" data-testid="auth-error">
+      <p
+        id="auth-login-form-error"
+        v-if="serverError"
+        class="auth-form__error"
+        role="alert"
+        data-testid="auth-error"
+      >
         {{ serverError }}
       </p>
 

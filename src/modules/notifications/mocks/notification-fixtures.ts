@@ -248,6 +248,3 @@ export function buildNotificationFixtures(): JobSeed[] {
     },
   ]
 }
-
-/** Reference emails/channels for the event-type → channel help mapping. */
-export const MAILPIT_URL = undefined

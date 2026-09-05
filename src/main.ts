@@ -11,7 +11,6 @@ import { useThemeStore } from '@/app/stores/theme-store'
 import { useSessionStore } from '@/modules/auth/store/session-store'
 import { loadAppConfig } from '@/shared/config/app-config'
 import { getRuntimeEnv } from '@/shared/config/runtime-env'
-import { startMockWorker } from '@/mocks/browser'
 
 import '@/shared/styles/tokens.css'
 import '@/shared/styles/base.css'
@@ -61,8 +60,10 @@ async function bootstrap(): Promise<void> {
 
   // Mock mode must intercept the network before auth bootstrap can issue the
   // cookie refresh request. Starting the router earlier would let its initial
-  // guard trigger bootstrap before MSW is ready.
+  // guard trigger bootstrap before MSW is ready. Dynamic import keeps MSW and
+  // the service mock handlers out of the production entry bundle.
   if (config.apiMode === 'mock') {
+    const { startMockWorker } = await import('@/mocks/browser')
     await startMockWorker()
   }
 

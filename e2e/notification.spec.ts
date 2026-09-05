@@ -3,8 +3,8 @@ import { expect, test } from '@playwright/test'
 /**
  * Notification critical browser flows (Prompt 03 TESTS §Playwright). Runs against
  * the mock dev server. The default scenario seeds several delivery jobs visible
- * on /notifications; a dedicated scenario seeds a terminal `dead` job whose
- * manual retry must move it to `sent` through the confirmation dialog.
+ * on /notifications, including a terminal `dead` job whose manual retry must
+ * move it to `sent` through the confirmation dialog.
  */
 
 const JOB_ID_PAID_SENT = '60000000-0000-4000-8000-000000000001'
@@ -28,8 +28,10 @@ test('notification list renders seeded jobs masked and links to a detail page', 
 test('dead -> confirmation -> retry -> sent (operational retry flow)', async ({ page }) => {
   await page.goto('/notifications')
 
-  // Terminal `dead` job seeded for the manual-retry demo.
-  await page.locator('select.scenario-switcher__select').selectOption('notifications-manual-retry-success')
+  // Terminal `dead` job is already seeded in the default scenario. A full
+  // page.goto to the detail reloads the mock baseline, but this job is present
+  // in default — so no scenario switch is needed (in-memory scenarios do not
+  // survive a reload anyway).
   await page.goto(`/notifications/${JOB_ID_MANUAL_RETRY}`)
 
   await expect(page.getByTestId('retry-button')).toBeVisible()

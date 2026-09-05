@@ -13,10 +13,10 @@ test('overview shell renders with a visible MOCK badge', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Auth' })).toBeVisible()
 })
 
-test('service placeholder routes resolve inside the shell', async ({ page }) => {
+test('shortener route resolves inside the shell with the create form', async ({ page }) => {
   await page.goto('/shortener')
   await expect(page.getByRole('heading', { name: 'URL Shortener' })).toBeVisible()
-  await expect(page.getByText('Implemented in its stage')).toBeVisible()
+  await expect(page.getByTestId('shortener-create-form')).toBeVisible()
 })
 
 test('unknown route shows the 404 page', async ({ page }) => {

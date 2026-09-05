@@ -44,7 +44,6 @@ export const useSessionStore = defineStore('session', () => {
   const principal = ref<AuthUserDto | null>(null)
   const lastReason = ref<AuthFailureReason>('none')
   const bootstrapError = ref<AppError | null>(null)
-  const isRefreshing = ref(false)
 
   const isAuthenticated = computed(() => status.value === 'authenticated')
   const isUnknown = computed(() => status.value === 'unknown')
@@ -196,7 +195,6 @@ export const useSessionStore = defineStore('session', () => {
     principal,
     lastReason,
     bootstrapError,
-    isRefreshing,
     isAuthenticated,
     isUnknown,
     roles,

@@ -23,6 +23,8 @@ function client(): QueryClient {
 function seedQuery(): void {
   client().setQueryData(['auth', 'me'], { id: 'u1' })
   client().setQueryData(['orders', 'detail', 'o1'], { id: 'o1' })
+  client().setQueryData(['notifications', 'list'], [{ id: 'n1' }])
+  client().setQueryData(['shortener', 'list'], [{ id: 's1' }])
   client().setQueryData(['system', 'health', 'auth'], 'healthy')
 }
 
@@ -51,6 +53,8 @@ describe('session teardown', () => {
     expect(store.lastReason).toBe('reuse-detected')
     expect(client().getQueryData(['auth', 'me'])).toBeUndefined()
     expect(client().getQueryData(['orders', 'detail', 'o1'])).toBeUndefined()
+    expect(client().getQueryData(['notifications', 'list'])).toBeUndefined()
+    expect(client().getQueryData(['shortener', 'list'])).toBeUndefined()
     expect(client().getQueryData(['system', 'health', 'auth'])).toBe('healthy')
   })
 

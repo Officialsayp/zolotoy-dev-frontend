@@ -44,35 +44,44 @@ test('invalid credentials show a generic error, never account details', async ({
 })
 
 test('admin scenario reaches the admin demo; normal user gets backend 403 UX', async ({ page }) => {
-  await page.goto('/auth/login')
+  // Demo scenarios and the mock session are held in page memory and do NOT
+  // survive a full reload. So protected-route navigation below is always
+  // client-side (a RouterLink click, or a history `pushState` + `popstate` that
+  // vue-router consumes) — never `page.goto`. Only the public login page is
+  // reached by full reload, after which the scenario is re-selected and a fresh
+  // sign-in restores the in-memory session.
 
-  // Admin baseline: login resolves to profile, then the protected backend demo succeeds.
-  await page.locator('select.scenario-switcher__select').selectOption('auth-active-admin')
-  await page.getByTestId('auth-email').fill(ADMIN_EMAIL)
-  await page.getByTestId('auth-password').fill(PASSWORD)
-  await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.waitForURL(/\/auth\/profile/)
+  async function signIn(email: string, scenario: string): Promise<void> {
+    await page.goto('/auth/login')
+    await page.locator('select.scenario-switcher__select').selectOption(scenario)
+    await page.getByTestId('auth-email').fill(email)
+    await page.getByTestId('auth-password').fill(PASSWORD)
+    await page.getByRole('button', { name: 'Sign in' }).click()
+    await page.waitForURL(/\/auth\/profile/)
+  }
 
-  await page.goto('/auth/admin')
+  // Admin baseline: login resolves to profile, then the protected demo succeeds
+  // through the in-app link (client-side, so the session/scenario stay intact).
+  await signIn(ADMIN_EMAIL, 'auth-active-admin')
+  await page.getByRole('link', { name: 'Admin demo' }).click()
+  await expect(page).toHaveURL(/\/auth\/admin/)
   await expect(page.getByTestId('admin-result')).toBeVisible()
 
-  // End the admin browser session, switch to a normal-user baseline and verify
-  // that frontend routing does not masquerade as authorization: the backend 403
-  // is rendered as Access denied without forcing another logout/refresh loop.
-  await page.goto('/auth/profile')
+  // Sign out from the header (client-side), then sign in as a normal user.
   await page.getByRole('button', { name: 'Sign out' }).click()
   await page.waitForURL(/\/auth\/login/)
 
-  await page.locator('select.scenario-switcher__select').selectOption('auth-active-user')
-  await page.getByTestId('auth-email').fill(USER_EMAIL)
-  await page.getByTestId('auth-password').fill(PASSWORD)
-  await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.waitForURL(/\/auth\/profile/)
-
+  // A normal user has no Admin demo link; reaching /auth/admin via history must
+  // not masquerade as authorization — the backend 403 renders as Access denied
+  // in place, without a logout/refresh loop.
+  await signIn(USER_EMAIL, 'auth-active-user')
   const deniedResponse = page.waitForResponse((response) =>
     response.url().includes('/api/v1/admin/example'),
   )
-  await page.goto('/auth/admin')
+  await page.evaluate(() => {
+    window.history.pushState({}, '', '/auth/admin')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+  })
   expect((await deniedResponse).status()).toBe(403)
   await expect(page.getByText('Access denied', { exact: true })).toBeVisible()
   await expect(page).toHaveURL(/\/auth\/admin/)

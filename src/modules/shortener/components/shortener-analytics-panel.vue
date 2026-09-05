@@ -26,20 +26,33 @@ const vm = computed(() => (props.analytics ? analyticsViewModel(props.analytics)
 
 const emptyAnalytics = computed(() => Boolean(vm.value && vm.value.totalClicks === 0))
 
-function chartDefs(vmValue: ReturnType<typeof analyticsViewModel>) {
+interface ChartDefs {
+  w: number
+  h: number
+  padX: number
+  x: (i: number) => number
+  y: (click: number) => number
+  points: string
+}
+
+function chartDefs(vmValue: ReturnType<typeof analyticsViewModel>): ChartDefs {
   const { byDay, maxByDayClicks } = vmValue
   const w = 560
   const h = 140
   const padY = 8
+  const padX = 6
   const usableH = h - padY * 2
   const n = byDay.length
-  const step = n > 1 ? w / (n - 1) : w
   const x = (i: number) => (n === 1 ? 0 : (i * w) / (n - 1))
   const y = (click: number) => padY + usableH - (maxByDayClicks > 0 ? (click / maxByDayClicks) * usableH : 0)
   const points = byDay.map((p, i) => `${x(i).toFixed(1)},${y(p.clicks).toFixed(1)}`).join(' ')
   // Spread dots generously so the polyline doesn't clip the first/last point.
-  return { w, h, x, y, step, points, pad: 6 }
+  return { w, h, padX, x, y, points }
 }
+
+// Memoized so the SVG attributes share one derivation instead of re-deriving
+// the geometry for every bound attribute on each render.
+const chart = computed<ChartDefs | null>(() => (vm.value ? chartDefs(vm.value) : null))
 </script>
 
 <template>
@@ -69,26 +82,24 @@ function chartDefs(vmValue: ReturnType<typeof analyticsViewModel>) {
       <!-- Clicks by day: SVG polyline + accessible table share `vm.byDay`. -->
       <section class="shortener-analytics__section" aria-labelledby="byday-title">
         <h4 id="byday-title" class="shortener-analytics__subtitle">Clicks by day</h4>
-        <div v-if="vm.byDay.length" class="shortener-analytics__chart">
+        <div v-if="chart && vm.byDay.length" class="shortener-analytics__chart">
           <svg
             class="shortener-analytics__line"
-            :viewBox="`0 0 ${chartDefs(vm).w} ${chartDefs(vm).h}`"
+            :viewBox="`0 0 ${chart.w} ${chart.h}`"
             preserveAspectRatio="none"
             aria-hidden="true"
           >
             <polyline
-              :points="chartDefs(vm).points"
+              :points="chart.points"
               fill="none"
               stroke="var(--c-accent)"
               stroke-width="2"
             />
             <polygon
               v-if="vm.byDay.length > 1"
-              :points="`${chartDefs(vm).w - 6},${chartDefs(vm).h - 2} ${chartDefs(vm).x(0)},${
-                chartDefs(vm).y(vm.byDay[0].clicks)
-              } ${chartDefs(vm).points} ${chartDefs(vm).w - 6},${chartDefs(vm).y(
-                vm.byDay[vm.byDay.length - 1].clicks,
-              )}`"
+              :points="`${chart.w - chart.padX},${chart.h - 2} ${chart.x(0)},${chart.y(vm.byDay[0].clicks)} ${
+                chart.points
+              } ${chart.w - chart.padX},${chart.y(vm.byDay[vm.byDay.length - 1].clicks)}`"
               fill="color-mix(in srgb, var(--c-accent) 18%, transparent)"
             />
           </svg>

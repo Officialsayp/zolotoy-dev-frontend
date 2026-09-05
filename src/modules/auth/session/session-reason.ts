@@ -38,17 +38,20 @@ export function mapErrorToReason(error: unknown): AuthFailureReason {
 /**
  * Remove server state that may belong to the previous authenticated principal.
  * Keep public shell/system queries (notably health) intact instead of clearing
- * the entire QueryClient. At Stage 02 the authenticated roots are Auth + Order;
- * later authenticated modules can extend this predicate deliberately.
+ * the entire QueryClient. Every module whose queries may hold principal-scoped
+ * data opts in here by listing its cache root — Auth, Orders, Notifications and
+ * URL Shortener are authenticated/operator-scoped and must not leak cached data
+ * across a logout or session expiry.
  */
 export function clearAuthenticatedCache(): void {
   const client = getAppQueryClient()
   if (!client) return
 
+  const authenticatedRoots = ['auth', 'orders', 'notifications', 'shortener']
   client.removeQueries({
     predicate: (query) => {
       const root = query.queryKey[0]
-      return root === 'auth' || root === 'orders'
+      return authenticatedRoots.includes(String(root))
     },
   })
 }
