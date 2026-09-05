@@ -224,12 +224,19 @@ function focusUrl(): void {
 
 .shortener-create__input {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--c-border-strong);
   border-radius: var(--radius-sm);
   background: var(--surface-card);
   color: var(--c-text);
   font-size: var(--text-sm);
+}
+
+.shortener-create__input[type='datetime-local'] {
+  min-inline-size: 0;
 }
 
 .shortener-create__input:focus-visible {
