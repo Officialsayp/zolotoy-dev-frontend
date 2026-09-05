@@ -92,6 +92,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'URL Shortener' },
       },
       {
+        path: 'shortener/:linkId',
+        name: ROUTE_NAMES.shortenerDetail,
+        component: () => import('@/modules/shortener/pages/shortener-detail-page.vue'),
+        meta: { title: 'Link detail' },
+      },
+      {
         path: ':pathMatch(.*)*',
         name: ROUTE_NAMES.notFound,
         component: () => import('@/app/pages/not-found-page.vue'),

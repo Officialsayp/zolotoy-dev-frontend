@@ -41,6 +41,17 @@ export type DemoScenarioId =
   | 'notifications-empty'
   | 'notifications-forbidden'
   | 'notifications-service-unavailable'
+  | 'shortener-happy-active'
+  | 'shortener-analytics-populated'
+  | 'shortener-analytics-empty'
+  | 'shortener-disabled'
+  | 'shortener-expired'
+  | 'shortener-deleted'
+  | 'shortener-alias-conflict'
+  | 'shortener-invalid-url'
+  | 'shortener-rate-limited'
+  | 'shortener-not-found'
+  | 'shortener-service-unavailable'
 
 export interface DemoScenario {
   id: DemoScenarioId
@@ -208,6 +219,61 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
     id: 'notifications-service-unavailable',
     label: 'Notifications · service unavailable',
     description: 'Admin/read endpoints return 503.',
+  },
+  {
+    id: 'shortener-happy-active',
+    label: 'Shortener · happy active',
+    description: 'A single active short link with a full short_url.',
+  },
+  {
+    id: 'shortener-analytics-populated',
+    label: 'Shortener · populated analytics',
+    description: 'Links ship deterministic by-day/referrer/device click analytics.',
+  },
+  {
+    id: 'shortener-analytics-empty',
+    label: 'Shortener · empty analytics',
+    description: 'Links have zero recorded clicks.',
+  },
+  {
+    id: 'shortener-disabled',
+    label: 'Shortener · disabled',
+    description: 'A link in disabled status is listed and shown on detail.',
+  },
+  {
+    id: 'shortener-expired',
+    label: 'Shortener · expired',
+    description: 'An active link with an expires_at in the past renders expired.',
+  },
+  {
+    id: 'shortener-deleted',
+    label: 'Shortener · logically deleted',
+    description: 'A logically deleted link shows deleted status metadata.',
+  },
+  {
+    id: 'shortener-alias-conflict',
+    label: 'Shortener · alias conflict',
+    description: 'Creating with a custom alias returns a 409 conflict.',
+  },
+  {
+    id: 'shortener-invalid-url',
+    label: 'Shortener · invalid URL',
+    description: 'Creating returns 400 for a non-http(s) target URL.',
+  },
+  {
+    id: 'shortener-rate-limited',
+    label: 'Shortener · rate limited',
+    description: 'Create/mutations return 429 with Retry-After.',
+  },
+  {
+    id: 'shortener-not-found',
+    label: 'Shortener · not found',
+    description: 'Detail/analytics return 404.',
+  },
+  {
+    id: 'shortener-service-unavailable',
+    label: 'Shortener · service unavailable',
+    description: 'Management endpoints return 503.',
   },
 ]
 

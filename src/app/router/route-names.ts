@@ -14,6 +14,7 @@ export const ROUTE_NAMES = {
   notificationDetail: 'notification-detail',
   notificationEvent: 'notification-event',
   shortener: 'shortener',
+  shortenerDetail: 'shortener-detail',
   notFound: 'not-found',
 } as const
 

@@ -5,6 +5,7 @@ import { failClosedHandler } from './handlers/fail-closed'
 import { orderHandlers } from '@/modules/orders/mocks/order-handlers'
 import { authHandlers } from '@/modules/auth/mocks/auth-handlers'
 import { notificationHandlers } from '@/modules/notifications/mocks/notification-handlers'
+import { shortenerHandlers } from '@/modules/shortener/mocks/shortener-handlers'
 
 /**
  * Root handler composition. Each service module contributes its own handlers;
@@ -21,5 +22,6 @@ export const handlers: HttpHandler[] = [
   ...orderHandlers,
   ...authHandlers,
   ...notificationHandlers,
+  ...shortenerHandlers,
   failClosedHandler,
 ]
