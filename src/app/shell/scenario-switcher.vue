@@ -43,14 +43,19 @@ async function onChange(event: Event): Promise<void> {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .scenario-switcher__label {
+  flex: 0 0 auto;
   font-size: var(--text-sm);
   color: var(--c-text-subtle);
 }
 
 .scenario-switcher__select {
+  min-width: 0;
+  max-width: 100%;
   height: 30px;
   padding: 0 var(--space-2);
   border: 1px solid var(--c-border-strong);
@@ -59,5 +64,18 @@ async function onChange(event: Event): Promise<void> {
   color: var(--c-text);
   font-size: var(--text-sm);
   cursor: pointer;
+}
+
+@media (max-width: 519.98px) {
+  .scenario-switcher {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+    gap: var(--space-1);
+  }
+
+  .scenario-switcher__select {
+    width: 100%;
+  }
 }
 </style>

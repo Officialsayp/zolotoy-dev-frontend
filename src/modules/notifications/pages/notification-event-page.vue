@@ -188,7 +188,7 @@ const view = computed(() => query.data.value)
 
 .notification-event-page__row {
   display: grid;
-  grid-template-columns: 160px 1fr;
+  grid-template-columns: 160px minmax(0, 1fr);
   gap: var(--space-2);
   align-items: baseline;
   font-size: var(--text-sm);
@@ -199,6 +199,7 @@ const view = computed(() => query.data.value)
 }
 
 .notification-event-page__row dd {
+  min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;
 }
@@ -219,6 +220,7 @@ const view = computed(() => query.data.value)
   margin: 0;
   color: var(--c-text-muted);
   font-size: var(--text-sm);
+  overflow-wrap: anywhere;
 }
 
 .notification-event-page__jobs-title {
@@ -237,16 +239,27 @@ const view = computed(() => query.data.value)
   align-items: center;
   gap: var(--space-3);
   flex-wrap: wrap;
+  min-width: 0;
   padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--c-border);
 }
 
 .notification-event-page__job-link {
+  min-width: 0;
+  max-width: 100%;
   color: inherit;
   text-decoration: none;
 }
 
 .notification-event-page__job-link:hover {
   color: var(--c-accent);
+}
+
+@media (max-width: 519.98px) {
+  .notification-event-page__row {
+    grid-template-columns: 1fr;
+    gap: 2px;
+    align-items: start;
+  }
 }
 </style>

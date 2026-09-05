@@ -54,14 +54,17 @@ const ROW = { display: 'flex', gap: 'var(--space-3)', justifyContent: 'space-bet
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-3);
+  min-width: 0;
 }
 
 .order-summary__row dt {
+  flex: 0 0 auto;
   color: var(--c-text-muted);
   font-size: var(--text-sm);
 }
 
 .order-summary__row dd {
+  min-width: 0;
   margin: 0;
   text-align: right;
   overflow-wrap: anywhere;
@@ -73,5 +76,17 @@ const ROW = { display: 'flex', gap: 'var(--space-3)', justifyContent: 'space-bet
 
 .order-summary__code {
   font-family: var(--font-mono);
+}
+
+@media (max-width: 519.98px) {
+  .order-summary__row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+  }
+
+  .order-summary__row dd {
+    text-align: left;
+  }
 }
 </style>

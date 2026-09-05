@@ -51,10 +51,13 @@ async function onCopy(): Promise<void> {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  min-width: 0;
   max-width: 100%;
 }
 
 .code-value__text {
+  flex: 1 1 auto;
+  min-width: 0;
   padding: 2px var(--space-2);
   background: var(--c-surface-muted);
   border: 1px solid var(--c-border);
@@ -68,6 +71,7 @@ async function onCopy(): Promise<void> {
 
 .code-value__copy {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   padding: 4px;

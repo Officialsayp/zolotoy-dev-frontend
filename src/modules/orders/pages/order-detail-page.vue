@@ -216,6 +216,7 @@ const historyEntries = computed(() => (history.data.value ?? []).map(toHistoryEn
   align-items: center;
   gap: var(--space-3);
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .order-detail__header {
@@ -238,7 +239,9 @@ const historyEntries = computed(() => (history.data.value ?? []).map(toHistoryEn
   gap: var(--space-4);
 }
 
-@media (max-width: 900px) {
+/* With the 240px desktop sidebar, 960–1279px viewports leave too little
+   content width for a useful two-column detail layout. Keep it stacked there. */
+@media (max-width: 1279.98px) {
   .order-detail__grid {
     grid-template-columns: 1fr;
   }
@@ -260,6 +263,7 @@ const historyEntries = computed(() => (history.data.value ?? []).map(toHistoryEn
 .order-detail__payment-status {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-2);
   margin: 0 0 var(--space-2);
 }
@@ -268,6 +272,7 @@ const historyEntries = computed(() => (history.data.value ?? []).map(toHistoryEn
   margin: 0;
   font-size: var(--text-sm);
   color: var(--c-text-muted);
+  overflow-wrap: anywhere;
 }
 
 .order-detail__error {
@@ -280,6 +285,7 @@ const historyEntries = computed(() => (history.data.value ?? []).map(toHistoryEn
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  overflow-wrap: anywhere;
 }
 
 .order-detail__error-note {

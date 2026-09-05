@@ -25,12 +25,8 @@ const notificationId = computed(() => String(route.params.notificationId ?? ''))
 
 const query = useNotificationDetailQuery(notificationId)
 
-// Fetch the event origin for the timeline card via the source-backed
-// GET /events/{event_id}; only shown when the API returns it (PROPOSED DTO).
-// Empty string keeps the query disabled until a real event_id is known.
 const eventId = computed(() => query.data.value?.job.event_id ?? '')
 const eventQuery = useNotificationEventQuery(eventId)
-
 const event = computed(() => eventQuery.data.value?.event ?? null)
 
 const retryMutation = useRetryNotificationMutation()
@@ -75,10 +71,6 @@ async function doRetry(): Promise<void> {
 
   confirmOpen.value = false
   const id = notificationId.value
-  // Invalidate/refetch the affected families happens in the mutation; we keep
-  // the server state authoritative and never set a local terminal status.
-  // Mutation state owns the error UI; catch here prevents an unhandled rejected
-  // promise from the DOM event handler.
   try {
     await retryMutation.mutateAsync(id)
   } catch {
@@ -245,7 +237,7 @@ async function doRetry(): Promise<void> {
 
 .notification-detail-page__row {
   display: grid;
-  grid-template-columns: 160px 1fr;
+  grid-template-columns: 160px minmax(0, 1fr);
   gap: var(--space-2);
   align-items: baseline;
   font-size: var(--text-sm);
@@ -256,6 +248,7 @@ async function doRetry(): Promise<void> {
 }
 
 .notification-detail-page__row dd {
+  min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;
 }
@@ -270,5 +263,14 @@ async function doRetry(): Promise<void> {
   margin: var(--space-3) 0 0;
   color: var(--c-danger);
   font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 519.98px) {
+  .notification-detail-page__row {
+    grid-template-columns: 1fr;
+    gap: 2px;
+    align-items: start;
+  }
 }
 </style>

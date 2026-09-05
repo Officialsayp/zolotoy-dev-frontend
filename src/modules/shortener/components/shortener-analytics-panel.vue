@@ -193,6 +193,10 @@ const chart = computed<ChartDefs | null>(() => (vm.value ? chartDefs(vm.value) :
 </template>
 
 <style scoped>
+.shortener-analytics {
+  min-width: 0;
+}
+
 .shortener-analytics__title {
   margin: 0 0 var(--space-3);
   font-size: var(--text-md);
@@ -213,6 +217,7 @@ const chart = computed<ChartDefs | null>(() => (vm.value ? chartDefs(vm.value) :
 
 .shortener-analytics__section {
   margin-top: var(--space-4);
+  min-width: 0;
 }
 
 .shortener-analytics__subtitle {
@@ -224,6 +229,7 @@ const chart = computed<ChartDefs | null>(() => (vm.value ? chartDefs(vm.value) :
 
 .shortener-analytics__chart {
   margin-bottom: var(--space-2);
+  min-width: 0;
 }
 
 .shortener-analytics__line {
@@ -246,16 +252,19 @@ const chart = computed<ChartDefs | null>(() => (vm.value ? chartDefs(vm.value) :
   grid-template-columns: minmax(90px, 1fr) 1.6fr minmax(90px, auto);
   gap: var(--space-2);
   align-items: center;
+  min-width: 0;
   font-size: var(--text-sm);
 }
 
 .shortener-analytics__bar-label {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .shortener-analytics__bar-track {
+  min-width: 0;
   height: 10px;
   border-radius: var(--radius-sm);
   background: var(--c-surface-muted);
@@ -276,15 +285,19 @@ const chart = computed<ChartDefs | null>(() => (vm.value ? chartDefs(vm.value) :
 
 .shortener-analytics__table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: var(--text-sm);
 }
 
 .shortener-analytics__table th,
 .shortener-analytics__table td {
+  min-width: 0;
   text-align: left;
   padding: var(--space-1) var(--space-2);
   border-bottom: 1px solid var(--c-border);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .shortener-analytics__table th {
@@ -303,5 +316,32 @@ const chart = computed<ChartDefs | null>(() => (vm.value ? chartDefs(vm.value) :
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+
+@media (max-width: 519.98px) {
+  .shortener-analytics__bar-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .shortener-analytics__bar-label {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+
+  .shortener-analytics__bar-track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .shortener-analytics__bar-value {
+    white-space: nowrap;
+  }
+
+  .shortener-analytics__table th,
+  .shortener-analytics__table td {
+    padding-inline: var(--space-1);
+  }
 }
 </style>

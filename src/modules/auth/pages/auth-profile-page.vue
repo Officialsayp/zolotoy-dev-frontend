@@ -124,7 +124,7 @@ async function logout(): Promise<void> {
 
 .auth-profile__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
   gap: var(--space-4);
 }
 
@@ -144,6 +144,7 @@ async function logout(): Promise<void> {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
 .auth-profile__row dt {
@@ -152,6 +153,7 @@ async function logout(): Promise<void> {
 }
 
 .auth-profile__row dd {
+  min-width: 0;
   margin: 0;
   font-size: var(--text-base);
   overflow-wrap: anywhere;
@@ -167,6 +169,7 @@ async function logout(): Promise<void> {
   margin: 0 0 var(--space-3);
   font-size: var(--text-sm);
   color: var(--c-text-muted);
+  overflow-wrap: anywhere;
 }
 
 .auth-profile__links {

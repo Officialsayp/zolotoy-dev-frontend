@@ -8,13 +8,6 @@ import type { ShortLinkDto } from '../models/shortener-dto'
 import { formatDateTime, truncateUrl } from '../utils/shortener-format'
 import ShortenerStatusBadge from './shortener-status-badge.vue'
 
-/**
- * Responsive link list (MASTER_FRONTEND_PLAN §17.2 / mobile lesson from Stage 03).
- * Desktop renders a table-like grid; on narrow screens each row stacks into a
- * card using `data-label` captions. The list shows ONLY fields the list DTO
- * actually carries — never a per-row analytics fetch.
- */
-
 defineProps<{
   links: ShortLinkDto[]
 }>()
@@ -122,6 +115,7 @@ const app = useAppStore()
 
 .shortener-list__truncate {
   display: block;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -146,8 +140,9 @@ const app = useAppStore()
   text-decoration: none;
 }
 
-/* Mobile/tablet: stacked rows avoid horizontal overflow. */
-@media (max-width: 959.98px) {
+/* Phones, tablets and 960–1279px desktop-shell widths use stacked records.
+   The desktop sidebar leaves too little effective content width for six columns there. */
+@media (max-width: 1279.98px) {
   .shortener-list__head {
     display: none;
   }
@@ -172,7 +167,7 @@ const app = useAppStore()
 }
 
 /* Wide desktop: compact single-row grid. */
-@media (min-width: 960px) {
+@media (min-width: 1280px) {
   .shortener-list__head,
   .shortener-list__row {
     grid-template-columns: minmax(170px, 2fr) minmax(160px, 3fr) 110px 130px 130px auto;

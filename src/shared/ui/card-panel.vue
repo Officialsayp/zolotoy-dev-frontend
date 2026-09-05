@@ -17,6 +17,8 @@ withDefaults(
 
 <style scoped>
 .card-panel {
+  min-width: 0;
+  max-width: 100%;
   background: var(--surface-card);
   border: 1px solid var(--c-border);
   border-radius: var(--radius-md);

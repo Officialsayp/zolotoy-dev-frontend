@@ -22,27 +22,29 @@ const rows = computed(() =>
 
 <template>
   <div class="session-table" role="table" aria-label="Active sessions">
-    <div class="session-table__head session-table__row">
-      <span>Device</span>
-      <span>Created</span>
-      <span>Last used</span>
-      <span>Expires</span>
-      <span>Status</span>
-      <span class="session-table__actions-cell">Action</span>
+    <div class="session-table__head session-table__row" role="row">
+      <span role="columnheader">Device</span>
+      <span role="columnheader">Created</span>
+      <span role="columnheader">Last used</span>
+      <span role="columnheader">Expires</span>
+      <span role="columnheader">Status</span>
+      <span role="columnheader" class="session-table__actions-cell">Action</span>
     </div>
 
     <div v-for="session in rows" :key="session.id" class="session-table__row" role="row">
-      <span class="session-table__device">
-        {{ session.deviceLabel }}
-        <StatusBadge v-if="session.current" tone="accent" label="Current" />
+      <span class="session-table__cell" data-label="Device" role="cell">
+        <span class="session-table__device">
+          {{ session.deviceLabel }}
+          <StatusBadge v-if="session.current" tone="accent" label="Current" />
+        </span>
       </span>
-      <span>{{ formatDate(session.created_at) }}</span>
-      <span>{{ formatDate(session.last_used_at) }}</span>
-      <span>{{ formatDate(session.expires_at) }}</span>
-      <span>
+      <span class="session-table__cell" data-label="Created" role="cell">{{ formatDate(session.created_at) }}</span>
+      <span class="session-table__cell" data-label="Last used" role="cell">{{ formatDate(session.last_used_at) }}</span>
+      <span class="session-table__cell" data-label="Expires" role="cell">{{ formatDate(session.expires_at) }}</span>
+      <span class="session-table__cell" data-label="Status" role="cell">
         <StatusBadge :tone="session.active ? 'success' : 'neutral'" :label="session.active ? 'Active' : 'Revoked'" />
       </span>
-      <span class="session-table__actions-cell">
+      <span class="session-table__cell session-table__actions-cell" data-label="Action" role="cell">
         <AppButton
           variant="ghost"
           size="sm"
@@ -61,6 +63,7 @@ const rows = computed(() =>
   display: flex;
   flex-direction: column;
   width: 100%;
+  min-width: 0;
   border: 1px solid var(--c-border);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -85,11 +88,17 @@ const rows = computed(() =>
   border-top: 1px solid var(--c-border);
 }
 
+.session-table__cell {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .session-table__device {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   flex-wrap: wrap;
+  min-width: 0;
   overflow-wrap: anywhere;
 }
 
@@ -98,24 +107,40 @@ const rows = computed(() =>
   justify-content: flex-end;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1199.98px) {
   .session-table__head {
     display: none;
   }
 
   .session-table__row {
-    grid-template-columns: 1fr;
-    gap: var(--space-1);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3) var(--space-4);
     padding: var(--space-3);
   }
 
-  .session-table__row + .session-table__row {
-    border-top: 1px solid var(--c-border);
+  .session-table__cell::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 2px;
+    color: var(--c-text-subtle);
+    font-size: var(--text-xs);
+    font-weight: 600;
   }
 
   .session-table__actions-cell {
+    grid-column: 1 / -1;
     justify-content: flex-start;
     padding-top: var(--space-1);
+  }
+}
+
+@media (max-width: 599.98px) {
+  .session-table__row {
+    grid-template-columns: 1fr;
+  }
+
+  .session-table__actions-cell {
+    grid-column: auto;
   }
 }
 </style>

@@ -16,7 +16,7 @@ function shortId(value: string): string {
 
 <template>
   <CardPanel class="notification-list" padding="none">
-    <!-- Desktop/tablet: dense operational table. -->
+    <!-- Wide desktop: dense operational table. -->
     <div class="notification-list__scroll">
       <table class="notification-list__table">
         <caption class="notification-list__caption">
@@ -68,7 +68,7 @@ function shortId(value: string): string {
       </table>
     </div>
 
-    <!-- Mobile: one job per card so all operational fields are readable without horizontal scrolling. -->
+    <!-- Phones, tablets and narrower desktop content: cards avoid horizontal scrolling. -->
     <div class="notification-list__cards" role="list" aria-label="Delivery jobs, newest first">
       <article v-for="job in jobs" :key="job.id" class="notification-list__card" role="listitem">
         <header class="notification-list__card-header">
@@ -156,17 +156,19 @@ function shortId(value: string): string {
 
 .notification-list__table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: var(--text-sm);
-  white-space: nowrap;
 }
 
 .notification-list__table th,
 .notification-list__table td {
+  min-width: 0;
   padding: var(--space-3);
   border-bottom: 1px solid var(--c-border);
   text-align: left;
   vertical-align: middle;
+  overflow-wrap: anywhere;
 }
 
 .notification-list__table thead th {
@@ -192,6 +194,7 @@ function shortId(value: string): string {
 .notification-list__link {
   color: inherit;
   text-decoration: none;
+  min-width: 0;
 }
 
 .notification-list__link:hover,
@@ -209,10 +212,12 @@ function shortId(value: string): string {
 .notification-list__mono {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
+  overflow-wrap: anywhere;
 }
 
 .notification-list__recipient {
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .notification-list__wrap {
@@ -220,7 +225,9 @@ function shortId(value: string): string {
   word-break: break-word;
 }
 
-@media (max-width: 760px) {
+/* The desktop shell reserves 240px for the sidebar. Keep the card layout until
+   the viewport is wide enough for all nine operational columns to remain readable. */
+@media (max-width: 1399.98px) {
   .notification-list__scroll {
     display: none;
   }
@@ -284,7 +291,7 @@ function shortId(value: string): string {
   }
 }
 
-@media (max-width: 420px) {
+@media (max-width: 479.98px) {
   .notification-list__details {
     grid-template-columns: 1fr;
   }
