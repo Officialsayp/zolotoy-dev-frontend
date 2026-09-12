@@ -14,7 +14,7 @@ function isActive(activeName: string): boolean {
 <template>
   <aside class="app-sidebar" aria-label="Service navigation">
     <RouterLink to="/" class="app-sidebar__brand" aria-label="zolotoy.dev — Overview">
-      <span class="app-sidebar__logo">z</span>
+      <img class="app-sidebar__logo" src="/favicon.svg" alt="" width="28" height="28" />
       <span class="app-sidebar__wordmark">zolotoy.dev</span>
     </RouterLink>
 
@@ -56,16 +56,11 @@ function isActive(activeName: string): boolean {
 }
 
 .app-sidebar__logo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
+  flex: none;
   width: 28px;
   height: 28px;
-  border-radius: var(--radius-sm);
-  background: var(--c-accent);
-  color: var(--c-accent-contrast);
-  font-family: var(--font-mono);
-  font-weight: 700;
+  object-fit: contain;
 }
 
 .app-sidebar__nav {

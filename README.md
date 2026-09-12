@@ -121,6 +121,25 @@ npm run deploy             # deploy through Wrangler
 
 ## Cloudflare deployment
 
+### Logo and favicon
+
+The navigation mark and favicons use the approved logo kit from
+[saypix/brand](https://github.com/Officialsayp/saypix/tree/c75fa1ea4138162823e37f6131bd832f4133fe91/brand).
+`public/favicon.svg` and `public/favicon.ico` are exact copies of the compact
+favicon exports; `public/favicon.png` is the 192px PWA export, and
+`public/apple-touch-icon.png` is the 180px touch icon. The 28px navigation mark
+uses the compact SVG in both themes. Its parent link provides the accessible name.
+Vite copies these public assets to stable root URLs during the normal build.
+
+The locked master SHA-256 is
+`fe0dde1281b8fe1b4a8a44e54365050becd72e2c8ea21acde61e5f28fc12be31`.
+Update assets only from approved derivatives; do not redraw the master.
+Search engines update the icon after recrawling the home page and icon URLs;
+deployment does not immediately refresh existing search results. See
+[Google favicon guidance](https://developers.google.com/search/docs/appearance/favicon-in-search).
+
+### Deployment commands
+
 Cloudflare is the external build/deployment gate used by the project. Preview and
 production pipelines run the repository build before the corresponding Wrangler
 deploy command.
