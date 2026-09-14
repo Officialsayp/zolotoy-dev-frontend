@@ -14,7 +14,7 @@ function isActive(activeName: string): boolean {
 <template>
   <aside class="app-sidebar" aria-label="Service navigation">
     <RouterLink to="/" class="app-sidebar__brand" aria-label="zolotoy.dev — Overview">
-      <img class="app-sidebar__logo" src="/favicon.svg" alt="" width="28" height="28" />
+      <img class="app-sidebar__logo" src="/favicon.svg?v=20260914" alt="" width="28" height="28" />
       <span class="app-sidebar__wordmark">zolotoy.dev</span>
     </RouterLink>
 
