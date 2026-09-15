@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter, type RouteRecordRaw } from 'vue-router'
 
 import { __setAuthBoundForTest, useSessionStore } from '@/modules/auth/store/session-store'
-import { installAppGuards, isSafeInternalPath, loginRedirectFor } from './guards'
+import { installAppGuards, isSafeInternalPath, loginRedirectFor, updateRobotsMeta } from './guards'
 
 /**
  * Route-guard tests (Prompt 02, TESTS §protected route redirect, §no flash
@@ -56,6 +56,14 @@ beforeEach(() => {
 })
 
 describe('redirect policy (open-redirect safety)', () => {
+  it('marks only the overview route indexable', () => {
+    document.head.innerHTML = '<meta name="robots" content="index,follow">'
+    updateRobotsMeta('orders')
+    expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex,follow')
+    updateRobotsMeta('overview')
+    expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('index,follow')
+  })
+
   it('accepts only safe internal paths', () => {
     expect(isSafeInternalPath('/orders/123')).toBe(true)
     expect(isSafeInternalPath('/auth/profile')).toBe(true)
