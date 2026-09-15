@@ -1,6 +1,7 @@
 import type { Router, RouteLocationNormalized } from 'vue-router'
 
 import { useSessionStore } from '@/modules/auth/store/session-store'
+import { ROUTE_NAMES } from './route-names'
 
 /**
  * App-wide guards installed once from `main.ts`.
@@ -37,6 +38,13 @@ export function loginRedirectFor(from: RouteLocationNormalized): {
   return { path: '/auth/login' }
 }
 
+export function updateRobotsMeta(routeName: unknown): void {
+  const robots = document.querySelector('meta[name="robots"]')
+  if (robots) {
+    robots.setAttribute('content', routeName === ROUTE_NAMES.overview ? 'index,follow' : 'noindex,follow')
+  }
+}
+
 export function installAppGuards(router: Router): void {
   router.beforeEach(async (to) => {
     const session = useSessionStore()
@@ -62,5 +70,6 @@ export function installAppGuards(router: Router): void {
   router.afterEach((to) => {
     const metaTitle = typeof to.meta.title === 'string' ? to.meta.title : undefined
     document.title = metaTitle ? `${metaTitle} · zolotoy.dev` : 'zolotoy.dev'
+    updateRobotsMeta(to.name)
   })
 }

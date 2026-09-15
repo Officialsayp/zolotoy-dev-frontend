@@ -3,18 +3,34 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>zolotoy.dev</title>
+    <title>zolotoy.dev — Go backend portfolio</title>
     <link rel="icon" href="/favicon.ico?v=20260914" sizes="16x16 32x32 48x48" />
     <link rel="icon" href="/favicon.png?v=20260914" type="image/png" sizes="192x192" />
     <link rel="icon" href="/favicon.svg?v=20260914" type="image/svg+xml" sizes="any" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20260914" sizes="180x180" />
     <meta
       name="description"
-      content="Technical developer/admin environment demonstrating four Go backend services."
+      content="Maxim Zolotoy's Go backend portfolio: order, auth, notification and URL shortener service cases."
     />
+    <meta name="robots" content="index,follow" />
+    <link rel="canonical" href="https://zolotoy.dev/" />
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"WebSite","name":"zolotoy.dev","url":"https://zolotoy.dev/","description":"Go backend portfolio demonstrating order, auth, notification and URL shortener service cases."}
+    </script>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <main aria-labelledby="seo-title">
+        <h1 id="seo-title">zolotoy.dev — Go backend portfolio</h1>
+        <p>Technical developer/admin environment demonstrating four Go backend service cases.</p>
+        <nav aria-label="Service demos">
+          <a href="/orders">Order Service</a>
+          <a href="/auth">Auth Service</a>
+          <a href="/notifications">Notification Service</a>
+          <a href="/shortener">URL Shortener</a>
+        </nav>
+      </main>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
