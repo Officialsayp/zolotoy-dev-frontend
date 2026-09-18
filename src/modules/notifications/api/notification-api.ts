@@ -76,6 +76,7 @@ export const notificationApi = {
   async listNotifications(query: NotificationListQuery = {}): Promise<NotificationListDto> {
     return client().request<NotificationListDto>({
       path: '/notifications',
+      method: 'GET',
       query: serializeNotificationQuery(query),
     })
   },
@@ -84,6 +85,7 @@ export const notificationApi = {
   async getNotification(notificationId: string): Promise<NotificationJobDetailDto> {
     return client().request<NotificationJobDetailDto>({
       path: `/notifications/${encodeNotificationId(notificationId)}`,
+      method: 'GET',
     })
   },
 
@@ -100,6 +102,7 @@ export const notificationApi = {
   async getEvent(eventId: string): Promise<NotificationEventViewDto> {
     return client().request<NotificationEventViewDto>({
       path: `/events/${encodeNotificationId(eventId)}`,
+      method: 'GET',
     })
   },
 }

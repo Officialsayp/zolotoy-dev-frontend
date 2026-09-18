@@ -4,15 +4,17 @@
   "private": true,
   "type": "module",
   "description": "Single frontend SPA for the zolotoy.dev technical developer/admin environment",
-  "packageManager": "npm@11.19.0",
+  "packageManager": "npm@10.9.2",
   "engines": {
     "node": ">=20.19.0"
   },
   "scripts": {
     "dev": "vite",
-    "build": "npm run type-check && vite build",
+    "build": "npm run type-check && vite build && vite build --ssr src/portfolio/entry-server.ts --outDir .prerender --emptyOutDir && node scripts/prerender.mjs && npm run check",
+    "build:e2e": "vite build && vite build --ssr src/portfolio/entry-server.ts --outDir .prerender --emptyOutDir && node scripts/prerender.mjs",
     "build-only": "vite build",
-    "preview": "vite preview",
+    "check": "node scripts/check-site.mjs",
+    "preview": "wrangler dev",
     "type-check": "vue-tsc --build",
     "lint": "eslint .",
     "format": "prettier --write src/ e2e/",
@@ -20,7 +22,8 @@
     "test:unit:run": "vitest run",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "msw:init": "msw init public/ --save",
+    "msw:init": "msw init public/demo --save",
+    "og:generate": "node scripts/generate-og.mjs",
     "deploy": "npx --yes wrangler@4.102.0 deploy",
     "deploy:preview": "npx --yes wrangler@4.102.0 versions upload"
   },
@@ -51,11 +54,12 @@
     "typescript-eslint": "^8.21.0",
     "vite": "^6.0.7",
     "vitest": "^3.0.4",
-    "vue-tsc": "^2.2.0"
+    "vue-tsc": "^2.2.0",
+    "wrangler": "^4.102.0"
   },
   "msw": {
     "workerDirectory": [
-      "public"
+      "public/demo"
     ]
   }
 }

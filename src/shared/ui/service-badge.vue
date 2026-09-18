@@ -13,10 +13,11 @@ defineProps<{
     :title="
       apiMode === 'mock'
         ? 'Simulated data served by MSW — no backend required'
-        : 'Connected to live backend hosts'
+        : 'Connected to live backend hosts — health is shown separately'
     "
   >
-    <span class="service-badge__label">{{ apiMode === 'mock' ? 'MOCK' : 'LIVE' }}</span>
+    <!-- The label describes the selected data source, not network health. -->
+    <span class="service-badge__label">{{ apiMode === 'mock' ? 'Data source: Mock' : 'Data source: Live API' }}</span>
     <span v-if="deployEnv" class="service-badge__env">{{ deployEnv }}</span>
   </span>
 </template>

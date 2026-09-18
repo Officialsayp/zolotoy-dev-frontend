@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 
 import { useAppStore } from '@/app/stores/app-store'
-import { isSafeInternalPath } from '@/app/router/guards'
+import { normalizeDemoRedirectTarget } from '@/app/router/guards'
 import AppButton from '@/shared/ui/app-button.vue'
 import FormField from '@/shared/ui/form-field.vue'
 import AuthFormShell from '../components/auth-form-shell.vue'
@@ -57,10 +57,9 @@ async function submit(): Promise<void> {
   serverError.value = null
   try {
     await mutateAsync({ email: email.value.trim(), password: password.value })
-    const target =
-      route.query.redirect && isSafeInternalPath(route.query.redirect)
-        ? route.query.redirect
-        : '/auth/profile'
+    // One normalization of a /demo/... browser target to the internal path;
+    // rejects external URLs, invalid encodings, backslash tricks and loops.
+    const target = normalizeDemoRedirectTarget(route.query.redirect) ?? '/auth/profile'
     await router.push(target)
   } catch (error) {
     serverError.value = errorMessage(error)

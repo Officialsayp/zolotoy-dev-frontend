@@ -188,6 +188,8 @@ export function analyticsViewModel(dto: ShortLinkAnalyticsDto): ShortLinkAnalyti
   }
   const devices = [...deviceClicks.entries()]
     .map(([category, clicks]) => ({ category, clicks, share: percent(clicks, totalClicks) }))
-    .sort((a, b) => b.clicks - a.clicks)
+    // Equal counts follow the fixed category order, independent of API row order.
+    .sort((a, b) => b.clicks - a.clicks
+      || SHORTENER_DEVICE_CATEGORIES.indexOf(a.category) - SHORTENER_DEVICE_CATEGORIES.indexOf(b.category))
   return { totalClicks, byDay, maxByDayClicks, referrers, devices }
 }

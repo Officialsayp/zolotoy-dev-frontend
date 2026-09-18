@@ -108,7 +108,10 @@ const routes: RouteRecordRaw[] = [
 ]
 
 export const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  // The demo SPA is served from the /demo/ namespace (see
+  // src/shared/routing/site-routes.ts): internal paths like /auth/profile
+  // resolve to browser URLs under /demo/.
+  history: createWebHistory('/demo/'),
   routes,
   scrollBehavior() {
     return { top: 0 }

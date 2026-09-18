@@ -212,7 +212,8 @@ function seedSession(
     deviceLabel,
     createdAt: at(-500),
     lastUsedAt: at(-60),
-    expiresAt: at(expiresOffset),
+    // Session lifetime starts at login, not at the historical fixture epoch.
+    expiresAt: new Date(Date.now() + expiresOffset * 60_000).toISOString(),
     revokedAt: null,
     revokeReason: null,
     familyRevoked: false,

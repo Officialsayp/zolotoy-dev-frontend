@@ -66,13 +66,19 @@ Final Integration is regression and readiness work, without new features or rede
 
 ## Architecture and code map
 
-One Git repository → one Vue 3 SPA → one shell → four lazy-loaded modules.
-Preserve TypeScript strict mode, Vite, Vue Router, TanStack Vue Query, narrow Pinia
-stores, native Fetch, MSW, Vitest/Vue Test Utils and Playwright.
+One Git repository → one deployment: a statically generated public portfolio
+layer plus the demo Vue 3 SPA under `/demo/` (one shell → four lazy-loaded
+modules). Preserve TypeScript strict mode, Vite, Vue Router, TanStack Vue Query,
+narrow Pinia stores, native Fetch, MSW, Vitest/Vue Test Utils and Playwright.
+The product architecture is documented in
+`docs/frontend/PORTFOLIO_ARCHITECTURE.md`.
 
 | Path | Responsibility |
 | --- | --- |
-| `src/app/router/`, `src/app/shell/` | Routes/guards and the common shell |
+| `src/portfolio/`, `src/content/` | Public portfolio shell/pages and the typed content layer |
+| `src/shared/routing/` | Site route manifest (public, demo, legacy namespaces) |
+| `src/edge/`, `scripts/` | Cloudflare Worker and build/prerender/check tooling |
+| `src/app/router/`, `src/app/shell/` | Demo routes/guards and the common shell |
 | `src/app/providers/`, `src/app/stores/` | Shared clients/providers and client-global state |
 | `src/modules/` (orders, auth, notifications, shortener) | Service pages, API facades, queries, models, mocks and tests |
 | `src/shared/api/` | Fetch transport, normalized errors and refresh coordination |
@@ -160,9 +166,12 @@ the committed `package-lock.json`. Recheck these files if the toolchain changes.
 | `npm test` | Full non-watch Vitest suite |
 | `npm run test:e2e -- e2e/auth.spec.ts` | Example focused Playwright flow |
 | `npm run test:e2e` | Full browser suite; requires installed Playwright browsers |
-| `npm run build` | Type check plus production build |
-| `npm run preview` | Serve an existing production build |
+| `npm run build` | Type check + client build + SSR prerender + site checks |
+| `npm run preview` | Production-like wrangler dev over the built Worker/assets |
 
+- Public content changes go through `src/content/**` (never hardcoded status
+  strings in components); the portfolio architecture lives in
+  `docs/frontend/PORTFOLIO_ARCHITECTURE.md`.
 - Documentation-only edits: verify facts, paths, commands and `git diff --check`.
   Do not install dependencies or run the application suite solely for prose.
 - Application changes: run lint, relevant unit/component tests and `npm run build`.

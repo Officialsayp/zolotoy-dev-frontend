@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interactive demo · zolotoy.dev</title>
+    <link rel="icon" href="/favicon.ico?v=20260914" sizes="16x16 32x32 48x48" />
+    <link rel="icon" href="/favicon.png?v=20260914" type="image/png" sizes="192x192" />
+    <link rel="icon" href="/favicon.svg?v=20260914" type="image/svg+xml" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20260914" sizes="180x180" />
+    <!--
+      The demo SPA is an interactive tool, not a content document: keep it out of
+      search indexes before JavaScript runs. The Edge Worker additionally sends
+      X-Robots-Tag: noindex,follow on demo document responses. No portfolio-root
+      canonical or public WebSite metadata here.
+    -->
+    <meta name="robots" content="noindex,follow" />
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>

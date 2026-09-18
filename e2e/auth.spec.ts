@@ -12,29 +12,29 @@ const ADMIN_EMAIL = 'admin@zolotoy.dev'
 const PASSWORD = 'DemoPassword!123'
 
 test('anonymous visitor on a protected route is redirected to sign-in', async ({ page }) => {
-  await page.goto('/auth/profile')
-  await expect(page).toHaveURL(/\/auth\/login/)
-  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible()
+  await page.goto('/demo/auth/profile')
+  await expect(page).toHaveURL(/\/demo\/auth\/login/)
+  await expect(page.getByRole('heading', { name: 'Sign in', level: 1 })).toBeVisible()
 })
 
 test('normal user signs in, sees the profile, and signs out', async ({ page }) => {
-  await page.goto('/auth/login')
+  await page.goto('/demo/auth/login')
   await page.getByTestId('auth-email').fill(USER_EMAIL)
   await page.getByTestId('auth-password').fill(PASSWORD)
   await page.getByRole('button', { name: 'Sign in' }).click()
 
   // Session bootstrap + /me resolves the user; profile renders.
-  await page.waitForURL(/\/auth\/profile/)
-  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible()
+  await page.waitForURL(/\/demo\/auth\/profile/)
+  await expect(page.getByRole('heading', { name: 'Profile', level: 1 })).toBeVisible()
   await expect(page.getByText(USER_EMAIL)).toBeVisible()
   await expect(page.getByText('user', { exact: true })).toBeVisible()
 
-  await page.getByRole('button', { name: 'Sign out' }).click()
-  await page.waitForURL(/\/auth\/login/)
+  await page.getByRole('main').getByRole('button', { name: 'Sign out' }).click()
+  await page.waitForURL(/\/demo\/auth\/login/)
 })
 
 test('invalid credentials show a generic error, never account details', async ({ page }) => {
-  await page.goto('/auth/login')
+  await page.goto('/demo/auth/login')
   await page.getByTestId('auth-email').fill('nobody@zolotoy.dev')
   await page.getByTestId('auth-password').fill('wrong-password')
   await page.getByRole('button', { name: 'Sign in' }).click()
@@ -52,24 +52,24 @@ test('admin scenario reaches the admin demo; normal user gets backend 403 UX', a
   // sign-in restores the in-memory session.
 
   async function signIn(email: string, scenario: string): Promise<void> {
-    await page.goto('/auth/login')
+    await page.goto('/demo/auth/login')
     await page.locator('select.scenario-switcher__select').selectOption(scenario)
     await page.getByTestId('auth-email').fill(email)
     await page.getByTestId('auth-password').fill(PASSWORD)
     await page.getByRole('button', { name: 'Sign in' }).click()
-    await page.waitForURL(/\/auth\/profile/)
+    await page.waitForURL(/\/demo\/auth\/profile/)
   }
 
   // Admin baseline: login resolves to profile, then the protected demo succeeds
   // through the in-app link (client-side, so the session/scenario stay intact).
   await signIn(ADMIN_EMAIL, 'auth-active-admin')
   await page.getByRole('link', { name: 'Admin demo' }).click()
-  await expect(page).toHaveURL(/\/auth\/admin/)
+  await expect(page).toHaveURL(/\/demo\/auth\/admin/)
   await expect(page.getByTestId('admin-result')).toBeVisible()
 
   // Sign out from the header (client-side), then sign in as a normal user.
-  await page.getByRole('button', { name: 'Sign out' }).click()
-  await page.waitForURL(/\/auth\/login/)
+  await page.getByRole('banner').getByRole('button', { name: 'Sign out' }).click()
+  await page.waitForURL(/\/demo\/auth\/login/)
 
   // A normal user has no Admin demo link; reaching /auth/admin via history must
   // not masquerade as authorization — the backend 403 renders as Access denied
@@ -79,10 +79,10 @@ test('admin scenario reaches the admin demo; normal user gets backend 403 UX', a
     response.url().includes('/api/v1/admin/example'),
   )
   await page.evaluate(() => {
-    window.history.pushState({}, '', '/auth/admin')
+    window.history.pushState({}, '', '/demo/auth/admin')
     window.dispatchEvent(new PopStateEvent('popstate'))
   })
   expect((await deniedResponse).status()).toBe(403)
   await expect(page.getByText('Access denied', { exact: true })).toBeVisible()
-  await expect(page).toHaveURL(/\/auth\/admin/)
+  await expect(page).toHaveURL(/\/demo\/auth\/admin/)
 })

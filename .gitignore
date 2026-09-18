@@ -18,3 +18,12 @@ node_modules/.tmp/
 .DS_Store
 .idea/
 *.swp
+
+# Local CodeGraph index
+.codegraph/
+
+# Prerender/SSR temporary output
+.prerender/
+
+# Wrangler local state
+.wrangler/
