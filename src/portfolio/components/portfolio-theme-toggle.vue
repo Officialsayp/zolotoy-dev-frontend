@@ -5,7 +5,7 @@
  * the server-rendered markup is deterministic and the browser state is
  * synchronized on mount.
  */
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import {
   applyThemePreference,
   persistThemePreference,
@@ -21,6 +21,12 @@ const props = defineProps<{
 
 const preference = ref<ThemePreference>(props.initialPreference ?? 'system')
 const resolved = ref<'light' | 'dark'>(resolveTheme(preference.value))
+
+const themeLabels = { system: 'System', light: 'Light', dark: 'Dark' } as const
+const label = computed(() => {
+  const selected = `Theme: ${themeLabels[preference.value]}`
+  return preference.value === 'system' ? `${selected} (${themeLabels[resolved.value]})` : selected
+})
 
 function cycle(): void {
   const order: ThemePreference[] = ['system', 'light', 'dark']
@@ -43,11 +49,11 @@ onMounted(() => {
   <button
     type="button"
     class="portfolio-theme-toggle portfolio-btn portfolio-btn--secondary"
-    :aria-label="`Theme: ${preference} (active: ${resolved}). Activate to switch.`"
-    :title="`Theme: ${preference}`"
+    :aria-label="`${label}. Activate to switch.`"
+    :title="label"
     @click="cycle"
   >
-    {{ preference === 'system' ? 'Theme: system' : `Theme: ${preference} (${resolved})` }}
+    {{ label }}
   </button>
 </template>
 

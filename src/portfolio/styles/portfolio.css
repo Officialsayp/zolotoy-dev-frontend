@@ -230,7 +230,7 @@
   color: var(--c-text);
 }
 
-.portfolio-card__actions a:hover {
+.portfolio-card__actions a:not(.is-primary):hover {
   border-color: var(--c-accent);
   color: var(--c-accent);
 }
@@ -239,6 +239,11 @@
   background: var(--c-accent);
   border-color: var(--c-accent);
   color: var(--c-accent-contrast);
+}
+
+.portfolio-card__actions .is-primary:hover {
+  background: var(--c-accent-strong);
+  border-color: var(--c-accent-strong);
 }
 
 /* ---- Status badges ------------------------------------------------------ */

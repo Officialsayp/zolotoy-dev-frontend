@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { RouterLink, useRoute } from 'vue-router'
 
+import { PUBLIC_ROUTES } from '@/shared/routing/site-routes'
+
 import { buildNavItems } from './nav-items'
 
+const portfolioHome = PUBLIC_ROUTES.find((route) => route.id === 'home')!
 const items = buildNavItems()
 const route = useRoute()
 
@@ -13,7 +16,7 @@ function isActive(activeName: string): boolean {
 
 <template>
   <aside class="app-sidebar" aria-label="Service navigation">
-    <RouterLink to="/" class="app-sidebar__brand" aria-label="zolotoy.dev — Overview">
+    <a :href="portfolioHome.path" class="app-sidebar__brand" aria-label="zolotoy.dev — Portfolio home">
       <svg class="app-sidebar__logo" viewBox="0 0 1024 1024" aria-hidden="true" width="28" height="28">
         <path
           fill="currentColor"
@@ -21,7 +24,7 @@ function isActive(activeName: string): boolean {
         />
       </svg>
       <span class="app-sidebar__wordmark">zolotoy.dev</span>
-    </RouterLink>
+    </a>
 
     <nav class="app-sidebar__nav">
       <RouterLink
@@ -57,7 +60,13 @@ function isActive(activeName: string): boolean {
 }
 
 .app-sidebar__brand:hover {
+  color: var(--c-accent);
   text-decoration: none;
+}
+
+.app-sidebar__brand:focus-visible {
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
 }
 
 .app-sidebar__logo {
