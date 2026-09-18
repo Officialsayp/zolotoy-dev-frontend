@@ -19,6 +19,20 @@ describe('AppButton', () => {
     expect(button.attributes('aria-busy')).toBe('true')
   })
 
+  it('preserves its label and blocks clicks while loading, then becomes interactive again', async () => {
+    const wrapper = mount(AppButton, { props: { loading: true }, slots: { default: 'Save' } })
+    const button = wrapper.get('button')
+    expect(button.text()).toBe('Save')
+    await button.trigger('click')
+    expect(wrapper.emitted('click')).toBeUndefined()
+    await wrapper.setProps({ loading: false })
+    expect(button.attributes('disabled')).toBeUndefined()
+    expect(button.attributes('aria-busy')).toBeUndefined()
+    await button.trigger('click')
+    expect(wrapper.emitted('click')).toHaveLength(1)
+    wrapper.unmount()
+  })
+
   it('emits click on user interaction', async () => {
     const wrapper = mount(AppButton, { slots: { default: 'Go' } })
     await wrapper.get('button').trigger('click')
