@@ -2,8 +2,23 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "zolotoy-dev-frontend",
   "compatibility_date": "2026-09-04",
+  "main": "./src/edge/worker.ts",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page",
+    "run_worker_first": [
+      "/demo",
+      "/demo/*",
+      "/orders",
+      "/orders/*",
+      "/auth",
+      "/auth/*",
+      "/notifications",
+      "/notifications/*",
+      "/shortener",
+      "/shortener/*"
+    ]
   }
 }

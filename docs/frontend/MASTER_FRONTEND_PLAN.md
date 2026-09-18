@@ -1,6 +1,12 @@
 # MASTER FRONTEND PLAN — zolotoy.dev
 
-**Status:** finalized architecture/specification for subsequent Codex repository execution; frontend code is intentionally out of scope for this document.  
+**Status:** historical architecture/specification. The URL topology, SEO model
+and single-shell statements in this plan are **superseded by
+[`PORTFOLIO_ARCHITECTURE.md`](PORTFOLIO_ARCHITECTURE.md)**: the site is now a
+statically generated public portfolio layer plus the demo SPA under `/demo/`.
+Domain constraints, contract rules and the TBD register below remain
+authoritative for backend contracts.
+
 **Execution target:** Codex working agentically inside one real Git repository for the zolotoy.dev frontend.  
 **Target:** a single technical/demo frontend environment for four Go backend portfolio services.  
 **Primary sources of truth:** `01_order_service.md`, `02_auth_service.md`, `03_notification_service.md`, `04_url_shortener.md`.  

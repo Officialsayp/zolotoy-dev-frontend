@@ -3,6 +3,8 @@
     "vite.config.*",
     "vitest.config.*",
     "playwright.config.*",
+    "scripts/vite-site-plugin.ts",
+    "src/shared/routing/site-routes.ts",
     "e2e/**/*.ts"
   ],
   "compilerOptions": {
@@ -16,6 +18,10 @@
     "types": ["node"],
     "strict": true,
     "skipLibCheck": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   }
 }

@@ -9,8 +9,8 @@ import { expect, test } from '@playwright/test'
 const LINK_ACTIVE = '70000000-0000-4000-8000-000000000001'
 
 test('dashboard renders the create form and a keyed link list', async ({ page }) => {
-  await page.goto('/shortener')
-  await expect(page.getByRole('heading', { name: 'URL Shortener' })).toBeVisible()
+  await page.goto('/demo/shortener')
+  await expect(page.getByRole('heading', { name: 'URL Shortener', level: 1 })).toBeVisible()
   await expect(page.getByTestId('shortener-create-form')).toBeVisible()
   // Default scenario seeds several links.
   await expect(page.getByTestId('shortener-list')).toBeVisible()
@@ -18,7 +18,7 @@ test('dashboard renders the create form and a keyed link list', async ({ page })
 })
 
 test('create -> detail: a new link shows its authoritative short URL', async ({ page }) => {
-  await page.goto('/shortener')
+  await page.goto('/demo/shortener')
   await page
     .locator('select.scenario-switcher__select')
     .selectOption('shortener-happy-active')
@@ -27,8 +27,8 @@ test('create -> detail: a new link shows its authoritative short URL', async ({ 
   await page.getByTestId('create-submit').click()
 
   // A successful create navigates to the new link's detail using the response id.
-  await page.waitForURL(/\/shortener\/70000000-/)
-  await expect(page.getByRole('heading', { name: 'Link detail' })).toBeVisible()
+  await page.waitForURL(/\/demo\/shortener\/70000000-/)
+  await expect(page.getByRole('heading', { name: 'Link detail', level: 1 })).toBeVisible()
   await expect(page.getByTestId('simulate-short-url')).toHaveAttribute(
     'href',
     'https://example.com/catalog/trail/route',
@@ -38,7 +38,7 @@ test('create -> detail: a new link shows its authoritative short URL', async ({ 
 })
 
 test('analytics: a populated link shows total clicks, chart and table', async ({ page }) => {
-  await page.goto('/shortener')
+  await page.goto('/demo/shortener')
   await page
     .locator('select.scenario-switcher__select')
     .selectOption('shortener-analytics-populated')
@@ -48,8 +48,8 @@ test('analytics: a populated link shows total clicks, chart and table', async ({
     .getByTestId('link-row-Ab3xP9qK')
     .getByRole('link', { name: 'Details' })
     .click()
-  await page.waitForURL(new RegExp(`/shortener/${LINK_ACTIVE}$`))
-  await expect(page.getByRole('heading', { name: 'Link detail' })).toBeVisible()
+  await page.waitForURL(new RegExp(`/demo/shortener/${LINK_ACTIVE}$`))
+  await expect(page.getByRole('heading', { name: 'Link detail', level: 1 })).toBeVisible()
   await expect(page.getByTestId('shortener-analytics')).toBeVisible()
   await expect(page.getByText('total clicks')).toBeVisible()
   // Deterministic populated analytics must be non-zero.

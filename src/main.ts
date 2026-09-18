@@ -48,6 +48,13 @@ async function bootstrap(): Promise<void> {
     return
   }
 
+  // Retire the legacy root-scoped MSW registration (script moved to
+  // /demo/mockServiceWorker.js). Exact same-origin URL match only; no reload
+  // loop — the old controller is harmless for this document navigation.
+  void import('@/shared/browser/retire-legacy-mock-worker').then((mod) =>
+    mod.retireLegacyMockWorker(),
+  )
+
   const app = createApp(App)
   const pinia = createPinia()
   const queryClient = createQueryClient()

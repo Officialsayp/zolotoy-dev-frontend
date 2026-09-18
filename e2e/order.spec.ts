@@ -11,31 +11,32 @@ import { expect, test } from '@playwright/test'
 const RECEIPT_UNPAID = '10000000-0000-4000-8000-000000000001'
 
 test('order list renders seeded rows and links to detail', async ({ page }) => {
-  await page.goto('/orders')
-  await expect(page.getByRole('heading', { name: 'Orders' })).toBeVisible()
-  await expect(page.getByRole('link', { name: /Mechanical Keyboard/ }).first()).toBeVisible()
+  await page.goto('/demo/orders')
+  await expect(page.getByRole('heading', { name: 'Orders', level: 1 })).toBeVisible()
+  // Rows link by short order id; the seeded pay-on-receipt order is present.
+  await expect(page.getByRole('link', { name: /10000000/ }).first()).toBeVisible()
 })
 
 test('pay-on-receipt: buyer pays a delivered order and the payment becomes paid', async ({
   page,
 }) => {
-  await page.goto(`/orders/${RECEIPT_UNPAID}`)
+  await page.goto(`/demo/orders/${RECEIPT_UNPAID}`)
 
   await expect(page.getByText('Pay on receipt (online)')).toBeVisible()
   // Still awaiting payment on load.
-  await expect(page.getByText('Awaiting payment', { exact: true })).toBeVisible()
+  await expect(page.getByText('Awaiting payment', { exact: true }).first()).toBeVisible()
 
   const payButton = page.getByRole('button', { name: 'Pay' })
   await expect(payButton).toBeEnabled()
   await payButton.click()
 
   // After a successful mock payment the order re-fetches as paid.
-  await expect(page.getByText('Paid', { exact: true })).toBeVisible()
+  await expect(page.getByText('Paid', { exact: true }).first()).toBeVisible()
   await expect(page.getByText('Awaiting payment', { exact: true })).toHaveCount(0)
 })
 
 test('create order posts a selected item and lands on the new order detail', async ({ page }) => {
-  await page.goto('/orders/new')
+  await page.goto('/demo/orders/new')
 
   await page.getByLabel('Buyer ID').fill('11111111-1111-4111-8111-111111111111')
   await page.getByLabel(/product/i).first().fill('20000000-0000-4000-8000-0000000000b1')
@@ -49,6 +50,6 @@ test('create order posts a selected item and lands on the new order detail', asy
   await page.getByRole('button', { name: /create order/i }).click()
 
   // New order starts at created / awaiting payment.
-  await expect(page.getByText('Created', { exact: true })).toBeVisible()
-  await expect(page.getByText('Awaiting payment', { exact: true })).toBeVisible()
+  await expect(page.getByText('Created', { exact: true }).first()).toBeVisible()
+  await expect(page.getByText('Awaiting payment', { exact: true }).first()).toBeVisible()
 })

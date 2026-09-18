@@ -20,7 +20,8 @@ const worker = setupWorker(...handlers)
 export async function startMockWorker(options: MockBootstrapOptions = {}): Promise<void> {
   await worker.start({
     serviceWorker: {
-      url: options.serviceWorkerUrl ?? '/mockServiceWorker.js',
+      // Worker lives under /demo/ so its scope covers only the demo SPA.
+      url: options.serviceWorkerUrl ?? '/demo/mockServiceWorker.js',
     },
     onUnhandledRequest: 'bypass',
   })

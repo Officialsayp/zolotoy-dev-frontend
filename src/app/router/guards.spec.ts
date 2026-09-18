@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter, type RouteRecordRaw } from 'vue-router'
 
 import { __setAuthBoundForTest, useSessionStore } from '@/modules/auth/store/session-store'
-import { installAppGuards, isSafeInternalPath, loginRedirectFor, updateRobotsMeta } from './guards'
+import { installAppGuards, isSafeInternalPath, loginRedirectFor, normalizeDemoRedirectTarget, updateRobotsMeta } from './guards'
 
 /**
  * Route-guard tests (Prompt 02, TESTS §protected route redirect, §no flash
@@ -56,12 +56,27 @@ beforeEach(() => {
 })
 
 describe('redirect policy (open-redirect safety)', () => {
-  it('marks only the overview route indexable', () => {
+  it('keeps every demo route noindex,follow (overview exception removed with /demo/)', () => {
     document.head.innerHTML = '<meta name="robots" content="index,follow">'
     updateRobotsMeta('orders')
     expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex,follow')
     updateRobotsMeta('overview')
-    expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('index,follow')
+    expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex,follow')
+  })
+
+  it('normalizes /demo/... redirect targets to internal demo paths', () => {
+    expect(normalizeDemoRedirectTarget('/demo/orders/123')).toBe('/orders/123')
+    expect(normalizeDemoRedirectTarget('/demo/auth/profile')).toBe('/auth/profile')
+    expect(normalizeDemoRedirectTarget('/demo/')).toBe('/')
+    expect(normalizeDemoRedirectTarget('/orders/123')).toBe('/orders/123')
+    // Never /demo/demo/; only one prefix is stripped.
+    expect(normalizeDemoRedirectTarget('/demo/demo/')).toBeNull()
+    // External or non-demo targets are rejected.
+    expect(normalizeDemoRedirectTarget('https://evil.example')).toBeNull()
+    expect(normalizeDemoRedirectTarget('//evil.example')).toBeNull()
+    expect(normalizeDemoRedirectTarget('/demo/auth/login')).toBeNull()
+    expect(normalizeDemoRedirectTarget('/nope/')).toBeNull()
+    expect(normalizeDemoRedirectTarget('')).toBeNull()
   })
 
   it('accepts only safe internal paths', () => {

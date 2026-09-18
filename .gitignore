@@ -21,3 +21,9 @@ node_modules/.tmp/
 
 # Local CodeGraph index
 .codegraph/
+
+# Prerender/SSR temporary output
+.prerender/
+
+# Wrangler local state
+.wrangler/

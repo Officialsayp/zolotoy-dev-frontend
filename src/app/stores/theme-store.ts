@@ -1,9 +1,21 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
+import {
+  applyThemePreference,
+  persistThemePreference,
+  readStoredThemePreference,
+  resolveTheme,
+  systemResolvedTheme,
+} from '@/shared/theme/theme-preference'
+
 /**
- * Shell-only theme preference (non-sensitive, allowed to persist locally —
+ * Shell theme preference (non-sensitive, allowed to persist locally —
  * MASTER_FRONTEND_PLAN §7, P1-04).
+ *
+ * A thin Pinia adapter over the shared theme mechanics in
+ * `src/shared/theme/theme-preference.ts` (which the public portfolio also
+ * uses, without importing this store).
  *
  * `system` removes the explicit `<html data-theme>` override so the CSS
  * `prefers-color-scheme` rule applies; `light`/`dark` set an explicit override.
@@ -12,52 +24,17 @@ import { defineStore } from 'pinia'
 export type ThemePreference = 'system' | 'light' | 'dark'
 export type ResolvedTheme = 'light' | 'dark'
 
-const STORAGE_KEY = 'zolotoy.dev:theme'
-
-const VALID_PREFERENCES: readonly ThemePreference[] = ['system', 'light', 'dark']
-
-function readStoredPreference(): ThemePreference {
-  try {
-    const value = localStorage.getItem(STORAGE_KEY)
-    if (value && VALID_PREFERENCES.includes(value as ThemePreference)) {
-      return value as ThemePreference
-    }
-  } catch {
-    // storage unavailable (e.g. disabled); fall through to system
-  }
-  return 'system'
-}
-
-function systemResolvedTheme(): ResolvedTheme {
-  if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
-    return 'dark'
-  }
-  return 'light'
-}
-
 export const useThemeStore = defineStore('theme', () => {
-  const preference = ref<ThemePreference>(readStoredPreference())
-  const resolved = ref<ResolvedTheme>(
-    preference.value === 'system' ? systemResolvedTheme() : preference.value,
-  )
+  const preference = ref<ThemePreference>(readStoredThemePreference())
+  const resolved = ref<ResolvedTheme>(resolveTheme(preference.value))
 
   function apply(): void {
-    const root = document.documentElement
-    if (preference.value === 'system') {
-      delete root.dataset.theme
-    } else {
-      root.dataset.theme = preference.value
-    }
+    applyThemePreference(preference.value)
   }
 
   function setPreference(next: ThemePreference): void {
-    if (!VALID_PREFERENCES.includes(next)) return
     preference.value = next
-    try {
-      localStorage.setItem(STORAGE_KEY, next)
-    } catch {
-      // non-fatal
-    }
+    persistThemePreference(next)
     apply()
     resolved.value = next === 'system' ? systemResolvedTheme() : next
   }

@@ -18,8 +18,21 @@ export default defineConfigWithVueTs(
       '**/test-results/**',
       '**/playwright-report/**',
       '.pw-browsers/**',
-      'public/mockServiceWorker.js',
+      'public/demo/mockServiceWorker.js',
+      '.prerender/**',
+      '.wrangler/**',
     ],
+  },
+
+  {
+    name: 'app/node-scripts',
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        process: 'readonly',
+        console: 'readonly',
+      },
+    },
   },
 
   js.configs.recommended,

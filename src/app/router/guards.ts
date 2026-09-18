@@ -1,7 +1,6 @@
 import type { Router, RouteLocationNormalized } from 'vue-router'
 
 import { useSessionStore } from '@/modules/auth/store/session-store'
-import { ROUTE_NAMES } from './route-names'
 
 /**
  * App-wide guards installed once from `main.ts`.
@@ -28,6 +27,49 @@ export function isSafeInternalPath(value: unknown): value is string {
   return true
 }
 
+/**
+ * Normalize a redirect target for the demo router. A supplied /demo/... browser
+ * URL is unwrapped to the internal path exactly once (never /demo/demo/).
+ * Returns null for anything that is not a safe internal demo route path.
+ */
+export function normalizeDemoRedirectTarget(value: unknown): string | null {
+  if (typeof value !== 'string' || value.length === 0) return null
+  // Strip a single /demo prefix from a browser-level target.
+  let path = value
+  if (path === '/demo' || path.startsWith('/demo/')) {
+    path = path.slice('/demo'.length) || '/'
+  }
+  if (!isSafeInternalPath(path)) return null
+  // Restrict to recognized demo route patterns (guards against crafted paths).
+  if (matchDemoRoutePath(path) === null) return null
+  return path
+}
+
+/** Local segment-pattern matcher (mirrors the shared manifest matcher). */
+function matchDemoRoutePath(pathname: string): string | null {
+  const patterns = [
+    '/', '/orders/', '/orders/new', '/orders/:orderId',
+    '/auth/', '/auth/login', '/auth/register', '/auth/profile',
+    '/auth/sessions', '/auth/admin',
+    '/notifications/', '/notifications/events/:eventId', '/notifications/:notificationId',
+    '/shortener/', '/shortener/:linkId',
+  ]
+  const bare = pathname === '' ? '/' : pathname
+  const noSlash = bare.endsWith('/') && bare !== '/' ? bare.slice(0, -1) : bare
+  for (const pattern of patterns) {
+    const pSegs = pattern.split('/').filter((s) => s !== '')
+    const uSegs = noSlash.split('/').filter((s) => s !== '')
+    if (pSegs.length !== uSegs.length) continue
+    let ok = true
+    for (let i = 0; i < pSegs.length; i++) {
+      if (pSegs[i].startsWith(':')) continue
+      if (pSegs[i] !== uSegs[i]) { ok = false; break }
+    }
+    if (ok) return pattern
+  }
+  return null
+}
+
 export function loginRedirectFor(from: RouteLocationNormalized): {
   path: '/auth/login'
   query?: { redirect?: string }
@@ -39,9 +81,12 @@ export function loginRedirectFor(from: RouteLocationNormalized): {
 }
 
 export function updateRobotsMeta(routeName: unknown): void {
+  // Every demo route stays noindex,follow — the overview exception is removed
+  // with the /demo/ namespace migration (PORTFOLIO_ARCHITECTURE.md).
+  void routeName
   const robots = document.querySelector('meta[name="robots"]')
   if (robots) {
-    robots.setAttribute('content', routeName === ROUTE_NAMES.overview ? 'index,follow' : 'noindex,follow')
+    robots.setAttribute('content', 'noindex,follow')
   }
 }
 
