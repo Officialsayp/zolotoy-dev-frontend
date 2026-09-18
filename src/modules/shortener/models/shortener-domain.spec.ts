@@ -136,6 +136,30 @@ describe('analytics view model (single source for chart + table)', () => {
     ])
   })
 
+  it('uses fixed category order for tied counts regardless of backend row order', () => {
+    const rows: ShortLinkAnalyticsDto['by_device'] = [
+      { device_type: 'tablet', clicks: 4 },
+      { device_type: 'unknown', clicks: 1 },
+      { device_type: 'bot', clicks: 5 },
+      { device_type: 'desktop', clicks: 5 },
+      { device_type: 'mobile', clicks: 5 },
+    ]
+    const expected = [
+      { category: 'mobile', clicks: 5, share: 25 },
+      { category: 'desktop', clicks: 5, share: 25 },
+      { category: 'bot', clicks: 5, share: 25 },
+      { category: 'unknown', clicks: 5, share: 25 },
+    ]
+    for (const by_device of [rows, [...rows].reverse()]) {
+      expect(analyticsViewModel({
+        total_clicks: 20,
+        by_day: [],
+        by_referrer: [],
+        by_device,
+      }).devices).toEqual(expected)
+    }
+  })
+
   it('handles empty analytics deterministically', () => {
     const empty: ShortLinkAnalyticsDto = {
       total_clicks: 0,

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { resetScenario, setScenario } from '@/mocks/scenario-registry'
 
@@ -26,6 +26,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  vi.useRealTimers()
   resetScenario()
   resetAuthMockState()
 })
@@ -148,6 +149,27 @@ describe('auth mock store', () => {
     expect(after.find((s) => s.id === SESSION_CURRENT)?.status).toBe('revoked')
     expect(after.filter((s) => s.id !== SESSION_CURRENT && s.status === 'active')).toHaveLength(2)
   })
+
+  it.each(['2026-09-01T12:00:00Z', '2040-01-01T00:00:00Z'])(
+    'starts refresh lifetime at login and still expires naturally (login at %s)',
+    (loginTime) => {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date(loginTime))
+      const tokens = login(AUTH_USER_EMAIL)
+      const session = api.listSessions(tokens.accessToken).find((s) => s.id === SESSION_CURRENT)
+      const expiresAt = Date.parse(loginTime) + 14 * 24 * 60 * 60_000
+      expect(session?.expires_at).toBe(new Date(expiresAt).toISOString())
+
+      vi.setSystemTime(expiresAt - 1)
+      const rotated = api.refresh(tokens.refreshToken)
+      expect(api.getMe(rotated.accessToken).id).toBeTruthy()
+
+      vi.setSystemTime(expiresAt + 1)
+      expect(() => api.refresh(rotated.refreshToken)).toThrow(
+        expect.objectContaining({ status: 401, code: 'AUTH_SESSION_EXPIRED' }),
+      )
+    },
+  )
 
   it('reuse-detected scenario immediately rejects refresh with replay', () => {
     setScenario('auth-reuse-detected')
