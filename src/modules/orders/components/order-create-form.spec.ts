@@ -1,6 +1,7 @@
 import { defineComponent, h, onMounted } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 
 const mocks = vi.hoisted(() => ({
   createOrder: vi.fn(),
@@ -57,6 +58,10 @@ const ValidItemsEditor = defineComponent({
 })
 
 describe('OrderCreateForm idempotency retry', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
   beforeEach(() => {
     mocks.createOrder.mockReset()
     mocks.push.mockReset()

@@ -1,12 +1,14 @@
 /**
  * Vite dev-server plugin serving the public portfolio documents (build-time
  * SSR in development tooling only) and routing per the shared manifest:
- *  - public documents render through src/portfolio/entry-server.ts;
+ *  - public documents (EN and /ru/...) render through entry-server.ts;
  *  - /demo/** serves demo/index.html for known demo routes;
  *  - legacy /orders, /auth, /notifications, /shortener 308-redirect to /demo/;
  *  - unknown document paths get a deliberate 404.
  *
  * Assets, Vite internal URLs and module requests are delegated to Vite.
+ * Development rendering is tooling only — production behavior is verified
+ * against wrangler dev.
  */
 import type { Plugin, ViteDevServer } from 'vite'
 import type { IncomingMessage, ServerResponse } from 'node:http'
@@ -19,10 +21,13 @@ import {
   DEMO_BASE,
 } from '../src/shared/routing/site-routes'
 
-const PUBLIC_HEAD_BASE = (title: string, description: string): string => `
+const PUBLIC_HEAD_BASE = (locale: string, title: string, description: string): string => `
     <meta name="description" content="${escapeAttr(description)}" />
     <meta name="robots" content="index,follow" />
-    <title>${escapeHtml(title)}</title>`
+    <title>${escapeHtml(title)}</title>
+    <link rel="alternate" hreflang="en" href="/" />
+    <link rel="alternate" hreflang="ru" href="/ru/" />
+    <link rel="alternate" hreflang="x-default" href="/" />`
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (ch) => {
@@ -35,16 +40,38 @@ function escapeAttr(value: string): string {
   return escapeHtml(value)
 }
 
+const DEV_TITLES: Record<string, { en: string; ru: string }> = {
+  '/': { en: 'zolotoy.dev — Go backend portfolio (dev)', ru: 'zolotoy.dev — портфолио Go-бэкендера (dev)' },
+  '/architecture/': { en: 'System architecture (dev)', ru: 'Архитектура системы (dev)' },
+  '/services/order/': { en: 'Order service case study (dev)', ru: 'Кейс Order-сервиса (dev)' },
+  '/services/auth/': { en: 'Auth service case study (dev)', ru: 'Кейс Auth-сервиса (dev)' },
+  '/services/notification/': { en: 'Notification service case study (dev)', ru: 'Кейс Notification-сервиса (dev)' },
+  '/services/url-shortener/': { en: 'URL shortener case study (dev)', ru: 'Кейс URL-сокращателя (dev)' },
+}
+
 async function renderPublicHtml(server: ViteDevServer, pathname: string): Promise<string | null> {
   try {
     const mod = await server.ssrLoadModule('/src/portfolio/entry-server.ts')
-    const rendered = await (mod as { renderPublicPage: (p: string) => Promise<{ html: string } | null> })
-      .renderPublicPage(pathname)
+    const rendered = await (
+      mod as {
+        renderPublicPage: (p: string) => Promise<{
+          html: string
+          locale: 'en' | 'ru'
+          canonicalPath: string
+        } | null>
+      }
+    ).renderPublicPage(pathname)
     if (rendered === null) return null
-    const template = await server.transformIndexHtml(pathname, '<!doctype html><html lang="en"><head></head><body><div id="app"></div></body></html>')
+    const lang = rendered.locale
+    const enPath = lang === 'ru' ? rendered.canonicalPath.slice(3) || '/' : rendered.canonicalPath
+    const title = DEV_TITLES[enPath]?.[lang] ?? 'zolotoy.dev (dev)'
+    const template = await server.transformIndexHtml(
+      pathname,
+      `<!doctype html><html lang="${lang}"><head></head><body><div id="app"></div></body></html>`,
+    )
     // Development rendering: inject rendered body and minimal head metadata.
     return template
-      .replace('</head>', `${PUBLIC_HEAD_BASE('zolotoy.dev — Go backend portfolio', 'Development rendering')}\n  </head>`)
+      .replace('</head>', `${PUBLIC_HEAD_BASE(lang, title, 'Development rendering — not for production use')}\n  </head>`)
       .replace('<div id="app"></div>', `<div id="app">${rendered.html}</div>`)
   } catch {
     return null
@@ -88,7 +115,7 @@ export function viteSitePlugin(): Plugin {
           }
         }
 
-        // Public documents through SSR.
+        // Public documents through SSR (EN + /ru/...).
         if (req.method === 'GET' || req.method === 'HEAD') {
           const canonical = canonicalizePublicUrl(pathname)
           if (canonical !== null) {

@@ -9,13 +9,34 @@ import FormField from '@/shared/ui/form-field.vue'
 
 import type { CreateOrderRequestDto } from '../models/order-dto'
 import { isIdempotencyConflict } from '../models/order-error'
-import { PAYMENT_METHODS, type PaymentMethod } from '../models/order-types'
+import { PAYMENT_METHODS, PAYMENT_METHOD_META, type PaymentMethod } from '../models/order-types'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
+import { labelFor } from '@/shared/i18n/label-strings'
 import { formatMoney } from '../models/order-view-model'
 import { useOrderCommands } from '../queries/use-order-commands'
 import { useIdempotency } from '../queries/use-idempotency'
 import OrderItemsEditor, { type DraftOrderItem } from './order-items-editor.vue'
 
 const router = useRouter()
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
+const labels = computed(() => ({
+  buyerId: labelFor('Buyer ID', locale.value),
+  buyerPlaceholder: tr({ en: 'Owner of the order (UUID)', ru: 'Владелец заказа (UUID)' }, locale.value),
+  paymentMethod: labelFor('Payment method', locale.value),
+  address: labelFor('Delivery address', locale.value),
+  addressPlaceholder: tr({ en: 'Full delivery address', ru: 'Полный адрес доставки' }, locale.value),
+  comment: tr({ en: 'Buyer comment (optional)', ru: 'Комментарий покупателя (необязательно)' }, locale.value),
+  create: tr({ en: 'Create order', ru: 'Создать заказ' }, locale.value),
+  retry: tr({ en: 'Retry (same idempotency key)', ru: 'Повторить (тот же ключ идемпотентности)' }, locale.value),
+  preview: tr({ en: 'Preview total', ru: 'Предварительный итог' }, locale.value),
+  previewNote: tr(
+    { en: '(client preview only — server computes the authoritative total)', ru: '(только предпросмотр на клиенте — итог считает сервер)' },
+    locale.value,
+  ),
+}))
 const toast = useToastStore()
 const commands = useOrderCommands()
 const idem = useIdempotency()
@@ -87,14 +108,26 @@ async function submit(): Promise<void> {
   try {
     const created = await commands.createOrder.mutateAsync({ body: payload, idempotencyKey: key })
     idem.resolveOutcome()
-    toast.push({ tone: 'success', message: `Order ${created.id.slice(0, 8)} was created.` })
+    toast.push({
+      tone: 'success',
+      message:
+        locale.value === 'ru'
+          ? `Заказ ${created.id.slice(0, 8)} создан.`
+          : `Order ${created.id.slice(0, 8)} was created.`,
+    })
     await router.push({ path: `/orders/${created.id}` })
   } catch (error) {
     if (isIdempotencyConflict(error)) {
       // The backend gave a definitive response, so this logical attempt is
       // resolved and the next attempt must get a fresh key.
       idem.resolveOutcome()
-      serverError.value = 'This idempotency key was already used with a different request.'
+      serverError.value = tr(
+        {
+          en: 'This idempotency key was already used with a different request.',
+          ru: 'Этот ключ идемпотентности уже использовался с другим запросом.',
+        },
+        locale.value,
+      )
     } else if (typeof error === 'object' && error !== null && 'kind' in error) {
       const kind = (error as { kind: string; message?: string }).kind
       if (kind === 'network' || kind === 'timeout') {
@@ -102,15 +135,22 @@ async function submit(): Promise<void> {
         // reuse the same key while the payload is unchanged, exactly as the
         // backend idempotency contract requires.
         canRetrySameKey.value = true
-        serverError.value = (error as { message?: string }).message ?? 'Request outcome unknown.'
+        serverError.value =
+          (error as { message?: string }).message ??
+          tr({ en: 'Request outcome unknown.', ru: 'Исход запроса неизвестен.' }, locale.value)
       } else {
         idem.resolveOutcome()
-        serverError.value = (error as { message?: string }).message ?? 'The order could not be created.'
+        serverError.value =
+          (error as { message?: string }).message ??
+          tr({ en: 'The order could not be created.', ru: 'Не удалось создать заказ.' }, locale.value)
       }
     } else {
       // An unexpected client-side failure is not a safe automatic retry case.
       idem.resolveOutcome()
-      serverError.value = 'The order could not be created.'
+      serverError.value = tr(
+        { en: 'The order could not be created.', ru: 'Не удалось создать заказ.' },
+        locale.value,
+      )
     }
   } finally {
     submitting.value = false
@@ -122,21 +162,21 @@ async function submit(): Promise<void> {
   <CardPanel class="order-create">
     <form novalidate @submit.prevent="submit">
       <div class="order-create__fields">
-        <FormField label="Buyer ID" control-for="order-buyer" required :error="buyerId.trim() ? undefined : ''">
+        <FormField :label="labels.buyerId" control-for="order-buyer" required :error="buyerId.trim() ? undefined : ''">
           <input
             id="order-buyer"
             v-model="buyerId"
             type="text"
             autocomplete="off"
-            placeholder="Owner of the order (UUID)"
+            :placeholder="labels.buyerPlaceholder"
             data-testid="order-buyer"
           />
         </FormField>
 
-        <FormField label="Payment method" control-for="order-payment" required>
+        <FormField :label="labels.paymentMethod" control-for="order-payment" required>
           <select id="order-payment" v-model="paymentMethod" data-testid="order-payment">
             <option v-for="method in PAYMENT_METHODS" :key="method" :value="method">
-              {{ method === 'prepaid' ? 'Prepaid' : 'Pay on receipt (online)' }}
+              {{ labelFor(PAYMENT_METHOD_META[method].label, locale) }}
             </option>
           </select>
         </FormField>
@@ -148,16 +188,16 @@ async function submit(): Promise<void> {
       </section>
 
       <div class="order-create__fields">
-        <FormField label="Delivery address" control-for="order-address" required :error="deliveryAddress.trim() ? undefined : ''">
+        <FormField :label="labels.address" control-for="order-address" required :error="deliveryAddress.trim() ? undefined : ''">
           <textarea
             id="order-address"
             v-model="deliveryAddress"
             rows="2"
-            placeholder="Full delivery address"
+            :placeholder="labels.addressPlaceholder"
             data-testid="order-address"
           />
         </FormField>
-        <FormField label="Buyer comment (optional)" control-for="order-comment" helper="">
+        <FormField :label="labels.comment" control-for="order-comment" helper="">
           <input
             id="order-comment"
             v-model="buyerComment"
@@ -174,15 +214,15 @@ async function submit(): Promise<void> {
 
       <div class="order-create__footer">
         <div class="order-create__preview">
-          Preview total: <strong>{{ formatMoney(previewTotalMinor, 'RUB') }}</strong>
-          <span class="order-create__preview-note">(client preview only — server computes the authoritative total)</span>
+          {{ labels.preview }}: <strong>{{ formatMoney(previewTotalMinor, 'RUB') }}</strong>
+          <span class="order-create__preview-note">{{ labels.previewNote }}</span>
         </div>
         <div class="order-create__actions">
           <AppButton v-if="canRetrySameKey" variant="secondary" type="button" :loading="submitting" @click="submit">
-            Retry (same idempotency key)
+            {{ labels.retry }}
           </AppButton>
           <AppButton type="submit" :disabled="!formComplete" :loading="submitting" data-testid="order-create-submit">
-            Create order
+            {{ labels.create }}
           </AppButton>
         </div>
       </div>

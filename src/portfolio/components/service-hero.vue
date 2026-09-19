@@ -1,36 +1,49 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { ServiceCase } from '@/content/types'
+import { tr } from '@/portfolio/i18n'
 import ServiceStatus from './service-status.vue'
 import ResourceLinks from './resource-links.vue'
 
-defineProps<{ service: ServiceCase }>()
+const props = defineProps<{ service: ServiceCase; locale?: 'en' | 'ru' }>()
+
+const locale = computed(() => props.locale ?? 'en')
+
+const labels = computed(() => ({
+  subtitle: tr({ en: 'Service case study', ru: 'Кейс сервиса' }, locale.value),
+  backendRuntime: tr({ en: 'Backend runtime', ru: 'Рантайм бэкенда' }, locale.value),
+  demoDataSource: tr({ en: 'Demo data source', ru: 'Источник данных демо' }, locale.value),
+  scope: tr({ en: 'Scope', ru: 'Область применения' }, locale.value),
+  notScope: tr({ en: 'Not in scope', ru: 'Не входит в область' }, locale.value),
+  focus: tr({ en: 'Engineering focus', ru: 'Инженерный фокус' }, locale.value),
+}))
 </script>
 
 <template>
   <section class="portfolio-hero service-hero">
-    <p class="portfolio-hero__subtitle">Service case study</p>
-    <h1>{{ service.name }}</h1>
-    <p class="portfolio-hero__intro">{{ service.summary }}</p>
+    <p class="portfolio-hero__subtitle">{{ labels.subtitle }}</p>
+    <h1>{{ tr(service.nameLocalized, locale) }}</h1>
+    <p class="portfolio-hero__intro">{{ tr(service.summary, locale) }}</p>
     <p>
-      <ServiceStatus :service="service" />
+      <ServiceStatus :service="service" :locale="locale" />
       <span aria-hidden="true"> · </span>
-      <span>Backend runtime: {{ service.runtimeLabel }}</span>
+      <span>{{ labels.backendRuntime }}: {{ tr(service.runtimeLabel, locale) }}</span>
       <span aria-hidden="true"> · </span>
-      <span>Demo data source: {{ service.demoMode === 'mock' ? 'Mock' : service.demoMode }}</span>
+      <span>{{ labels.demoDataSource }}: {{ service.demoMode === 'mock' ? (locale === 'ru' ? 'Mock' : 'Mock') : service.demoMode }}</span>
     </p>
     <dl class="fact-list">
-      <dt>Scope</dt>
-      <dd>{{ service.declaredScope }}</dd>
-      <dt>Not in scope</dt>
+      <dt>{{ labels.scope }}</dt>
+      <dd>{{ tr(service.declaredScope, locale) }}</dd>
+      <dt>{{ labels.notScope }}</dt>
       <dd>
         <ul class="service-hero__not-scope">
-          <li v-for="item in service.notScope" :key="item">{{ item }}</li>
+          <li v-for="item in service.notScope" :key="item.en">{{ tr(item, locale) }}</li>
         </ul>
       </dd>
-      <dt>Engineering focus</dt>
-      <dd>{{ service.engineeringFocus }}</dd>
+      <dt>{{ labels.focus }}</dt>
+      <dd>{{ tr(service.engineeringFocus, locale) }}</dd>
     </dl>
-    <ResourceLinks :service="service" />
+    <ResourceLinks :service="service" :locale="locale" />
   </section>
 </template>
 

@@ -8,18 +8,24 @@ import type { ServiceEntry } from '@/shared/config/service-registry'
 import StatusBadge from '@/shared/ui/status-badge.vue'
 import CardPanel from '@/shared/ui/card-panel.vue'
 import { useAppStore } from '@/app/stores/app-store'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
 import { useServiceHealth } from './use-service-health'
 
 const props = defineProps<{ service: ServiceEntry }>()
 
 const app = useAppStore()
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
 const { isMock } = storeToRefs(app)
 const { data: health } = useServiceHealth(props.service.id)
 
 const healthLabel = computed(() => {
-  if (health.value === 'healthy') return isMock.value ? 'Simulated' : 'Live'
-  if (health.value === 'degraded') return 'Degraded'
-  return 'Unknown'
+  if (health.value === 'healthy')
+    return tr(isMock.value ? { en: 'Simulated', ru: 'Симуляция' } : { en: 'Live', ru: 'Live' }, locale.value)
+  if (health.value === 'degraded')
+    return tr({ en: 'Degraded', ru: 'Деградация' }, locale.value)
+  return tr({ en: 'Unknown', ru: 'Неизвестно' }, locale.value)
 })
 
 const healthTone = computed(() => {
@@ -40,7 +46,7 @@ const healthTone = computed(() => {
 
     <div class="service-card__actions">
       <RouterLink :to="service.routePath" class="service-card__demo">
-        Open demo <ArrowRight aria-hidden="true" />
+        {{ tr({ en: 'Open demo', ru: 'Открыть демо' }, locale) }} <ArrowRight aria-hidden="true" />
       </RouterLink>
 
       <a
@@ -59,7 +65,7 @@ const healthTone = computed(() => {
         target="_blank"
         rel="noopener noreferrer"
         class="service-card__link"
-        title="Source repository"
+        :title="tr({ en: 'Source repository', ru: 'Репозиторий исходников' }, locale)"
       >
         <Github aria-hidden="true" /> Source
       </a>
@@ -69,7 +75,7 @@ const healthTone = computed(() => {
         target="_blank"
         rel="noopener noreferrer"
         class="service-card__link"
-        title="Observability dashboard"
+        :title="tr({ en: 'Observability dashboard', ru: 'Панель наблюдаемости' }, locale)"
       >
         <Gauge aria-hidden="true" /> Grafana
       </a>

@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
+import { labelFor } from '@/shared/i18n/label-strings'
 import CodeValue from '@/shared/ui/code-value.vue'
 
 import { attemptDisplay, CHANNEL_LABELS } from '../models/notification-domain'
@@ -13,6 +17,28 @@ withDefaults(
   }>(),
   { event: null },
 )
+
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
+const labels = computed(() => ({
+  eventOrigin: tr({ en: 'Event origin', ru: 'Источник события' }, locale.value),
+  eventType: tr({ en: 'Event type', ru: 'Тип события' }, locale.value),
+  event: tr({ en: 'Event', ru: 'Событие' }, locale.value),
+  attempts: tr({ en: 'Attempts', ru: 'Попытки' }, locale.value),
+  noAttempts: tr({ en: 'No attempts recorded yet.', ru: 'Попытки пока не записаны.' }, locale.value),
+  jobKicker: tr({ en: 'Notification job', ru: 'Задача уведомления' }, locale.value),
+  channel: tr({ en: 'Channel', ru: 'Канал' }, locale.value),
+  template: tr({ en: 'Template', ru: 'Шаблон' }, locale.value),
+  attemptKicker: tr({ en: 'Attempt', ru: 'Попытка' }, locale.value),
+  result: tr({ en: 'Result', ru: 'Результат' }, locale.value),
+  providerStatus: tr({ en: 'Provider status', ru: 'Статус провайдера' }, locale.value),
+  errorCode: tr({ en: 'Error code', ru: 'Код ошибки' }, locale.value),
+  latency: tr({ en: 'Latency', ru: 'Задержка' }, locale.value),
+  started: tr({ en: 'Started', ru: 'Начата' }, locale.value),
+  outcome: tr({ en: 'Outcome', ru: 'Итог' }, locale.value),
+  lastErrorCode: tr({ en: 'Last error code', ru: 'Код последней ошибки' }, locale.value),
+}))
 </script>
 
 <template>
@@ -21,13 +47,13 @@ withDefaults(
     <li class="notification-timeline__node">
       <div class="notification-timeline__rail" aria-hidden="true" />
       <div class="notification-timeline__card notification-timeline__card--event">
-        <p class="notification-timeline__kicker">Event origin</p>
+        <p class="notification-timeline__kicker">{{ labels.eventOrigin }}</p>
         <div class="notification-timeline__row">
-          <span class="notification-timeline__label">Event type</span>
+          <span class="notification-timeline__label">{{ labels.eventType }}</span>
           <code class="notification-timeline__mono">{{ event?.event_type ?? job.event_type }}</code>
         </div>
         <div class="notification-timeline__row">
-          <span class="notification-timeline__label">Event</span>
+          <span class="notification-timeline__label">{{ labels.event }}</span>
           <RouterLink :to="`/notifications/events/${job.event_id}`" class="notification-timeline__link">
             <CodeValue :value="job.event_id" />
           </RouterLink>
@@ -53,20 +79,20 @@ withDefaults(
     <li class="notification-timeline__node">
       <div class="notification-timeline__rail" aria-hidden="true" />
       <div class="notification-timeline__card notification-timeline__card--job">
-        <p class="notification-timeline__kicker">Notification job</p>
+        <p class="notification-timeline__kicker">{{ labels.jobKicker }}</p>
         <div class="notification-timeline__status">
           <NotificationStatusBadge :status="job.status" />
         </div>
         <div class="notification-timeline__row">
-          <span class="notification-timeline__label">Channel</span>
-          <span>{{ CHANNEL_LABELS[job.channel] }}</span>
+          <span class="notification-timeline__label">{{ labels.channel }}</span>
+          <span>{{ labelFor(CHANNEL_LABELS[job.channel], locale) }}</span>
         </div>
         <div v-if="job.template_key" class="notification-timeline__row">
-          <span class="notification-timeline__label">Template</span>
+          <span class="notification-timeline__label">{{ labels.template }}</span>
           <code class="notification-timeline__mono">{{ job.template_key }}</code>
         </div>
         <div class="notification-timeline__row">
-          <span class="notification-timeline__label">Attempts</span>
+          <span class="notification-timeline__label">{{ labels.attempts }}</span>
           <span>{{ job.attempt_count }}</span>
         </div>
       </div>
@@ -80,25 +106,25 @@ withDefaults(
     >
       <div class="notification-timeline__rail" aria-hidden="true" />
       <div class="notification-timeline__card notification-timeline__card--attempt">
-        <p class="notification-timeline__kicker">Attempt #{{ attempt.attempt_no }}</p>
+        <p class="notification-timeline__kicker">{{ labels.attemptKicker }} #{{ attempt.attempt_no }}</p>
         <div class="notification-timeline__row">
-          <span class="notification-timeline__label">Result</span>
+          <span class="notification-timeline__label">{{ labels.result }}</span>
           <code class="notification-timeline__mono">{{ attemptDisplay(attempt).label }}</code>
         </div>
         <div v-if="attempt.provider_status" class="notification-timeline__row">
-          <span class="notification-timeline__label">Provider status</span>
+          <span class="notification-timeline__label">{{ labels.providerStatus }}</span>
           <code class="notification-timeline__mono">{{ attempt.provider_status }}</code>
         </div>
         <div v-if="attempt.error_code" class="notification-timeline__row">
-          <span class="notification-timeline__label">Error code</span>
+          <span class="notification-timeline__label">{{ labels.errorCode }}</span>
           <code class="notification-timeline__mono" data-testid="attempt-error-code">{{ attempt.error_code }}</code>
         </div>
         <div v-if="attempt.latency_ms != null" class="notification-timeline__row">
-          <span class="notification-timeline__label">Latency</span>
+          <span class="notification-timeline__label">{{ labels.latency }}</span>
           <span>{{ attempt.latency_ms }} ms</span>
         </div>
         <div class="notification-timeline__row">
-          <span class="notification-timeline__label">Started</span>
+          <span class="notification-timeline__label">{{ labels.started }}</span>
           <span>{{ attempt.started_at ?? '—' }}</span>
         </div>
         <p v-if="attemptDisplay(attempt).safeErrorMessage" class="notification-timeline__hint">
@@ -119,12 +145,12 @@ withDefaults(
             job.status === 'pending' || job.status === 'processing' || job.status === 'retry_wait',
         }"
       >
-        <p class="notification-timeline__kicker">Outcome</p>
+        <p class="notification-timeline__kicker">{{ labels.outcome }}</p>
         <div class="notification-timeline__status">
           <NotificationStatusBadge :status="job.status" />
         </div>
         <p v-if="job.last_error_code" class="notification-timeline__hint">
-          Last error code: <code class="notification-timeline__mono">{{ job.last_error_code }}</code>
+          {{ labels.lastErrorCode }}: <code class="notification-timeline__mono">{{ job.last_error_code }}</code>
         </p>
       </div>
     </li>

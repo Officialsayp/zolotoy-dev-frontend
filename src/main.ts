@@ -8,6 +8,7 @@ import { installAppGuards } from '@/app/router/guards'
 import { createQueryClient, setAppQueryClient } from '@/app/providers/query-client'
 import { useAppStore } from '@/app/stores/app-store'
 import { useThemeStore } from '@/app/stores/theme-store'
+import { useLocaleStore, bindLocaleToRouter, localeFromQuery } from '@/shared/i18n/use-locale'
 import { useSessionStore } from '@/modules/auth/store/session-store'
 import { loadAppConfig } from '@/shared/config/app-config'
 import { getRuntimeEnv } from '@/shared/config/runtime-env'
@@ -65,6 +66,13 @@ async function bootstrap(): Promise<void> {
   useAppStore(pinia).initialize(config.apiMode, config.deployEnv)
   useThemeStore(pinia).initialize()
 
+  // Locale: explicit ?lang= wins over the persisted preference (invalid or
+  // absent values fall through to the stored preference / EN). <html lang>
+  // is synced here and re-synced after the router starts.
+  const localeStore = useLocaleStore(pinia)
+  const initialQuery = new URLSearchParams(window.location.search)
+  localeStore.initialize(localeFromQuery(initialQuery.get('lang')) ?? undefined)
+
   // Mock mode must intercept the network before auth bootstrap can issue the
   // cookie refresh request. Starting the router earlier would let its initial
   // guard trigger bootstrap before MSW is ready. Dynamic import keeps MSW and
@@ -83,8 +91,12 @@ async function bootstrap(): Promise<void> {
   // Vue Router starts the initial navigation during `app.use(router)`, therefore
   // guards must already be registered at that point.
   installAppGuards(router)
+  // Locale follows ?lang= on every navigation; the persisted preference is the
+  // fallback when the param is absent.
+  bindLocaleToRouter((next) => localeStore.set(next), () => localeStore.get(), router)
   app.use(router)
 
+  localeStore.syncDocumentLang()
   app.mount('#app')
 }
 

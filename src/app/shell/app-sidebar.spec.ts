@@ -1,10 +1,14 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import AppSidebar from './app-sidebar.vue'
 
 describe('AppSidebar portfolio link', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
   it.each(['/', '/auth/login', '/shortener/'])('uses a document link outside the demo router from %s', async (path) => {
     const router = createRouter({
       history: createMemoryHistory('/demo/'),

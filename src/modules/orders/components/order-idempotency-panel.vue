@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import AppButton from '@/shared/ui/app-button.vue'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
 
 defineProps<{
   lastKey: string | null
@@ -8,8 +11,17 @@ defineProps<{
 
 const emit = defineEmits<{ (e: 'replay'): void }>()
 
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+const labels = computed(() => ({
+  title: tr({ en: 'Idempotent command replay', ru: 'Идемпотентный повтор команды' }, locale.value),
+  lastKey: tr({ en: 'Last idempotency key', ru: 'Последний ключ идемпотентности' }, locale.value),
+  replay: tr({ en: 'Replay exact request (same key)', ru: 'Повторить точный запрос (тот же ключ)' }, locale.value),
+  noneYet: tr({ en: 'none yet', ru: 'пока нет' }, locale.value),
+}))
+
 function shortKey(key: string | null): string {
-  if (!key) return 'none yet'
+  if (!key) return ''
   return key.length > 12 ? `${key.slice(0, 8)}…${key.slice(-4)}` : key
 }
 </script>
@@ -18,13 +30,13 @@ function shortKey(key: string | null): string {
   <div class="idem-panel">
     <div class="idem-panel__head">
       <span class="idem-panel__tag">DEMO</span>
-      <span class="idem-panel__title">Idempotent command replay</span>
+      <span class="idem-panel__title">{{ labels.title }}</span>
     </div>
     <p class="idem-panel__body">
-      Last idempotency key: <code class="idem-panel__key">{{ shortKey(lastKey) }}</code>
+      {{ labels.lastKey }}: <code class="idem-panel__key">{{ shortKey(lastKey) || labels.noneYet }}</code>
     </p>
     <AppButton variant="secondary" size="sm" :disabled="!lastKey || busy" @click="emit('replay')">
-      Replay exact request (same key)
+      {{ labels.replay }}
     </AppButton>
     <p class="idem-panel__hint">
       Re-running the exact same command with the same key returns the stored result and does not

@@ -55,11 +55,11 @@ export interface HistoryEntryView {
 }
 
 /** Format an integer minor-unit money value, e.g. `499000, RUB` -> `4 990,00 ₽`. */
-export function formatMoney(amount: number, currency: string): string {
+export function formatMoney(amount: number, currency: string, locale: 'en' | 'ru' = 'en'): string {
   const normalized = Number.isFinite(amount) ? amount : 0
   const value = normalized / 100
   const symbol = currencySymbol(currency)
-  const formatted = new Intl.NumberFormat('ru-RU', {
+  const formatted = new Intl.NumberFormat(locale === 'ru' ? 'ru-RU' : 'en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value)
@@ -75,27 +75,27 @@ function currencySymbol(currency: string): string {
   }
 }
 
-export function formatDate(iso: string): string {
+export function formatDate(iso: string, locale: 'en' | 'ru' = 'en'): string {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return iso
-  return new Intl.DateTimeFormat('ru-RU', {
+  return new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en-US', {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(date)
 }
 
-export function toOrderRowView(dto: OrderDto): OrderRowView {
+export function toOrderRowView(dto: OrderDto, locale: 'en' | 'ru' = 'en'): OrderRowView {
   return {
     id: dto.id,
-    createdAt: formatDate(dto.created_at),
+    createdAt: formatDate(dto.created_at, locale),
     paymentMethod: dto.payment_method,
-    total: formatMoney(dto.total.amount, dto.total.currency),
+    total: formatMoney(dto.total.amount, dto.total.currency, locale),
     orderStatus: dto.status,
     paymentStatus: dto.payment_status,
   }
 }
 
-export function toOrderDetailView(dto: OrderDto): OrderDetailView {
+export function toOrderDetailView(dto: OrderDto, locale: 'en' | 'ru' = 'en'): OrderDetailView {
   return {
     id: dto.id,
     buyerId: dto.buyer_id,
@@ -104,26 +104,26 @@ export function toOrderDetailView(dto: OrderDto): OrderDetailView {
     paymentMethod: dto.payment_method,
     deliveryAddress: dto.delivery_address,
     buyerComment: dto.buyer_comment,
-    total: formatMoney(dto.total.amount, dto.total.currency),
+    total: formatMoney(dto.total.amount, dto.total.currency, locale),
     currency: dto.total.currency,
     version: dto.version,
-    createdAt: formatDate(dto.created_at),
-    updatedAt: formatDate(dto.updated_at),
+    createdAt: formatDate(dto.created_at, locale),
+    updatedAt: formatDate(dto.updated_at, locale),
     items: dto.items.map((item) => ({
       id: item.id,
       productId: item.product_id,
       name: item.name,
       quantity: item.quantity,
-      unitPrice: formatMoney(item.unit_price, item.currency),
-      totalPrice: formatMoney(item.total_price, item.currency),
+      unitPrice: formatMoney(item.unit_price, item.currency, locale),
+      totalPrice: formatMoney(item.total_price, item.currency, locale),
     })),
   }
 }
 
-export function toHistoryEntryView(dto: OrderHistoryEntryDto): HistoryEntryView {
+export function toHistoryEntryView(dto: OrderHistoryEntryDto, locale: 'en' | 'ru' = 'en'): HistoryEntryView {
   return {
     id: dto.id,
-    occurredAt: formatDate(dto.occurred_at),
+    occurredAt: formatDate(dto.occurred_at, locale),
     operation: dto.operation,
     orderStatusBefore: dto.order_status_before,
     orderStatusAfter: dto.order_status_after,

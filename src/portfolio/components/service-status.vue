@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ServiceCase } from '@/content/types'
+import { tr } from '@/portfolio/i18n'
 
-const props = defineProps<{ service: ServiceCase }>()
+const props = defineProps<{ service: ServiceCase; locale?: 'en' | 'ru' }>()
 
 const statusText = computed(() => {
+  const locale = props.locale ?? 'en'
   switch (props.service.implementationStatus) {
     case 'implemented':
-      return 'Implemented'
+      return tr({ en: 'Implemented', ru: 'Реализован' }, locale)
     case 'in-development':
-      return 'In development'
+      return tr({ en: 'In development', ru: 'В разработке' }, locale)
     default:
-      return 'Planned'
+      return tr({ en: 'Planned', ru: 'Запланирован' }, locale)
   }
 })
 </script>

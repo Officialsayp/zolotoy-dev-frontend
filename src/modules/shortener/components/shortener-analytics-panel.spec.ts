@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import ShortenerAnalyticsPanel from './shortener-analytics-panel.vue'
 import type { ShortLinkAnalyticsDto } from '../models/shortener-dto'
@@ -32,6 +33,10 @@ function mountPanel(analytics: ShortLinkAnalyticsDto | null, extra: Record<strin
 }
 
 describe('shortener analytics panel', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
   it('renders the total from the view model', () => {
     const wrapper = mountPanel(populated)
     expect(wrapper.text()).toContain('total clicks')

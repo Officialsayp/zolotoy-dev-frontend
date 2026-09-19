@@ -32,14 +32,15 @@ describe('order view model', () => {
   it('formats minor-unit money with a currency symbol', () => {
     // ru-RU Intl inserts a (narrow no-break) group separator; assert on the
     // digits, decimal comma and symbol rather than a specific space char.
-    const formatted = formatMoney(499000, 'RUB')
+    const formatted = formatMoney(499000, 'RUB', 'ru')
     expect(formatted).toMatch(/4[\s\u202f\u00a0]990,00/)
     expect(formatted).toContain('₽')
-    expect(formatMoney(0, 'RUB')).toContain('0,00')
+    expect(formatMoney(0, 'RUB', 'ru')).toContain('0,00')
+    // EN locale uses en-US formatting (section 27: locale-aware numbers).
   })
 
-  it('maps a detail DTO into a presentation view', () => {
-    const view = toOrderDetailView(dto)
+  it('maps a detail DTO into a presentation view (RU formatting)', () => {
+    const view = toOrderDetailView(dto, 'ru')
     expect(view.id).toBe(dto.id)
     expect(view.paymentMethod).toBe('pay_on_receipt_online')
     expect(view.version).toBe(9)

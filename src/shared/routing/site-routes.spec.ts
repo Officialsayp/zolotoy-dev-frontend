@@ -13,6 +13,9 @@ import {
   publicCanonicalUrl,
   serviceCaseStudyPath,
   serviceDemoRoot,
+  counterpartPath,
+  publicPathFor,
+  resolvePublicPathForLocale,
 } from './site-routes'
 
 describe('site-routes manifest', () => {
@@ -48,6 +51,14 @@ describe('site-routes manifest', () => {
     expect(canonicalizePublicUrl('/services/order')).toBe('/services/order/')
     expect(canonicalizePublicUrl('/services/order/index.html')).toBeNull()
     expect(canonicalizePublicUrl('/nope/')).toBeNull()
+  })
+
+  it('canonicalizes /ru aliases including the RU home', () => {
+    expect(canonicalizePublicUrl('/ru')).toBe('/ru/')
+    expect(canonicalizePublicUrl('/ru/index.html')).toBe('/ru/')
+    expect(canonicalizePublicUrl('/ru/architecture')).toBe('/ru/architecture/')
+    expect(canonicalizePublicUrl('/ru/services/url-shortener/')).toBe('/ru/services/url-shortener/')
+    expect(canonicalizePublicUrl('/ru/nope/')).toBeNull()
   })
 
   it('matches demo routes with and without the root slash', () => {
@@ -93,5 +104,39 @@ describe('site-routes manifest', () => {
     expect(demoUrl('/')).toBe('/demo/')
     expect(publicCanonicalUrl('home')).toBe('https://zolotoy.dev/')
     expect(publicCanonicalUrl('shortener')).toBe('https://zolotoy.dev/services/url-shortener/')
+  })
+})
+
+describe('site-routes locale mapping', () => {
+  it('maps every EN route to an RU counterpart under /ru/', () => {
+    for (const route of PUBLIC_ROUTES) {
+      const resolved = resolvePublicPathForLocale(route.path)
+      expect(resolved?.locale).toBe('en')
+      const ru = counterpartPath(route.path, 'ru')
+      expect(ru).toBe('/ru' + (route.path === '/' ? '/' : route.path))
+      // Round trip: RU path resolves back to the same document.
+      const resolvedRu = resolvePublicPathForLocale(ru!)
+      expect(resolvedRu?.id).toBe(route.id)
+      expect(resolvedRu?.locale).toBe('ru')
+      expect(resolvedRu?.canonicalPath).toBe('/ru' + (route.path === '/' ? '/' : route.path))
+    }
+  })
+
+  it('keeps EN canonical paths unprefixed', () => {
+    expect(publicPathFor('home', 'en')).toBe('/')
+    expect(publicPathFor('architecture', 'en')).toBe('/architecture/')
+    expect(publicPathFor('shortener', 'en')).toBe('/services/url-shortener/')
+    expect(publicPathFor('home', 'ru')).toBe('/ru/')
+    expect(publicPathFor('shortener', 'ru')).toBe('/ru/services/url-shortener/')
+  })
+
+  it('rejects non-public /ru/ paths; bare /ru is the RU home', () => {
+    expect(resolvePublicPathForLocale('/ru/nope/')).toBeNull()
+    expect(resolvePublicPathForLocale('/ru')?.id).toBe('home')
+  })
+
+  it('switch preserves the semantic page both ways', () => {
+    expect(counterpartPath('/ru/services/auth/', 'en')).toBe('/services/auth/')
+    expect(counterpartPath('/services/auth/', 'ru')).toBe('/ru/services/auth/')
   })
 })

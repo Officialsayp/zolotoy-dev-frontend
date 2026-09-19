@@ -64,10 +64,15 @@ describe('content model', () => {
     }
   })
 
-  it('planned services declare scope and not-scope', () => {
+  it('planned services declare scope and not-scope in both locales', () => {
     for (const service of SERVICE_CASES) {
-      expect(service.declaredScope.length).toBeGreaterThan(0)
+      expect(service.declaredScope.en.length).toBeGreaterThan(0)
+      expect(service.declaredScope.ru.length).toBeGreaterThan(0)
       expect(service.notScope.length).toBeGreaterThan(0)
+      for (const item of service.notScope) {
+        expect(item.en.length).toBeGreaterThan(0)
+        expect(item.ru.length).toBeGreaterThan(0)
+      }
     }
   })
 

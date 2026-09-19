@@ -1,13 +1,23 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
-import { PUBLIC_ROUTES } from '@/shared/routing/site-routes'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { uiString } from '@/shared/i18n/ui-strings'
+import { labelFor } from '@/shared/i18n/label-strings'
 
 import { buildNavItems } from './nav-items'
 
-const portfolioHome = PUBLIC_ROUTES.find((route) => route.id === 'home')!
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+const portfolioHref = computed(() => (locale.value === 'ru' ? '/ru/' : '/'))
 const items = buildNavItems()
 const route = useRoute()
+
+function itemLabel(item: (typeof items)[number]): string {
+  if (item.label === 'overview') return uiString('overview', locale.value)
+  return labelFor(item.label, locale.value)
+}
 
 function isActive(activeName: string): boolean {
   return route.name === activeName
@@ -15,8 +25,8 @@ function isActive(activeName: string): boolean {
 </script>
 
 <template>
-  <aside class="app-sidebar" aria-label="Service navigation">
-    <a :href="portfolioHome.path" class="app-sidebar__brand" aria-label="zolotoy.dev — Portfolio home">
+  <aside class="app-sidebar" :aria-label="uiString('serviceNavigation', locale)">
+    <a :href="portfolioHref" class="app-sidebar__brand" :aria-label="uiString('brandHome', locale)">
       <svg class="app-sidebar__logo" viewBox="0 0 1024 1024" aria-hidden="true" width="28" height="28">
         <path
           fill="currentColor"
@@ -35,7 +45,7 @@ function isActive(activeName: string): boolean {
         :class="{ 'app-sidebar__link--active': isActive(item.activeName) }"
         :aria-current="isActive(item.activeName) ? 'page' : undefined"
       >
-        {{ item.label }}
+        {{ itemLabel(item) }}
       </RouterLink>
     </nav>
   </aside>
@@ -60,13 +70,7 @@ function isActive(activeName: string): boolean {
 }
 
 .app-sidebar__brand:hover {
-  color: var(--c-accent);
   text-decoration: none;
-}
-
-.app-sidebar__brand:focus-visible {
-  box-shadow: var(--focus-ring);
-  border-radius: var(--radius-sm);
 }
 
 .app-sidebar__logo {

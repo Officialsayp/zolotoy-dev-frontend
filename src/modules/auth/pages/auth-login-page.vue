@@ -9,6 +9,8 @@ import AppButton from '@/shared/ui/app-button.vue'
 import FormField from '@/shared/ui/form-field.vue'
 import AuthFormShell from '../components/auth-form-shell.vue'
 import { isUserBlocked } from '../models/auth-error'
+import { authString } from '@/shared/i18n/auth-strings'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
 import { reasonMessage, type AuthFailureReason } from '../session/session-reason'
 import { useLoginMutation } from '../queries/use-auth-queries'
 import { useSessionStore } from '../store/session-store'
@@ -17,6 +19,8 @@ const route = useRoute()
 const router = useRouter()
 const session = useSessionStore()
 const app = useAppStore()
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
 const { isMock } = storeToRefs(app)
 
 const { mutateAsync, isPending } = useLoginMutation()
@@ -31,20 +35,20 @@ const reason = computed<AuthFailureReason>(() => {
   return session.lastReason
 })
 
-const reasonText = computed(() => reasonMessage(reason.value))
+const reasonText = computed(() => reasonMessage(reason.value, locale.value))
 const bootstrapWarning = computed(() =>
-  session.bootstrapError ? "We couldn't verify an existing session. Sign in to continue." : '',
+  session.bootstrapError ? authString('errBootstrap', locale.value) : '',
 )
 
 function errorMessage(error: unknown): string {
-  if (isUserBlocked(error)) return 'This account is blocked. Contact support.'
+  if (isUserBlocked(error)) return authString('errBlocked', locale.value)
   const kind = typeof error === 'object' && error !== null ? (error as { kind?: string }).kind : undefined
-  if (kind === 'rate-limit') return 'Too many login attempts. Please wait a moment and try again.'
+  if (kind === 'rate-limit') return authString('errRateLimit', locale.value)
   if (kind === 'network' || kind === 'timeout' || kind === 'server') {
-    return 'Could not reach the auth service. Please try again.'
+    return authString('errUnreachable', locale.value)
   }
   // Generic safe message — never reveals "user not found" vs "wrong password".
-  return 'Invalid email or password.'
+  return authString('errInvalidCredentials', locale.value)
 }
 
 async function fillDemo(emailValue: string): Promise<void> {
@@ -68,14 +72,14 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <AuthFormShell title="Sign in" subtitle="Access your zolotoy.dev account.">
+  <AuthFormShell :title="authString('signInTitle', locale)" :subtitle="authString('signInSubtitle', locale)">
     <div v-if="reasonText" class="auth-alert auth-alert--danger" role="alert" data-testid="auth-reason">
       {{ reasonText }}
     </div>
     <div v-if="bootstrapWarning" class="auth-alert" role="status">{{ bootstrapWarning }}</div>
 
     <form novalidate class="auth-form" @submit.prevent="submit">
-      <FormField label="Email" control-for="auth-email" required>
+      <FormField :label="authString('email', locale)" control-for="auth-email" required>
         <input
           id="auth-email"
           v-model="email"
@@ -87,7 +91,7 @@ async function submit(): Promise<void> {
         />
       </FormField>
 
-      <FormField label="Password" control-for="auth-password" required>
+      <FormField :label="authString('password', locale)" control-for="auth-password" required>
         <input
           id="auth-password"
           v-model="password"
@@ -110,12 +114,12 @@ async function submit(): Promise<void> {
       </p>
 
       <AppButton type="submit" :loading="isPending" :disabled="!email.trim() || !password" full-width>
-        Sign in
+        {{ authString('signIn', locale) }}
       </AppButton>
     </form>
 
     <div v-if="isMock" class="auth-demo">
-      <p class="auth-demo__label">Demo credentials (mock)</p>
+      <p class="auth-demo__label">{{ authString('demoCredentials', locale) }}</p>
       <div class="auth-demo__actions">
         <AppButton variant="secondary" size="sm" @click="fillDemo('user@zolotoy.dev')">
           user@zolotoy.dev
@@ -124,12 +128,12 @@ async function submit(): Promise<void> {
           admin@zolotoy.dev
         </AppButton>
       </div>
-      <p class="auth-demo__note">Refresh session lives in an HttpOnly cookie — never in the browser's JS storage.</p>
+      <p class="auth-demo__note">{{ authString('demoCookieNote', locale) }}</p>
     </div>
 
     <template #footer>
-      <span>No account?</span>
-      <RouterLink to="/auth/register">Create one</RouterLink>
+      <span>{{ authString('noAccount', locale) }}</span>
+      <RouterLink to="/auth/register">{{ authString('createOne', locale) }}</RouterLink>
     </template>
   </AuthFormShell>
 </template>

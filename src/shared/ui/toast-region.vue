@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
 import { CheckCircle2, Info, AlertTriangle, X, XCircle } from 'lucide-vue-next'
 
 import { useToastStore } from './toast-store'
@@ -11,10 +14,13 @@ const ICONS = {
   warning: AlertTriangle,
   danger: XCircle,
 } as const
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+const regionLabel = computed(() => tr({ en: 'Notifications', ru: 'Уведомления' }, locale.value))
 </script>
 
 <template>
-  <div class="toast-region" role="region" aria-live="polite" aria-label="Notifications">
+  <div class="toast-region" role="region" aria-live="polite" :aria-label="regionLabel">
     <TransitionGroup name="toast" tag="div" class="toast-region__list">
       <div
         v-for="toast in store.toasts"

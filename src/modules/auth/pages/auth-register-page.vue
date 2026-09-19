@@ -8,9 +8,13 @@ import { useToastStore } from '@/shared/ui/toast-store'
 import AuthFormShell from '../components/auth-form-shell.vue'
 import { isEmailExists } from '../models/auth-error'
 import { useRegisterMutation } from '../queries/use-auth-queries'
+import { authString } from '@/shared/i18n/auth-strings'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
 
 const router = useRouter()
 const toast = useToastStore()
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
 const { mutateAsync, isPending } = useRegisterMutation()
 
 const email = ref('')
@@ -32,13 +36,25 @@ async function submit(): Promise<void> {
   serverError.value = null
   try {
     await mutateAsync({ email: email.value.trim(), password: password.value })
-    toast.push({ tone: 'success', message: 'Account created. Sign in to continue.' })
+    toast.push({
+      tone: 'success',
+      message:
+        locale.value === 'ru'
+          ? 'Аккаунт создан. Войдите, чтобы продолжить.'
+          : 'Account created. Sign in to continue.',
+    })
     await router.push('/auth/login')
   } catch (error) {
     if (isEmailExists(error)) {
-      serverError.value = 'An account with this email already exists. Sign in instead.'
+      serverError.value =
+        locale.value === 'ru'
+          ? 'Аккаунт с таким email уже существует. Войдите.'
+          : 'An account with this email already exists. Sign in instead.'
     } else {
-      serverError.value = 'Could not create the account. Please try again.'
+      serverError.value =
+        locale.value === 'ru'
+          ? 'Не удалось создать аккаунт. Попробуйте снова.'
+          : 'Could not create the account. Please try again.'
     }
   }
 }
@@ -46,11 +62,15 @@ async function submit(): Promise<void> {
 
 <template>
   <AuthFormShell
-    title="Create account"
-    subtitle="Registration creates a user session baseline for the Auth demo."
+    :title="authString('registerTitle', locale)"
+    :subtitle="
+      locale === 'ru'
+        ? 'Регистрация создаёт базовую пользовательскую сессию для демо Auth.'
+        : 'Registration creates a user session baseline for the Auth demo.'
+    "
   >
     <form novalidate class="auth-form" @submit.prevent="submit">
-      <FormField label="Email" control-for="reg-email" required>
+      <FormField :label="authString('email', locale)" control-for="reg-email" required>
         <input
           id="reg-email"
           v-model="email"
@@ -63,10 +83,10 @@ async function submit(): Promise<void> {
       </FormField>
 
       <FormField
-        label="Password"
+        :label="authString('password', locale)"
         control-for="reg-password"
         required
-        helper="At least 8 characters."
+        :helper="locale === 'ru' ? 'Минимум 8 символов.' : 'At least 8 characters.'"
       >
         <input
           id="reg-password"
@@ -79,7 +99,7 @@ async function submit(): Promise<void> {
         />
       </FormField>
 
-      <FormField label="Confirm password" control-for="reg-confirm" required :error="confirmMismatch ? 'Passwords do not match.' : null">
+      <FormField :label="authString('confirmPassword', locale)" control-for="reg-confirm" required :error="confirmMismatch ? authString('passwordMismatch', locale) : null">
         <input
           id="reg-confirm"
           v-model="confirm"
@@ -96,13 +116,13 @@ async function submit(): Promise<void> {
       </p>
 
       <AppButton type="submit" :loading="isPending" :disabled="!formReady" full-width>
-        Create account
+        {{ authString('registerTitle', locale) }}
       </AppButton>
     </form>
 
     <template #footer>
-      <span>Already registered?</span>
-      <RouterLink to="/auth/login">Sign in</RouterLink>
+      <span>{{ authString('haveAccount', locale) }}</span>
+      <RouterLink to="/auth/login">{{ authString('signIn', locale) }}</RouterLink>
     </template>
   </AuthFormShell>
 </template>

@@ -1,9 +1,19 @@
-/** Deterministic-ish display formatting for Notification timestamps. */
+/** Display formatting for Notification timestamps, aware of the active demo locale. */
 export function formatDateTime(iso?: string | null): string {
   if (!iso) return '—'
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return iso
-  return date.toLocaleString()
+  // Read the active locale at render time; fall back to the browser default.
+  let locale: string | undefined
+  try {
+    locale = document?.documentElement?.lang || undefined
+  } catch {
+    locale = undefined
+  }
+  return date.toLocaleString(locale, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  })
 }
 
 /** Short, safe mid-display form for long IDs (full value still copyable). */

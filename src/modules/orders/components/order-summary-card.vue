@@ -1,9 +1,25 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import CardPanel from '@/shared/ui/card-panel.vue'
 import CodeValue from '@/shared/ui/code-value.vue'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
 import type { OrderDetailView } from '../models/order-view-model'
 
 defineProps<{ order: OrderDetailView }>()
+
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
+const labels = computed(() => ({
+  buyerId: tr({ en: 'Buyer ID', ru: 'ID покупателя' }, locale.value),
+  total: tr({ en: 'Total', ru: 'Итого' }, locale.value),
+  address: tr({ en: 'Delivery address', ru: 'Адрес доставки' }, locale.value),
+  comment: tr({ en: 'Buyer comment', ru: 'Комментарий покупателя' }, locale.value),
+  version: tr({ en: 'Aggregate version', ru: 'Версия агрегата' }, locale.value),
+  created: tr({ en: 'Created', ru: 'Создан' }, locale.value),
+  updated: tr({ en: 'Updated', ru: 'Обновлён' }, locale.value),
+}))
 
 /** Row helper renders a key/value pair. */
 const ROW = { display: 'flex', gap: 'var(--space-3)', justifyContent: 'space-between' } as const
@@ -12,31 +28,31 @@ const ROW = { display: 'flex', gap: 'var(--space-3)', justifyContent: 'space-bet
 <template>
   <CardPanel class="order-summary">
     <div class="order-summary__row" :style="ROW">
-      <dt>Buyer ID</dt>
+      <dt>{{ labels.buyerId }}</dt>
       <dd><CodeValue :value="order.buyerId" /></dd>
     </div>
     <div class="order-summary__row" :style="ROW">
-      <dt>Total</dt>
+      <dt>{{ labels.total }}</dt>
       <dd class="order-summary__strong">{{ order.total }}</dd>
     </div>
     <div class="order-summary__row" :style="ROW">
-      <dt>Delivery address</dt>
+      <dt>{{ labels.address }}</dt>
       <dd>{{ order.deliveryAddress }}</dd>
     </div>
     <div v-if="order.buyerComment" class="order-summary__row" :style="ROW">
-      <dt>Buyer comment</dt>
+      <dt>{{ labels.comment }}</dt>
       <dd>{{ order.buyerComment }}</dd>
     </div>
     <div class="order-summary__row" :style="ROW">
-      <dt>Aggregate version</dt>
+      <dt>{{ labels.version }}</dt>
       <dd><code class="order-summary__code">{{ order.version }}</code></dd>
     </div>
     <div class="order-summary__row" :style="ROW">
-      <dt>Created</dt>
+      <dt>{{ labels.created }}</dt>
       <dd>{{ order.createdAt }}</dd>
     </div>
     <div class="order-summary__row" :style="ROW">
-      <dt>Updated</dt>
+      <dt>{{ labels.updated }}</dt>
       <dd>{{ order.updatedAt }}</dd>
     </div>
   </CardPanel>

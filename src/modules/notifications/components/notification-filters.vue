@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
 import type { NotificationChannel, NotificationEventType, NotificationJobStatus } from '../models/notification-types'
 import { NOTIFICATION_CHANNELS, NOTIFICATION_EVENT_TYPES, NOTIFICATION_STATUSES } from '../models/notification-types'
 
@@ -7,6 +10,17 @@ defineProps<{
   channel: NotificationChannel | undefined
   eventType: NotificationEventType | undefined
 }>()
+
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
+const labels = computed(() => ({
+  group: tr({ en: 'Notification filters', ru: 'Фильтры уведомлений' }, locale.value),
+  status: tr({ en: 'Status', ru: 'Статус' }, locale.value),
+  channel: tr({ en: 'Channel', ru: 'Канал' }, locale.value),
+  all: tr({ en: 'All', ru: 'Все' }, locale.value),
+  eventType: tr({ en: 'Event type', ru: 'Тип события' }, locale.value),
+}))
 
 const emit = defineEmits<{
   (e: 'update:status', value: NotificationJobStatus | undefined): void
@@ -20,42 +34,42 @@ function emptyToUndefined(value: string): string | undefined {
 </script>
 
 <template>
-  <div class="notification-filters" role="group" aria-label="Notification filters">
+  <div class="notification-filters" role="group" :aria-label="labels.group">
     <label class="notification-filters__field">
-      <span class="notification-filters__label">Status</span>
+      <span class="notification-filters__label">{{ labels.status }}</span>
       <select
         class="notification-filters__select"
         :value="status ?? ''"
         data-testid="filter-status"
         @change="emit('update:status', emptyToUndefined(($event.target as HTMLSelectElement).value) as NotificationJobStatus | undefined)"
       >
-        <option value="">All</option>
+        <option value="">{{ labels.all }}</option>
         <option v-for="s in NOTIFICATION_STATUSES" :key="s" :value="s">{{ s }}</option>
       </select>
     </label>
 
     <label class="notification-filters__field">
-      <span class="notification-filters__label">Channel</span>
+      <span class="notification-filters__label">{{ labels.channel }}</span>
       <select
         class="notification-filters__select"
         :value="channel ?? ''"
         data-testid="filter-channel"
         @change="emit('update:channel', emptyToUndefined(($event.target as HTMLSelectElement).value) as NotificationChannel | undefined)"
       >
-        <option value="">All</option>
+        <option value="">{{ labels.all }}</option>
         <option v-for="c in NOTIFICATION_CHANNELS" :key="c" :value="c">{{ c }}</option>
       </select>
     </label>
 
     <label class="notification-filters__field notification-filters__field--event">
-      <span class="notification-filters__label">Event type</span>
+      <span class="notification-filters__label">{{ labels.eventType }}</span>
       <select
         class="notification-filters__select"
         :value="eventType ?? ''"
         data-testid="filter-event-type"
         @change="emit('update:event-type', emptyToUndefined(($event.target as HTMLSelectElement).value) as NotificationEventType | undefined)"
       >
-        <option value="">All</option>
+        <option value="">{{ labels.all }}</option>
         <option v-for="e in NOTIFICATION_EVENT_TYPES" :key="e" :value="e">{{ e }}</option>
       </select>
     </label>

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
 import CardPanel from '@/shared/ui/card-panel.vue'
 import CodeValue from '@/shared/ui/code-value.vue'
 import { PAYMENT_METHOD_META } from '../models/order-types'
@@ -12,6 +15,23 @@ function shortId(value: string): string {
   if (value.length <= 18) return value
   return `${value.slice(0, 8)}…${value.slice(-4)}`
 }
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+const cardsAria = computed(() => tr({ en: 'Orders, newest first', ru: 'Заказы, сначала новые' }, locale.value))
+
+const labels = computed(() => ({
+  tableCaption: tr({ en: 'Orders, newest first (keyset pagination)', ru: 'Заказы, сначала новые (keyset-пагинация)' }, locale.value),
+  order: tr({ en: 'Order', ru: 'Заказ' }, locale.value),
+  created: tr({ en: 'Created', ru: 'Создан' }, locale.value),
+  payment: tr({ en: 'Payment', ru: 'Оплата' }, locale.value),
+  total: tr({ en: 'Total', ru: 'Итого' }, locale.value),
+  orderStatus: tr({ en: 'Order status', ru: 'Статус заказа' }, locale.value),
+  paymentStatus: tr({ en: 'Payment status', ru: 'Статус оплаты' }, locale.value),
+  paymentMethod: tr({ en: 'Payment method', ru: 'Способ оплаты' }, locale.value),
+  address: tr({ en: 'Delivery address', ru: 'Адрес доставки' }, locale.value),
+  comment: tr({ en: 'Buyer comment', ru: 'Комментарий покупателя' }, locale.value),
+  version: tr({ en: 'Aggregate version', ru: 'Версия агрегата' }, locale.value),
+}))
 </script>
 
 <template>
@@ -21,12 +41,12 @@ function shortId(value: string): string {
         <caption class="order-list__caption">Orders, newest first (keyset pagination)</caption>
         <thead>
           <tr>
-            <th scope="col">Order</th>
-            <th scope="col">Created</th>
-            <th scope="col">Payment</th>
-            <th scope="col" class="order-list__num">Total</th>
-            <th scope="col">Order status</th>
-            <th scope="col">Payment status</th>
+            <th scope="col">{{ labels.order }}</th>
+            <th scope="col">{{ labels.created }}</th>
+            <th scope="col">{{ labels.payment }}</th>
+            <th scope="col" class="order-list__num">{{ labels.total }}</th>
+            <th scope="col">{{ labels.orderStatus }}</th>
+            <th scope="col">{{ labels.paymentStatus }}</th>
           </tr>
         </thead>
         <tbody>
@@ -46,7 +66,7 @@ function shortId(value: string): string {
       </table>
     </div>
 
-    <div class="order-list__cards" role="list" aria-label="Orders, newest first">
+    <div class="order-list__cards" role="list" :aria-label="cardsAria">
       <article v-for="row in rows" :key="row.id" class="order-list__card" role="listitem">
         <header class="order-list__card-header">
           <div class="order-list__card-order">
@@ -60,23 +80,23 @@ function shortId(value: string): string {
 
         <dl class="order-list__details">
           <div class="order-list__detail">
-            <dt>Created</dt>
+            <dt>{{ labels.created }}</dt>
             <dd>{{ row.createdAt }}</dd>
           </div>
           <div class="order-list__detail">
-            <dt>Total</dt>
+            <dt>{{ labels.total }}</dt>
             <dd class="order-list__strong">{{ row.total }}</dd>
           </div>
           <div class="order-list__detail order-list__detail--wide">
-            <dt>Payment method</dt>
+            <dt>{{ labels.paymentMethod }}</dt>
             <dd>{{ PAYMENT_METHOD_META[row.paymentMethod].label }}</dd>
           </div>
           <div class="order-list__detail">
-            <dt>Order status</dt>
+            <dt>{{ labels.orderStatus }}</dt>
             <dd><OrderStatusBadge :status="row.orderStatus" /></dd>
           </div>
           <div class="order-list__detail">
-            <dt>Payment status</dt>
+            <dt>{{ labels.paymentStatus }}</dt>
             <dd><PaymentStatusBadge :status="row.paymentStatus" /></dd>
           </div>
         </dl>

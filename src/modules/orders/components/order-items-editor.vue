@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import AppButton from '@/shared/ui/app-button.vue'
 import FormField from '@/shared/ui/form-field.vue'
+import { computed } from 'vue'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
 
 export interface DraftOrderItem {
   key: number
@@ -14,6 +17,22 @@ export interface DraftOrderItem {
 const props = defineProps<{ items: DraftOrderItem[] }>()
 
 const emit = defineEmits<{ (e: 'update:items', items: DraftOrderItem[]): void }>()
+
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
+const labels = computed(() => ({
+  productId: tr({ en: 'Product ID', ru: 'ID товара' }, locale.value),
+  productPlaceholder: tr({ en: 'Catalog product id', ru: 'ID товара из каталога' }, locale.value),
+  productName: tr({ en: 'Product name', ru: 'Название товара' }, locale.value),
+  namePlaceholder: tr({ en: 'Snapshot name', ru: 'Название (снимок)' }, locale.value),
+  quantity: tr({ en: 'Quantity', ru: 'Количество' }, locale.value),
+  unitPrice: tr({ en: 'Unit price (₽)', ru: 'Цена за единицу (₽)' }, locale.value),
+  currency: tr({ en: 'Currency', ru: 'Валюта' }, locale.value),
+  currencyHelper: tr({ en: 'Order MVP supports RUB only.', ru: 'MVP заказов поддерживает только RUB.' }, locale.value),
+  removeItem: tr({ en: 'Remove item', ru: 'Убрать позицию' }, locale.value),
+  addItem: tr({ en: 'Add item', ru: 'Добавить позицию' }, locale.value),
+}))
 
 let nextKey = 100
 
@@ -43,15 +62,27 @@ function addItem(): void {
 
 /** Lightweight inline validation helpers (backend remains authoritative). */
 function fieldError(value: string, label: string): string | undefined {
-  return value.trim() === '' ? `${label} is required.` : undefined
+  return value.trim() === ''
+    ? tr({ en: `${label} is required.`, ru: `Поле «${label}» обязательно.` }, locale.value)
+    : undefined
 }
 
 function quantityError(value: number): string | undefined {
-  return !Number.isInteger(value) || value <= 0 ? 'Quantity must be a positive integer.' : undefined
+  return !Number.isInteger(value) || value <= 0
+    ? tr(
+        { en: 'Quantity must be a positive integer.', ru: 'Количество должно быть положительным целым числом.' },
+        locale.value,
+      )
+    : undefined
 }
 
 function priceError(value: number): string | undefined {
-  return !Number.isFinite(value) || value <= 0 ? 'Unit price must be greater than 0.' : undefined
+  return !Number.isFinite(value) || value <= 0
+    ? tr(
+        { en: 'Unit price must be greater than 0.', ru: 'Цена за единицу должна быть больше 0.' },
+        locale.value,
+      )
+    : undefined
 }
 </script>
 
@@ -59,27 +90,27 @@ function priceError(value: number): string | undefined {
   <div class="items-editor">
     <div v-for="(item, i) in items" :key="item.key" class="items-editor__row">
       <div class="items-editor__grid">
-        <FormField label="Product ID" :control-for="`idem-pid-${item.key}`" :error="fieldError(item.product_id, 'Product ID')">
+        <FormField :label="labels.productId" :control-for="`idem-pid-${item.key}`" :error="fieldError(item.product_id, 'Product ID')">
           <input
             :id="`idem-pid-${item.key}`"
             :value="item.product_id"
             type="text"
             autocomplete="off"
-            placeholder="Catalog product id"
+            :placeholder="labels.productPlaceholder"
             @input="set(i, { product_id: ($event.target as HTMLInputElement).value })"
           />
         </FormField>
-        <FormField label="Product name" :control-for="`idem-name-${item.key}`" :error="fieldError(item.name, 'Product name')">
+        <FormField :label="labels.productName" :control-for="`idem-name-${item.key}`" :error="fieldError(item.name, 'Product name')">
           <input
             :id="`idem-name-${item.key}`"
             :value="item.name"
             type="text"
             autocomplete="off"
-            placeholder="Snapshot name"
+            :placeholder="labels.namePlaceholder"
             @input="set(i, { name: ($event.target as HTMLInputElement).value })"
           />
         </FormField>
-        <FormField label="Quantity" :control-for="`idem-qty-${item.key}`" :error="quantityError(item.quantity)">
+        <FormField :label="labels.quantity" :control-for="`idem-qty-${item.key}`" :error="quantityError(item.quantity)">
           <input
             :id="`idem-qty-${item.key}`"
             :value="String(item.quantity)"
@@ -89,7 +120,7 @@ function priceError(value: number): string | undefined {
             @input="set(i, { quantity: Number(($event.target as HTMLInputElement).value) })"
           />
         </FormField>
-        <FormField label="Unit price (₽)" :control-for="`idem-price-${item.key}`" :error="priceError(item.unit_price)">
+        <FormField :label="labels.unitPrice" :control-for="`idem-price-${item.key}`" :error="priceError(item.unit_price)">
           <input
             :id="`idem-price-${item.key}`"
             :value="String(item.unit_price)"
@@ -100,9 +131,9 @@ function priceError(value: number): string | undefined {
           />
         </FormField>
         <FormField
-          label="Currency"
+          :label="labels.currency"
           :control-for="`idem-cur-${item.key}`"
-          helper="Order MVP supports RUB only."
+          :helper="labels.currencyHelper"
         >
           <input
             :id="`idem-cur-${item.key}`"
@@ -113,11 +144,11 @@ function priceError(value: number): string | undefined {
           />
         </FormField>
       </div>
-      <AppButton variant="ghost" size="sm" @click="removeItem(i)">Remove item</AppButton>
+      <AppButton variant="ghost" size="sm" @click="removeItem(i)">{{ labels.removeItem }}</AppButton>
     </div>
 
     <div class="items-editor__add">
-      <AppButton variant="secondary" size="sm" @click="addItem">Add item</AppButton>
+      <AppButton variant="secondary" size="sm" @click="addItem">{{ labels.addItem }}</AppButton>
     </div>
   </div>
 </template>

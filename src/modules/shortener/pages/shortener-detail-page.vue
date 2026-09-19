@@ -20,6 +20,8 @@ import {
   useShortLinkQuery,
 } from '../queries/use-shortener-queries'
 import { formatDateTime } from '../utils/shortener-format'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
 
 /**
  * Link detail + analytics (MASTER_FRONTEND_PLAN §17.2/§17.6). Uses the backend
@@ -31,6 +33,47 @@ import { formatDateTime } from '../utils/shortener-format'
 const route = useRoute()
 const router = useRouter()
 const app = useAppStore()
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
+const labels = computed(() => ({
+  title: tr({ en: 'Link detail', ru: 'Детали ссылки' }, locale.value),
+  subtitle: tr(
+    { en: 'Management metadata, redirect path and click analytics.', ru: 'Метаданные управления, путь редиректа и аналитика кликов.' },
+    locale.value,
+  ),
+  back: tr({ en: 'Back to links', ru: 'К списку ссылок' }, locale.value),
+  denied: tr({ en: 'Access denied', ru: 'Доступ запрещён' }, locale.value),
+  deniedMsg: tr(
+    { en: 'This link requires access that the backend denied (403).', ru: 'Для этой ссылки бэкенд отклонил доступ (403).' },
+    locale.value,
+  ),
+  notFound: tr({ en: 'Link not found', ru: 'Ссылка не найдена' }, locale.value),
+  loadError: tr({ en: 'Unable to load link', ru: 'Не удалось загрузить ссылку' }, locale.value),
+  metadata: tr({ en: 'Link metadata', ru: 'Метаданные ссылки' }, locale.value),
+  shortUrl: tr({ en: 'Short URL', ru: 'Короткий URL' }, locale.value),
+  open: tr({ en: 'Open', ru: 'Открыть' }, locale.value),
+  simulate: tr({ en: 'Simulate redirect', ru: 'Симулировать редирект' }, locale.value),
+  code: tr({ en: 'Code', ru: 'Код' }, locale.value),
+  originalUrl: tr({ en: 'Original URL', ru: 'Исходный URL' }, locale.value),
+  status: tr({ en: 'Status', ru: 'Статус' }, locale.value),
+  expires: tr({ en: 'Expires', ru: 'Истекает' }, locale.value),
+  created: tr({ en: 'Created', ru: 'Создана' }, locale.value),
+  updated: tr({ en: 'Updated', ru: 'Обновлена' }, locale.value),
+  version: tr({ en: 'Version', ru: 'Версия' }, locale.value),
+  emptyTitle: tr({ en: 'No link data', ru: 'Нет данных ссылки' }, locale.value),
+  emptyDesc: tr({ en: 'The API returned no content.', ru: 'API вернул пустой ответ.' }, locale.value),
+}))
+
+const mockNote = computed(() =>
+  tr(
+    {
+      en: 'Mock mode bypasses the short host and opens the original URL directly. Live mode opens the backend-returned short URL and exercises the real HTTP redirect.',
+      ru: 'В mock-режиме короткий хост обходится и открывается исходный URL напрямую. В live-режиме открывается возвращённый бэкендом короткий URL с реальным HTTP-редиректом.',
+    },
+    locale.value,
+  ),
+)
 
 const linkId = computed(() => String(route.params.linkId ?? ''))
 
@@ -73,7 +116,7 @@ const deleteMessage = computed(() => {
     const message = (error as { message?: unknown }).message
     if (typeof message === 'string' && message) return message
   }
-  return 'The link could not be deleted.'
+  return tr({ en: 'The link could not be deleted.', ru: 'Ссылку не удалось удалить.' }, locale.value)
 })
 </script>
 
@@ -81,41 +124,41 @@ const deleteMessage = computed(() => {
   <section class="shortener-detail">
     <header class="shortener-detail__header">
       <div>
-        <h2 class="shortener-detail__title">Link detail</h2>
-        <p class="shortener-detail__subtitle">
-          Management metadata, redirect path and click analytics.
-        </p>
+        <h2 class="shortener-detail__title">{{ labels.title }}</h2>
+        <p class="shortener-detail__subtitle">{{ labels.subtitle }}</p>
       </div>
-      <AppButton variant="secondary" size="sm" @click="router.push('/shortener')">Back to links</AppButton>
+      <AppButton variant="secondary" size="sm" @click="router.push('/shortener')">{{ labels.back }}</AppButton>
     </header>
 
     <LoadingSkeleton v-if="query.isLoading.value" :rows="6" :columns="2" />
 
     <ErrorState
       v-else-if="isDenied"
-      title="Access denied"
-      :message="'This link requires access that the backend denied (403).'"
+      :title="labels.denied"
+      :message="labels.deniedMsg"
     />
 
     <ErrorState
       v-else-if="isNotFound"
-      title="Link not found"
-      :message="`No short link exists for ${linkId}.`"
+      :title="labels.notFound"
+      :message="
+        tr({ en: `No short link exists for ${linkId}.`, ru: `Короткой ссылки ${linkId} не существует.` }, locale)
+      "
     />
 
     <ErrorState
       v-else-if="query.isError.value"
-      title="Unable to load link"
+      :title="labels.loadError"
       :message="mainMessage"
       :on-retry="() => query.refetch()"
     />
 
     <template v-else-if="query.data.value">
       <CardPanel class="shortener-detail__meta">
-        <h3 class="shortener-detail__meta-title">Link metadata</h3>
+        <h3 class="shortener-detail__meta-title">{{ labels.metadata }}</h3>
         <dl class="shortener-detail__list">
           <div class="shortener-detail__row">
-            <dt>Short URL</dt>
+            <dt>{{ labels.shortUrl }}</dt>
             <dd>
               <span v-if="query.data.value.short_url" class="shortener-detail__short">
                 <CodeValue :value="query.data.value.short_url" />
@@ -127,7 +170,7 @@ const deleteMessage = computed(() => {
                   class="shortener-detail__open"
                   data-testid="open-short-url"
                 >
-                  Open
+                  {{ labels.open }}
                 </a>
                 <a
                   v-else-if="query.data.value.short_url && app.isMock"
@@ -137,22 +180,22 @@ const deleteMessage = computed(() => {
                   class="shortener-detail__open"
                   data-testid="simulate-short-url"
                 >
-                  Simulate redirect
+                  {{ labels.simulate }}
                 </a>
               </span>
               <code v-else class="shortener-detail__mono">{{ query.data.value.code }}</code>
             </dd>
           </div>
           <div class="shortener-detail__row">
-            <dt>Code</dt>
+            <dt>{{ labels.code }}</dt>
             <dd><code class="shortener-detail__mono">{{ query.data.value.code }}</code></dd>
           </div>
           <div class="shortener-detail__row">
-            <dt>Original URL</dt>
+            <dt>{{ labels.originalUrl }}</dt>
             <dd class="shortener-detail__wrap">{{ query.data.value.url }}</dd>
           </div>
           <div class="shortener-detail__row">
-            <dt>Status</dt>
+            <dt>{{ labels.status }}</dt>
             <dd>
               <ShortenerStatusBadge
                 :status="query.data.value.status"
@@ -161,26 +204,23 @@ const deleteMessage = computed(() => {
             </dd>
           </div>
           <div class="shortener-detail__row">
-            <dt>Expires</dt>
+            <dt>{{ labels.expires }}</dt>
             <dd>{{ formatDateTime(query.data.value.expires_at) }}</dd>
           </div>
           <div class="shortener-detail__row">
-            <dt>Created</dt>
+            <dt>{{ labels.created }}</dt>
             <dd>{{ formatDateTime(query.data.value.created_at) }}</dd>
           </div>
           <div v-if="query.data.value.updated_at" class="shortener-detail__row">
-            <dt>Updated</dt>
+            <dt>{{ labels.updated }}</dt>
             <dd>{{ formatDateTime(query.data.value.updated_at) }}</dd>
           </div>
           <div v-if="query.data.value.version != null" class="shortener-detail__row">
-            <dt>Version</dt>
+            <dt>{{ labels.version }}</dt>
             <dd>{{ query.data.value.version }}</dd>
           </div>
         </dl>
-        <p v-if="app.isMock" class="shortener-detail__mock-note">
-          Mock mode bypasses the short host and opens the original URL directly.
-          Live mode opens the backend-returned short URL and exercises the real HTTP redirect.
-        </p>
+        <p v-if="app.isMock" class="shortener-detail__mock-note">{{ mockNote }}</p>
       </CardPanel>
 
       <ShortenerManagementActions
@@ -201,7 +241,7 @@ const deleteMessage = computed(() => {
       <ShortenerHelpPanel />
     </template>
 
-    <EmptyState v-else title="No link data" description="The API returned no content." />
+    <EmptyState v-else :title="labels.emptyTitle" :description="labels.emptyDesc" />
   </section>
 </template>
 

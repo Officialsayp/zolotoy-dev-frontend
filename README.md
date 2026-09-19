@@ -190,6 +190,17 @@ A Cloudflare failure while restoring build/dependency cache **before**
 than evidence of a source-code build failure. Clearing the Cloudflare build cache
 and retrying has resolved that failure mode in this project.
 
+## Language (i18n)
+
+The site is fully bilingual (English/Russian). English is the default and
+stays at canonical root URLs; the Russian portfolio lives under `/ru/...`
+(12 statically generated documents total, with hreflang alternates). The
+language switcher sits next to the theme control in both the public header
+and the demo shell. Demo locale: explicit `?lang=ru|en` wins over the
+persisted preference (`zolotoy.locale`), which falls back to English —
+switching preserves the current route, other query parameters and the hash.
+`<html lang>` always follows the active locale.
+
 ## Demo scenarios (mock mode)
 
 In mock mode the demo header shows a **Demo scenario** switcher. Scenarios are

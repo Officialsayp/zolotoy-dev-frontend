@@ -12,6 +12,38 @@ import StatusBadge from '@/shared/ui/status-badge.vue'
 import { useLogoutMutation, useMeQuery } from '../queries/use-auth-queries'
 import { useSessionStore } from '../store/session-store'
 import { formatDate } from '../utils/auth-format'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { authString } from '@/shared/i18n/auth-strings'
+import { tr } from '@/portfolio/i18n'
+
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
+const labels = computed(() => ({
+  profile: authString('profileTitle', locale.value),
+  principal: tr({ en: 'Principal', ru: 'Субъект' }, locale.value),
+  userId: tr({ en: 'User ID', ru: 'ID пользователя' }, locale.value),
+  email: tr({ en: 'Email', ru: 'Email' }, locale.value),
+  status: tr({ en: 'Status', ru: 'Статус' }, locale.value),
+  active: tr({ en: 'Active', ru: 'Активен' }, locale.value),
+  blocked: tr({ en: 'Blocked', ru: 'Заблокирован' }, locale.value),
+  roles: tr({ en: 'Roles', ru: 'Роли' }, locale.value),
+  created: tr({ en: 'Created', ru: 'Создан' }, locale.value),
+  updated: tr({ en: 'Updated', ru: 'Обновлён' }, locale.value),
+  session: tr({ en: 'Session', ru: 'Сессия' }, locale.value),
+  manageSessions: tr({ en: 'Manage sessions', ru: 'Управление сессиями' }, locale.value),
+  adminDemo: authString('adminDemo', locale.value),
+}))
+
+const tokenNote = computed(() =>
+  tr(
+    {
+      en: 'Access token: in memory. The access token is never persisted to browser storage. The refresh token is an HttpOnly cookie owned by the backend and is never exposed to the app.',
+      ru: 'Access-токен: в памяти. Access-токен никогда не сохраняется в хранилище браузера. Refresh-токен — это HttpOnly cookie во владении бэкенда, приложение к нему доступа не имеет.',
+    },
+    locale.value,
+  ),
+)
 
 const router = useRouter()
 const session = useSessionStore()
@@ -26,7 +58,7 @@ const updatedAt = computed(() => (me.value?.updated_at ? formatDate(me.value.upd
 const meErrorMessage = computed(() =>
   typeof error.value === 'object' && error.value !== null && 'message' in error.value
     ? String((error.value as { message: unknown }).message)
-    : 'Profile could not be loaded.',
+    : tr({ en: 'Profile could not be loaded.', ru: 'Не удалось загрузить профиль.' }, locale.value),
 )
 
 async function logout(): Promise<void> {
@@ -38,64 +70,62 @@ async function logout(): Promise<void> {
 <template>
   <div class="auth-profile">
     <div class="auth-profile__toolbar">
-      <h2 class="auth-profile__title">Profile</h2>
-      <AppButton variant="secondary" :loading="isPending" @click="logout">Sign out</AppButton>
+      <h2 class="auth-profile__title">{{ labels.profile }}</h2>
+      <AppButton variant="secondary" :loading="isPending" @click="logout">{{ authString('signOut', locale) }}</AppButton>
     </div>
 
     <LoadingSkeleton v-if="isLoading" :rows="6" :columns="1" />
 
     <ErrorState
       v-else-if="isError"
-      title="Unable to load profile"
+      :title="tr({ en: 'Unable to load profile', ru: 'Не удалось загрузить профиль' }, locale)"
       :message="meErrorMessage"
       :on-retry="() => refetch()"
     />
 
     <div v-else-if="me" class="auth-profile__grid">
       <CardPanel class="auth-profile__section">
-        <h3 class="auth-profile__section-title">Principal</h3>
+        <h3 class="auth-profile__section-title">{{ labels.principal }}</h3>
         <dl class="auth-profile__list">
           <div class="auth-profile__row">
-            <dt>User ID</dt>
+            <dt>{{ labels.userId }}</dt>
             <dd><CodeValue :value="me.id" /></dd>
           </div>
           <div class="auth-profile__row">
-            <dt>Email</dt>
+            <dt>{{ labels.email }}</dt>
             <dd>{{ me.email }}</dd>
           </div>
           <div class="auth-profile__row">
-            <dt>Status</dt>
+            <dt>{{ labels.status }}</dt>
             <dd>
-              <StatusBadge :tone="me.status === 'active' ? 'success' : 'danger'" :label="me.status === 'active' ? 'Active' : 'Blocked'" />
+              <StatusBadge :tone="me.status === 'active' ? 'success' : 'danger'"  :label="me.status === 'active' ? labels.active : labels.blocked" />
             </dd>
           </div>
           <div class="auth-profile__row">
-            <dt>Roles</dt>
+            <dt>{{ labels.roles }}</dt>
             <dd class="auth-profile__roles">
               <StatusBadge v-for="role in me.roles" :key="role" :tone="roleTone(role)" :label="role" />
             </dd>
           </div>
           <div v-if="createdAt" class="auth-profile__row">
-            <dt>Created</dt>
+            <dt>{{ labels.created }}</dt>
             <dd>{{ createdAt }}</dd>
           </div>
           <div v-if="updatedAt" class="auth-profile__row">
-            <dt>Updated</dt>
+            <dt>{{ labels.updated }}</dt>
             <dd>{{ updatedAt }}</dd>
           </div>
         </dl>
       </CardPanel>
 
       <CardPanel class="auth-profile__section">
-        <h3 class="auth-profile__section-title">Session</h3>
+        <h3 class="auth-profile__section-title">{{ labels.session }}</h3>
         <p class="auth-profile__note">
-          <strong>Access token: in memory.</strong> The access token is never persisted to
-          browser storage. The refresh token is an <code>HttpOnly</code> cookie owned by the
-          backend and is never exposed to the app.
+          <strong>{{ tokenNote }}</strong>
         </p>
         <div class="auth-profile__links">
-          <RouterLink class="auth-profile__link" to="/auth/sessions">Manage sessions</RouterLink>
-          <RouterLink v-if="session.isAdmin" class="auth-profile__link" to="/auth/admin">Admin demo</RouterLink>
+          <RouterLink class="auth-profile__link" to="/auth/sessions">{{ labels.manageSessions }}</RouterLink>
+          <RouterLink v-if="session.isAdmin" class="auth-profile__link" to="/auth/admin">{{ labels.adminDemo }}</RouterLink>
         </div>
       </CardPanel>
     </div>
