@@ -9,6 +9,9 @@ import CodeValue from '@/shared/ui/code-value.vue'
 import FormField from '@/shared/ui/form-field.vue'
 
 import { aliasValidationError, urlValidationError } from '../models/shortener-domain'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
+import { labelFor } from '@/shared/i18n/label-strings'
 import type { CreateShortLinkRequest } from '../models/shortener-dto'
 import { useCreateShortLinkMutation } from '../queries/use-shortener-queries'
 
@@ -32,9 +35,31 @@ const submitted = ref(false)
 
 const urlRef = ref<HTMLInputElement | null>(null)
 
-const urlLocalError = computed(() => (submitted.value ? urlValidationError(url.value) : null))
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
+const labels = computed(() => ({
+  url: labelFor('URL', locale.value),
+  urlHelper: tr({ en: 'http:// or https:// only.', ru: 'Только http:// или https://.' }, locale.value),
+  urlPlaceholder: tr({ en: 'https://example.com/some/long/path', ru: 'https://example.com/some/long/path' }, locale.value),
+  alias: tr({ en: 'Custom alias (optional)', ru: 'Свой алиас (необязательно)' }, locale.value),
+  aliasHelper: tr({ en: '4–32 chars: letters, digits, - and _.', ru: '4–32 символа: буквы, цифры, - и _.' }, locale.value),
+  aliasPlaceholder: tr({ en: 'docs', ru: 'docs' }, locale.value),
+  expires: tr({ en: 'Expiration (optional)', ru: 'Срок действия (необязательно)' }, locale.value),
+  expiresHelper: tr({ en: 'Leave empty for a never-expiring link.', ru: 'Оставьте пустым для бессрочной ссылки.' }, locale.value),
+  title: tr({ en: 'New short link', ru: 'Новая короткая ссылка' }, locale.value),
+  submit: tr({ en: 'Create short link', ru: 'Создать короткую ссылку' }, locale.value),
+  createdLabel: tr({ en: 'Created short URL', ru: 'Создан короткий URL' }, locale.value),
+}))
+
+const urlLocalError = computed(() =>
+  submitted.value ? localizeValidation(urlValidationError(url.value)) : null,
+)
+function localizeValidation(value: string | null): string | null {
+  return value === null ? null : labelFor(value, locale.value)
+}
 const aliasLocalError = computed(() =>
-  submitted.value && customAlias.value ? aliasValidationError(customAlias.value) : null,
+  submitted.value && customAlias.value ? localizeValidation(aliasValidationError(customAlias.value)) : null,
 )
 
 interface FormNotice {
@@ -50,24 +75,28 @@ const mutationNotice = computed<FormNotice | null>(() => {
   if (kind === 'rate-limit') {
     return {
       tone: 'warning' as const,
-      text: message || 'Too many requests. Slow down and try again shortly.',
+      text:
+        message ||
+        tr({ en: 'Too many requests. Slow down and try again shortly.', ru: 'Слишком много запросов. Сбавьте темп и попробуйте позже.' }, locale.value),
     }
   }
   if (kind === 'conflict') {
     return {
       tone: 'danger' as const,
-      text: message || 'That alias is already taken. Choose another one.',
+      text:
+        message ||
+        tr({ en: 'That alias is already taken. Choose another one.', ru: 'Этот алиас уже занят. Выберите другой.' }, locale.value),
     }
   }
   if (kind === 'validation') {
     return {
       tone: 'danger' as const,
-      text: message || 'The server rejected this URL.',
+      text: message || tr({ en: 'The server rejected this URL.', ru: 'Сервер отклонил этот URL.' }, locale.value),
     }
   }
   return {
     tone: 'danger' as const,
-    text: message || 'The link could not be created.',
+    text: message || tr({ en: 'The link could not be created.', ru: 'Ссылку не удалось создать.' }, locale.value),
   }
 })
 
@@ -108,15 +137,15 @@ function focusUrl(): void {
 
 <template>
   <CardPanel class="shortener-create" data-testid="shortener-create-form">
-    <h3 class="shortener-create__title">New short link</h3>
+    <h3 class="shortener-create__title">{{ labels.title }}</h3>
 
     <form class="shortener-create__form" novalidate @submit.prevent="onSubmit">
       <FormField
-        label="URL"
+        :label="labels.url"
         required
         control-for="shortener-url"
         :error="urlLocalError"
-        helper="http:// or https:// only."
+        :helper="labels.urlHelper"
       >
         <input
           id="shortener-url"
@@ -127,15 +156,15 @@ function focusUrl(): void {
           :aria-invalid="Boolean(urlLocalError)"
           :aria-describedby="urlLocalError ? 'shortener-url-error' : undefined"
           data-testid="create-url"
-          placeholder="https://example.com/some/long/path"
+          :placeholder="labels.urlPlaceholder"
         />
       </FormField>
 
       <FormField
-        label="Custom alias (optional)"
+        :label="labels.alias"
         control-for="shortener-alias"
         :error="aliasLocalError"
-        helper="4–32 chars: letters, digits, - and _."
+        :helper="labels.aliasHelper"
       >
         <input
           id="shortener-alias"
@@ -143,14 +172,14 @@ function focusUrl(): void {
           class="shortener-create__input"
           :aria-invalid="Boolean(aliasLocalError)"
           data-testid="create-alias"
-          placeholder="docs"
+          :placeholder="labels.aliasPlaceholder"
         />
       </FormField>
 
       <FormField
-        label="Expiration (optional)"
+        :label="labels.expires"
         control-for="shortener-expires"
-        helper="Leave empty for a never-expiring link."
+        :helper="labels.expiresHelper"
       >
         <input
           id="shortener-expires"
@@ -163,7 +192,7 @@ function focusUrl(): void {
 
       <div class="shortener-create__actions">
         <AppButton type="submit" :loading="createMutation.isPending.value" data-testid="create-submit">
-          Create short link
+          {{ labels.submit }}
         </AppButton>
       </div>
     </form>
@@ -179,7 +208,7 @@ function focusUrl(): void {
     </p>
 
     <div v-if="createMutation.data.value" class="shortener-create__result" data-testid="create-result">
-      <p class="shortener-create__result-label">Created short URL</p>
+      <p class="shortener-create__result-label">{{ labels.createdLabel }}</p>
       <CodeValue :value="createMutation.data.value.short_url" />
       <div class="shortener-create__result-actions">
         <a
@@ -202,7 +231,7 @@ function focusUrl(): void {
         >
           Simulate redirect
         </a>
-        <AppButton variant="secondary" size="sm" @click="focusUrl()">Create another</AppButton>
+        <AppButton variant="secondary" size="sm" @click="focusUrl()">{{ tr({ en: 'Create another', ru: 'Создать ещё' }, locale) }}</AppButton>
       </div>
       <p v-if="app.isMock" class="shortener-create__mock-note">
         Mock mode bypasses the short host and opens the original URL directly.

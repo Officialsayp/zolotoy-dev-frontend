@@ -3,6 +3,11 @@ import { computed } from 'vue'
 
 import { useOrderRole } from '../queries/use-order-role'
 import type { OrderRole } from '../models/order-types'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { labelFor } from '@/shared/i18n/label-strings'
+
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
 
 const { role, canSelectDemoRole, setDemoRole } = useOrderRole()
 
@@ -15,10 +20,10 @@ function onRole(event: Event): void {
 
 <template>
   <label v-if="!hidden" class="role-switcher">
-    <span class="role-switcher__label">Acting role</span>
+    <span class="role-switcher__label">{{ labelFor('Acting role', locale) }}</span>
     <select :value="role" class="role-switcher__select" @change="onRole" data-testid="order-role">
-      <option value="buyer">Buyer (user)</option>
-      <option value="service">Service (admin)</option>
+      <option value="buyer">{{ labelFor('Buyer (user)', locale) }}</option>
+      <option value="service">{{ labelFor('Service (admin)', locale) }}</option>
     </select>
   </label>
 </template>

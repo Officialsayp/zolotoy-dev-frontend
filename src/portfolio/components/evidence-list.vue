@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { EvidenceSource } from '@/content/types'
+import { tr } from '@/portfolio/i18n'
 
-defineProps<{ evidence: EvidenceSource[] }>()
+const props = defineProps<{ evidence: EvidenceSource[]; locale?: 'en' | 'ru' }>()
+
+const locale = computed(() => props.locale ?? 'en')
 
 function evidenceHref(item: EvidenceSource): string {
   if (item.repository.startsWith('http')) {
@@ -14,12 +18,16 @@ function evidenceHref(item: EvidenceSource): string {
 function isLink(item: EvidenceSource): boolean {
   return item.repository.startsWith('http')
 }
+
+const reviewedLabel = computed(() =>
+  tr({ en: 'reviewed', ru: 'проверено' }, locale.value),
+)
 </script>
 
 <template>
   <ul class="evidence-list">
     <li v-for="item in evidence" :key="item.id">
-      <strong>{{ item.label }}</strong>
+      <strong>{{ tr(item.label, locale) }}</strong>
       <span aria-hidden="true"> — </span>
       <template v-if="isLink(item)">
         <a :href="evidenceHref(item)" rel="noopener noreferrer">
@@ -34,7 +42,7 @@ function isLink(item: EvidenceSource): boolean {
       <span v-if="item.revision" aria-hidden="true"> · </span>
       <span v-if="item.revision"><code>{{ item.revision.slice(0, 8) }}</code></span>
       <span aria-hidden="true"> · </span>
-      <span>reviewed {{ item.reviewedOn }}</span>
+      <span>{{ reviewedLabel }} {{ item.reviewedOn }}</span>
     </li>
   </ul>
 </template>

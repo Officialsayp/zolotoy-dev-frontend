@@ -1,23 +1,28 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { ApiMode } from '@/shared/config/app-config'
+import { uiString } from '@/shared/i18n/ui-strings'
 
-defineProps<{
+const props = defineProps<{
   apiMode: ApiMode
   deployEnv?: string
+  locale?: 'en' | 'ru'
 }>()
+
+const locale = computed(() => props.locale ?? 'en')
+
+const label = computed(() =>
+  props.apiMode === 'mock' ? uiString('badgeMock', locale.value) : uiString('badgeLive', locale.value),
+)
+const title = computed(() =>
+  props.apiMode === 'mock' ? uiString('badgeMockTitle', locale.value) : uiString('badgeLiveTitle', locale.value),
+)
 </script>
 
 <template>
-  <span
-    :class="['service-badge', apiMode === 'mock' ? 'service-badge--mock' : 'service-badge--live']"
-    :title="
-      apiMode === 'mock'
-        ? 'Simulated data served by MSW — no backend required'
-        : 'Connected to live backend hosts — health is shown separately'
-    "
-  >
+  <span :class="['service-badge', apiMode === 'mock' ? 'service-badge--mock' : 'service-badge--live']" :title="title">
     <!-- The label describes the selected data source, not network health. -->
-    <span class="service-badge__label">{{ apiMode === 'mock' ? 'Data source: Mock' : 'Data source: Live API' }}</span>
+    <span class="service-badge__label">{{ label }}</span>
     <span v-if="deployEnv" class="service-badge__env">{{ deployEnv }}</span>
   </span>
 </template>

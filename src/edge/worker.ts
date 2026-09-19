@@ -99,6 +99,13 @@ const PUBLIC_PATHS = new Set<string>([
   '/services/auth/',
   '/services/notification/',
   '/services/url-shortener/',
+  // RU locale documents (prerendered under /ru/ in dist).
+  '/ru/',
+  '/ru/architecture/',
+  '/ru/services/order/',
+  '/ru/services/auth/',
+  '/ru/services/notification/',
+  '/ru/services/url-shortener/',
 ])
 
 function canonicalizePublic(pathname: string): string | null {
@@ -172,8 +179,17 @@ export default {
 
     // 4. Everything else: static asset or native 404 handling. The ASSETS
     // binding forwards to the asset layer (html_handling and
-    // not_found_handling still apply).
+    // not_found_handling still apply). Unknown /ru/... paths get the RU 404
+    // document so the error page language matches the namespace.
     const assetResponse = await env.ASSETS.fetch(request)
+    if (
+      assetResponse.status === 404 &&
+      (pathname === '/ru' || pathname.startsWith('/ru/')) &&
+      !pathname.startsWith('/ru/assets/')
+    ) {
+      const ru404 = await env.ASSETS.fetch(new URL('/ru/404.html', url.origin))
+      return new Response(ru404.body, { status: 404, headers: ru404.headers })
+    }
     return assetResponse
   },
 }

@@ -10,15 +10,23 @@ import { authCode } from '../models/auth-error'
  */
 export type AuthFailureReason = 'none' | 'expired' | 'revoked' | 'reuse-detected'
 
-const REASON_MESSAGE: Record<Exclude<AuthFailureReason, 'none'>, string> = {
-  expired: 'Your session expired. Sign in again.',
-  revoked: 'This session was revoked. Sign in again.',
-  'reuse-detected':
-    'This session was revoked because a refresh token replay was detected. Sign in again.',
+const REASON_MESSAGE: Record<Exclude<AuthFailureReason, 'none'>, { en: string; ru: string }> = {
+  expired: {
+    en: 'Your session expired. Sign in again.',
+    ru: 'Срок действия сессии истёк. Войдите снова.',
+  },
+  revoked: {
+    en: 'This session was revoked. Sign in again.',
+    ru: 'Эта сессия была отозвана. Войдите снова.',
+  },
+  'reuse-detected': {
+    en: 'This session was revoked because a refresh token replay was detected. Sign in again.',
+    ru: 'Сессия отозвана: обнаружено повторное использование refresh-токена. Войдите снова.',
+  },
 }
 
-export function reasonMessage(reason: AuthFailureReason): string {
-  return reason === 'none' ? '' : REASON_MESSAGE[reason]
+export function reasonMessage(reason: AuthFailureReason, locale: 'en' | 'ru' = 'en'): string {
+  return reason === 'none' ? '' : REASON_MESSAGE[reason][locale]
 }
 
 /** Map a normalizeable auth error to the safest user-facing reason. */

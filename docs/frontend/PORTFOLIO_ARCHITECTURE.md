@@ -48,6 +48,21 @@ JSON-LD and the sitemap derive from it. Rules:
   `measured` (reproducible artifact). The measurement list is initially empty;
   never fabricate benchmarks or coverage.
 
+## Localization (EN/RU)
+
+The public layer renders both locales statically: six EN documents at root
+paths, six RU documents under `/ru/...` — 12 indexable documents with
+canonical + hreflang (en/ru/x-default) metadata and a bilingual sitemap.
+`src/shared/i18n/` owns the strict `Locale` model, dictionaries (EN source,
+RU parity enforced by unit test) and the demo locale store
+(`?lang=` → `zolotoy.locale` → EN). The typed content layer
+(`src/content/**`) carries `{ en, ru }` copy alongside invariant technical
+data (IDs, evidence paths, revisions). Dates/numbers use locale-aware
+`Intl` formatting; protocol values and code identifiers stay untranslated.
+
+Unknown paths under `/ru/...` serve a Russian 404 document; the demo stays
+noindex in both locales.
+
 ## Build pipeline
 
 `npm run build`:

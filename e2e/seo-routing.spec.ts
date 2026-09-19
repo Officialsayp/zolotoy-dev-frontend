@@ -23,10 +23,24 @@ test.describe('public documents', () => {
       const html = await response.text()
       expect(html).toContain(`<link rel="canonical" href="${canonical}" />`)
       expect(html).toContain('<meta name="robots" content="index,follow" />')
+      expect(html).toContain('hreflang="ru"')
+      expect(html).toContain('hreflang="x-default"')
       // Meaningful body before JS: the app root is not empty and contains the
       // page H1 (the shared shell markup precedes it).
       const appStart = html.indexOf('<div id="app">')
       expect(html.slice(appStart)).toContain('<h1')
+    })
+
+    const ruPath = '/ru' + (path === '/' ? '/' : path)
+    test(`${ruPath} serves the RU document`, async ({ request }) => {
+      const response = await request.get(ruPath)
+      expect(response.status()).toBe(200)
+      const html = await response.text()
+      expect(html).toContain(`<link rel="canonical" href="https://zolotoy.dev${ruPath}" />`)
+      expect(html).toContain('<html lang="ru">')
+      expect(html).toContain('hreflang="en"')
+      // Russian copy renders before JS.
+      expect(html).toMatch(/[А-Яа-яЁё]/)
     })
   }
 })
@@ -119,4 +133,12 @@ test('hash is preserved through legacy redirects in a browser', async ({ page })
   // Fragment inheritance: the browser preserves the fragment across redirects.
   const hash = await page.evaluate(() => window.location.hash)
   expect(hash).toBe('#history')
+})
+
+test('unknown /ru/ path serves the Russian 404 document', async ({ request }) => {
+  const response = await request.get('/ru/no-such-document/')
+  expect(response.status()).toBe(404)
+  const html = await response.text()
+  expect(html).toContain('<html lang="ru">')
+  expect(html).toContain('Страница не найдена')
 })

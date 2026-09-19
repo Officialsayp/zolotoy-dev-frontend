@@ -37,12 +37,18 @@ test('public navigation works without JavaScript', async ({ browser }) => {
   await context.close()
 })
 
-test('legacy hash-free theme toggle keeps working on public pages', async ({ page }) => {
+test('theme toggle keeps working on public pages in both locales', async ({ page }) => {
   await page.goto('/')
   const toggle = page.getByRole('button', { name: /Theme:/ })
   await expect(toggle).toBeVisible()
   await toggle.click()
-  await expect(toggle).toHaveAccessibleDescription(/light|dark|system/)
+  await expect(toggle).toHaveAccessibleDescription(/Theme:/)
+  // RU page keeps the localized label with the same semantics.
+  await page.goto('/ru/')
+  const toggleRu = page.getByRole('button', { name: /Тема:/ })
+  await expect(toggleRu).toBeVisible()
+  await toggleRu.click()
+  await expect(toggleRu).toHaveAccessibleDescription(/Тема:/)
 })
 
 test('portfolio pages have no horizontal overflow at narrow widths', async ({ page }) => {
@@ -64,4 +70,64 @@ test('case-study TOC links scroll to rendered sections', async ({ page }) => {
   await expect(toc).toBeVisible()
   await toc.getByRole('link', { name: 'Evidence' }).click()
   await expect(page.getByRole('heading', { name: 'Evidence', level: 2 })).toBeVisible()
+})
+
+test.describe('language switching (public)', () => {
+  const PAGES = ['/', '/architecture/', '/services/auth/']
+
+  for (const docPath of PAGES) {
+    test(`switch ${docPath} EN→RU→EN preserves the semantic document`, async ({ page }) => {
+      const ruPath = '/ru' + (docPath === '/' ? '/' : docPath)
+      await page.goto(docPath)
+      await page.getByRole('navigation', { name: 'Language' }).getByRole('link', { name: 'RU' }).click()
+      await expect(page).toHaveURL(new RegExp(ruPath.replace(/\//g, '\\/') + '$'))
+      await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
+      await expect(page.getByRole('navigation', { name: 'Портфолио' }).getByRole('link', { name: 'Главная' })).toBeVisible()
+      // Switch back.
+      await page.getByRole('navigation', { name: 'Язык' }).getByRole('link', { name: 'EN' }).click()
+      await expect(page).toHaveURL(new RegExp(docPath.replace(/\//g, '\\/') + '$'))
+      await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    })
+  }
+
+  test('RU pages work without JavaScript (anchors only)', async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false })
+    const page = await context.newPage()
+    await page.goto('/ru/')
+    await expect(page.getByRole('heading', { name: /Go Backend/ })).toBeVisible()
+    await page.getByRole('navigation', { name: 'Портфолио' }).getByRole('link', { name: 'Архитектура' }).click()
+    await expect(page.getByRole('heading', { name: 'Архитектура системы' })).toBeVisible()
+    await context.close()
+  })
+})
+
+test.describe('primary button hover regression (section 32)', () => {
+  const combos: [string, 'dark' | 'light'][] = [
+    ['/', 'dark'],
+    ['/', 'light'],
+    ['/ru/', 'dark'],
+    ['/ru/', 'light'],
+  ]
+  for (const [docPath, theme] of combos) {
+    test(`primary button text stays readable in ${docPath} ${theme}`, async ({ page }) => {
+      await page.goto(docPath)
+      // Set explicit theme via localStorage (init script runs before paint).
+      await page.evaluate((t) => localStorage.setItem('zolotoy.dev:theme', t), theme)
+      await page.reload()
+      const primary = page.locator('.portfolio-btn--primary').first()
+      await expect(primary).toBeVisible()
+      const colors = await primary.evaluate((el) => {
+        const cs = getComputedStyle(el)
+        return { text: cs.color, bg: cs.backgroundColor }
+      })
+      expect(colors.text).not.toBe(colors.bg)
+      // Hover state keeps text readable (CSS :hover keeps accent-contrast).
+      await primary.hover()
+      const hoverColors = await primary.evaluate((el) => {
+        const cs = getComputedStyle(el)
+        return { text: cs.color, bg: cs.backgroundColor }
+      })
+      expect(hoverColors.text).not.toBe(hoverColors.bg)
+    })
+  }
 })

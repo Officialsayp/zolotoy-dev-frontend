@@ -1,7 +1,25 @@
 <script setup lang="ts">
 import CardPanel from '@/shared/ui/card-panel.vue'
+import { computed } from 'vue'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
+
 import CodeValue from '@/shared/ui/code-value.vue'
 import type { OrderDetailView } from '../models/order-view-model'
+
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
+const labels = computed(() => ({
+  caption: tr({ en: 'Item snapshots as of purchase (server-authoritative)', ru: 'Снимки позиций на момент покупки (авторитет — сервер)' }, locale.value),
+  product: tr({ en: 'Product', ru: 'Товар' }, locale.value),
+  productId: tr({ en: 'Product ID', ru: 'ID товара' }, locale.value),
+  qty: tr({ en: 'Qty', ru: 'Кол-во' }, locale.value),
+  quantity: tr({ en: 'Quantity', ru: 'Количество' }, locale.value),
+  unitPrice: tr({ en: 'Unit price', ru: 'Цена за единицу' }, locale.value),
+  total: tr({ en: 'Total', ru: 'Итого' }, locale.value),
+  cards: tr({ en: 'Item snapshots as of purchase', ru: 'Снимки позиций на момент покупки' }, locale.value),
+}))
 
 defineProps<{ items: OrderDetailView['items'] }>()
 </script>
@@ -10,14 +28,14 @@ defineProps<{ items: OrderDetailView['items'] }>()
   <CardPanel class="order-items" padding="none">
     <div class="order-items__scroll">
       <table class="order-items__table">
-        <caption class="order-items__caption">Item snapshots as of purchase (server-authoritative)</caption>
+        <caption class="order-items__caption">{{ labels.caption }}</caption>
         <thead>
           <tr>
-            <th scope="col">Product</th>
-            <th scope="col">Product ID</th>
-            <th scope="col">Qty</th>
-            <th scope="col" class="order-items__num">Unit price</th>
-            <th scope="col" class="order-items__num">Total</th>
+            <th scope="col">{{ labels.product }}</th>
+            <th scope="col">{{ labels.productId }}</th>
+            <th scope="col">{{ labels.qty }}</th>
+            <th scope="col" class="order-items__num">{{ labels.unitPrice }}</th>
+            <th scope="col" class="order-items__num">{{ labels.total }}</th>
           </tr>
         </thead>
         <tbody>
@@ -32,24 +50,24 @@ defineProps<{ items: OrderDetailView['items'] }>()
       </table>
     </div>
 
-    <div class="order-items__cards" role="list" aria-label="Item snapshots as of purchase">
+    <div class="order-items__cards" role="list" :aria-label="labels.cards">
       <article v-for="item in items" :key="item.id" class="order-items__card" role="listitem">
         <div class="order-items__card-name">{{ item.name }}</div>
         <dl class="order-items__details">
           <div class="order-items__detail order-items__detail--wide">
-            <dt>Product ID</dt>
+            <dt>{{ labels.productId }}</dt>
             <dd><CodeValue :value="item.productId" /></dd>
           </div>
           <div class="order-items__detail">
-            <dt>Quantity</dt>
+            <dt>{{ labels.quantity }}</dt>
             <dd>{{ item.quantity }}</dd>
           </div>
           <div class="order-items__detail">
-            <dt>Unit price</dt>
+            <dt>{{ labels.unitPrice }}</dt>
             <dd>{{ item.unitPrice }}</dd>
           </div>
           <div class="order-items__detail">
-            <dt>Total</dt>
+            <dt>{{ labels.total }}</dt>
             <dd class="order-items__strong">{{ item.totalPrice }}</dd>
           </div>
         </dl>

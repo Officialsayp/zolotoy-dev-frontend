@@ -6,15 +6,24 @@ import { UserRound } from 'lucide-vue-next'
 import AppButton from '@/shared/ui/app-button.vue'
 import { useSessionStore } from '@/modules/auth/store/session-store'
 import { useLogoutMutation } from '@/modules/auth/queries/use-auth-queries'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { uiString } from '@/shared/i18n/ui-strings'
+
+const props = defineProps<{ locale?: 'en' | 'ru' }>()
 
 const session = useSessionStore()
 const router = useRouter()
+const localeStore = useLocaleStore()
 const { mutateAsync, isPending } = useLogoutMutation()
 
+const locale = computed(() => props.locale ?? localeStore.get())
+
 const label = computed(() => {
-  if (session.status === 'authenticated') return 'Signed in'
-  if (session.status === 'anonymous') return 'Guest'
-  return 'Checking session…'
+  if (session.status === 'authenticated')
+    return uiString('signInLink', locale.value) === 'Войти' ? 'Вы вошли' : 'Signed in'
+  if (session.status === 'anonymous')
+    return locale.value === 'ru' ? 'Гость' : 'Guest'
+  return locale.value === 'ru' ? 'Проверка сессии…' : 'Checking session…'
 })
 
 const tone = computed(() => {
@@ -31,18 +40,18 @@ async function logout(): Promise<void> {
 
 <template>
   <div class="auth-widget" :class="tone">
-    <span class="auth-widget__status" :title="`Session: ${session.status}`">
+    <span class="auth-widget__status" :title="`${uiString('sessionStatus', locale)}: ${session.status}`">
       <UserRound aria-hidden="true" />
       <span>{{ session.isAuthenticated ? session.email || label : label }}</span>
       <span v-if="session.isAdmin" class="auth-widget__role">admin</span>
     </span>
 
     <template v-if="session.isAuthenticated">
-      <RouterLink class="auth-widget__link" to="/auth/profile">Profile</RouterLink>
-      <AppButton variant="ghost" size="sm" :loading="isPending" @click="logout">Sign out</AppButton>
+      <RouterLink class="auth-widget__link" to="/auth/profile">{{ uiString('profileLink', locale) }}</RouterLink>
+      <AppButton variant="ghost" size="sm" :loading="isPending" @click="logout">{{ uiString('signOut', locale) }}</AppButton>
     </template>
     <RouterLink v-else-if="session.status === 'anonymous'" class="auth-widget__link" to="/auth/login">
-      Sign in
+      {{ uiString('signInLink', locale) }}
     </RouterLink>
   </div>
 </template>

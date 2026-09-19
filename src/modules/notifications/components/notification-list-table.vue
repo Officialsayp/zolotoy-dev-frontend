@@ -1,10 +1,31 @@
 <script setup lang="ts">
 import CardPanel from '@/shared/ui/card-panel.vue'
+import { computed } from 'vue'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
 import CodeValue from '@/shared/ui/code-value.vue'
 
 import { CHANNEL_LABELS, maskRecipient } from '../models/notification-domain'
 import type { NotificationJobDto } from '../models/notification-dto'
 import NotificationStatusBadge from './notification-status-badge.vue'
+
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
+const labels = computed(() => ({
+  caption: tr({ en: 'Delivery jobs, newest first (keyset pagination)', ru: 'Задачи доставки, сначала новые (keyset-пагинация)' }, locale.value),
+  job: tr({ en: 'Job', ru: 'Задача' }, locale.value),
+  event: tr({ en: 'Event', ru: 'Событие' }, locale.value),
+  channel: tr({ en: 'Channel', ru: 'Канал' }, locale.value),
+  recipient: tr({ en: 'Recipient', ru: 'Получатель' }, locale.value),
+  status: tr({ en: 'Status', ru: 'Статус' }, locale.value),
+  attempts: tr({ en: 'Attempts', ru: 'Попытки' }, locale.value),
+  nextAttempt: tr({ en: 'Next attempt', ru: 'Следующая попытка' }, locale.value),
+  lastError: tr({ en: 'Last error', ru: 'Последняя ошибка' }, locale.value),
+  created: tr({ en: 'Created', ru: 'Создана' }, locale.value),
+  open: tr({ en: 'Open', ru: 'Открыть' }, locale.value),
+  cardsAria: tr({ en: 'Delivery jobs, newest first', ru: 'Задачи доставки, сначала новые' }, locale.value),
+}))
 
 defineProps<{ jobs: NotificationJobDto[] }>()
 
@@ -24,15 +45,15 @@ function shortId(value: string): string {
         </caption>
         <thead>
           <tr>
-            <th scope="col">Job</th>
-            <th scope="col">Event</th>
-            <th scope="col">Channel</th>
-            <th scope="col">Recipient</th>
-            <th scope="col">Status</th>
-            <th scope="col" class="notification-list__num">Attempts</th>
-            <th scope="col">Next attempt</th>
-            <th scope="col">Last error</th>
-            <th scope="col">Created</th>
+            <th scope="col">{{ labels.job }}</th>
+            <th scope="col">{{ labels.event }}</th>
+            <th scope="col">{{ labels.channel }}</th>
+            <th scope="col">{{ labels.recipient }}</th>
+            <th scope="col">{{ labels.status }}</th>
+            <th scope="col" class="notification-list__num">{{ labels.attempts }}</th>
+            <th scope="col">{{ labels.nextAttempt }}</th>
+            <th scope="col">{{ labels.lastError }}</th>
+            <th scope="col">{{ labels.created }}</th>
           </tr>
         </thead>
         <tbody>
@@ -44,7 +65,7 @@ function shortId(value: string): string {
                   :to="`/notifications/${job.id}`"
                   class="notification-list__link notification-list__open-link"
                 >
-                  Open
+                  {{ labels.open }}
                 </RouterLink>
               </div>
             </td>
@@ -69,18 +90,18 @@ function shortId(value: string): string {
     </div>
 
     <!-- Phones, tablets and narrower desktop content: cards avoid horizontal scrolling. -->
-    <div class="notification-list__cards" role="list" aria-label="Delivery jobs, newest first">
+    <div class="notification-list__cards" role="list" :aria-label="labels.cardsAria">
       <article v-for="job in jobs" :key="job.id" class="notification-list__card" role="listitem">
         <header class="notification-list__card-header">
           <div class="notification-list__card-job">
-            <span class="notification-list__field-label">Job</span>
+            <span class="notification-list__field-label">{{ labels.job }}</span>
             <div class="notification-list__job-ref">
               <CodeValue :value="job.id" :display="shortId(job.id)" />
               <RouterLink
                 :to="`/notifications/${job.id}`"
                 class="notification-list__link notification-list__open-link"
               >
-                Open
+                {{ labels.open }}
               </RouterLink>
             </div>
           </div>
@@ -89,7 +110,7 @@ function shortId(value: string): string {
 
         <dl class="notification-list__details">
           <div class="notification-list__detail notification-list__detail--wide">
-            <dt>Event</dt>
+            <dt>{{ labels.event }}</dt>
             <dd>
               <RouterLink :to="`/notifications/events/${job.event_id}`" class="notification-list__link">
                 <code class="notification-list__mono notification-list__wrap">{{ job.event_type }}</code>
@@ -98,22 +119,22 @@ function shortId(value: string): string {
           </div>
 
           <div class="notification-list__detail">
-            <dt>Channel</dt>
+            <dt>{{ labels.channel }}</dt>
             <dd>{{ CHANNEL_LABELS[job.channel] }}</dd>
           </div>
 
           <div class="notification-list__detail">
-            <dt>Attempts</dt>
+            <dt>{{ labels.attempts }}</dt>
             <dd>{{ job.attempt_count }}</dd>
           </div>
 
           <div class="notification-list__detail notification-list__detail--wide">
-            <dt>Recipient</dt>
+            <dt>{{ labels.recipient }}</dt>
             <dd class="notification-list__wrap">{{ maskRecipient(job.recipient, job.channel) }}</dd>
           </div>
 
           <div class="notification-list__detail notification-list__detail--wide">
-            <dt>Last error</dt>
+            <dt>{{ labels.lastError }}</dt>
             <dd>
               <code v-if="job.last_error_code" class="notification-list__mono notification-list__wrap">
                 {{ job.last_error_code }}
@@ -123,12 +144,12 @@ function shortId(value: string): string {
           </div>
 
           <div class="notification-list__detail notification-list__detail--wide">
-            <dt>Next attempt</dt>
+            <dt>{{ labels.nextAttempt }}</dt>
             <dd class="notification-list__wrap">{{ job.next_attempt_at || '—' }}</dd>
           </div>
 
           <div class="notification-list__detail notification-list__detail--wide">
-            <dt>Created</dt>
+            <dt>{{ labels.created }}</dt>
             <dd class="notification-list__wrap">{{ job.created_at }}</dd>
           </div>
         </dl>

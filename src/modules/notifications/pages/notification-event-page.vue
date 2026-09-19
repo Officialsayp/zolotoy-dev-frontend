@@ -9,11 +9,42 @@ import ErrorState from '@/shared/ui/error-state.vue'
 import LoadingSkeleton from '@/shared/ui/loading-skeleton.vue'
 import StatusBadge from '@/shared/ui/status-badge.vue'
 
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
 import NotificationStatusBadge from '../components/notification-status-badge.vue'
 import { useNotificationEventQuery } from '../queries/use-notification-queries'
 import { formatDateTime, shortenId } from '../utils/notification-format'
 
 const route = useRoute()
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
+const labels = computed(() => ({
+  title: tr({ en: 'Notification event', ru: 'Событие уведомления' }, locale.value),
+  subtitle: tr(
+    { en: 'Input event origin, consumption/deduplication and resulting jobs.', ru: 'Источник входного события, консьюминг/дедупликация и созданные задачи.' },
+    locale.value,
+  ),
+  denied: tr({ en: 'Access denied', ru: 'Доступ запрещён' }, locale.value),
+  deniedMsg: tr(
+    { en: 'This event requires access that the backend denied (403).', ru: 'Для этого события бэкенд отклонил доступ (403).' },
+    locale.value,
+  ),
+  notFound: tr({ en: 'Event not found', ru: 'Событие не найдено' }, locale.value),
+  loadError: tr({ en: 'Unable to load event', ru: 'Не удалось загрузить событие' }, locale.value),
+  metadata: tr({ en: 'Event metadata', ru: 'Метаданные события' }, locale.value),
+  eventId: tr({ en: 'Event ID', ru: 'ID события' }, locale.value),
+  eventType: tr({ en: 'Event type', ru: 'Тип события' }, locale.value),
+  occurred: tr({ en: 'Occurred', ru: 'Время события' }, locale.value),
+  producer: tr({ en: 'Producer', ru: 'Продюсер' }, locale.value),
+  aggregate: tr({ en: 'Order / aggregate', ru: 'Заказ / агрегат' }, locale.value),
+  correlation: tr({ en: 'Correlation', ru: 'Корреляция' }, locale.value),
+  consumption: tr({ en: 'Consumption & deduplication', ru: 'Консьюминг и дедупликация' }, locale.value),
+  consumed: tr({ en: 'Durably consumed', ru: 'Надёжно обработано' }, locale.value),
+  duplicate: tr({ en: 'Duplicate received — deduplicated, no new job', ru: 'Получен дубликат — дедуплицирован, новая задача не создана' }, locale.value),
+  jobs: tr({ en: 'Resulting jobs', ru: 'Созданные задачи' }, locale.value),
+  noJobs: tr({ en: 'No delivery jobs were produced from this event.', ru: 'Из этого события не было создано задач доставки.' }, locale.value),
+}))
 const eventId = computed(() => String(route.params.eventId ?? ''))
 
 const query = useNotificationEventQuery(eventId)
@@ -47,10 +78,8 @@ const view = computed(() => query.data.value)
   <section class="notification-event-page">
     <header class="notification-event-page__header">
       <div>
-        <h2 class="notification-event-page__title">Notification event</h2>
-        <p class="notification-event-page__subtitle">
-          Input event origin, consumption/deduplication and resulting jobs.
-        </p>
+        <h2 class="notification-event-page__title">{{ labels.title }}</h2>
+        <p class="notification-event-page__subtitle">{{ labels.subtitle }}</p>
       </div>
     </header>
 
@@ -58,72 +87,73 @@ const view = computed(() => query.data.value)
 
     <ErrorState
       v-else-if="isDenied"
-      title="Access denied"
-      :message="'This event requires access that the backend denied (403).'"
+      :title="labels.denied"
+      :message="labels.deniedMsg"
     />
 
     <ErrorState
       v-else-if="isNotFound"
-      title="Event not found"
-      :message="`No input event exists for ${eventId}.`"
+      :title="labels.notFound"
+      :message="
+        tr({ en: `No input event exists for ${eventId}.`, ru: `Входного события ${eventId} не существует.` }, locale)
+      "
     />
 
     <ErrorState
       v-else-if="query.isError.value"
-      title="Unable to load event"
+      :title="labels.loadError"
       :message="mainError"
       :on-retry="() => query.refetch()"
     />
 
     <template v-else-if="view">
       <CardPanel class="notification-event-page__card">
-        <h3 class="notification-event-page__card-title">Event metadata</h3>
+        <h3 class="notification-event-page__card-title">{{ labels.metadata }}</h3>
         <dl class="notification-event-page__list">
           <div class="notification-event-page__row">
-            <dt>Event ID</dt>
+            <dt>{{ labels.eventId }}</dt>
             <dd><CodeValue :value="view.event.event_id" /></dd>
           </div>
           <div class="notification-event-page__row">
-            <dt>Event type</dt>
+            <dt>{{ labels.eventType }}</dt>
             <dd><code class="notification-event-page__mono">{{ view.event.event_type }}</code></dd>
           </div>
           <div v-if="view.event.occurred_at" class="notification-event-page__row">
-            <dt>Occurred</dt>
+            <dt>{{ labels.occurred }}</dt>
             <dd>{{ formatDateTime(view.event.occurred_at) }}</dd>
           </div>
           <div v-if="view.event.producer" class="notification-event-page__row">
-            <dt>Producer</dt>
+            <dt>{{ labels.producer }}</dt>
             <dd>{{ view.event.producer }}</dd>
           </div>
           <div v-if="view.event.aggregate_id" class="notification-event-page__row">
-            <dt>Order / aggregate</dt>
+            <dt>{{ labels.aggregate }}</dt>
             <dd><CodeValue :value="view.event.aggregate_id" /></dd>
           </div>
           <div v-if="view.event.correlation_id" class="notification-event-page__row">
-            <dt>Correlation</dt>
+            <dt>{{ labels.correlation }}</dt>
             <dd><CodeValue :value="view.event.correlation_id" /></dd>
           </div>
         </dl>
       </CardPanel>
 
       <CardPanel class="notification-event-page__card">
-        <h3 class="notification-event-page__card-title">Consumption &amp; deduplication</h3>
+        <h3 class="notification-event-page__card-title">{{ labels.consumption }}</h3>
         <div class="notification-event-page__badges">
-          <StatusBadge tone="success" label="Durably consumed" dot />
+          <StatusBadge tone="success"  :label="labels.consumed" dot />
           <StatusBadge
             v-if="view.duplicate_received"
             tone="warning"
-            label="Duplicate received — deduplicated, no new job"
+             :label="labels.duplicate"
           />
         </div>
         <p v-if="view.received_count != null" class="notification-event-page__hint">
-          Received {{ view.received_count }} time(s) (Kafka at-least-once). At-least-once means
-          duplicates are normal; the inbox deduplicated them so no second job was created.
+          {{ tr({ en: 'Received', ru: 'Получено' }, locale) }} {{ view.received_count }} {{ tr({ en: 'time(s) (Kafka at-least-once). At-least-once means duplicates are normal; the inbox deduplicated them so no second job was created.', ru: 'раз (Kafka at-least-once). At-least-once означает, что дубликаты нормальны; inbox их дедуплицировал, поэтому второй задачи не создано.' }, locale) }}
         </p>
       </CardPanel>
 
       <CardPanel class="notification-event-page__card" padding="none">
-        <h3 class="notification-event-page__jobs-title">Resulting jobs</h3>
+        <h3 class="notification-event-page__jobs-title">{{ labels.jobs }}</h3>
         <template v-if="view.jobs && view.jobs.length > 0">
           <ul class="notification-event-page__jobs" data-testid="event-jobs">
             <li v-for="job in view.jobs" :key="job.id" class="notification-event-page__job">
@@ -134,11 +164,11 @@ const view = computed(() => query.data.value)
             </li>
           </ul>
         </template>
-        <p v-else class="notification-event-page__hint">No delivery jobs were produced from this event.</p>
+        <p v-else class="notification-event-page__hint">{{ labels.noJobs }}</p>
       </CardPanel>
     </template>
 
-    <EmptyState v-else title="No event data" description="The API returned no content." />
+    <EmptyState v-else :title="tr({ en: 'No event data', ru: 'Нет данных события' }, locale)" :description="tr({ en: 'The API returned no content.', ru: 'API вернул пустой ответ.' }, locale)" />
   </section>
 </template>
 

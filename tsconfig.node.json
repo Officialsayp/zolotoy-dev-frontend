@@ -5,6 +5,7 @@
     "playwright.config.*",
     "scripts/vite-site-plugin.ts",
     "src/shared/routing/site-routes.ts",
+    "src/shared/i18n/locale.ts",
     "e2e/**/*.ts"
   ],
   "compilerOptions": {

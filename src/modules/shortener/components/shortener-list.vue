@@ -6,6 +6,9 @@ import CodeValue from '@/shared/ui/code-value.vue'
 
 import type { ShortLinkDto } from '../models/shortener-dto'
 import { formatDateTime, truncateUrl } from '../utils/shortener-format'
+import { computed } from 'vue'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
 import ShortenerStatusBadge from './shortener-status-badge.vue'
 
 defineProps<{
@@ -13,6 +16,13 @@ defineProps<{
 }>()
 
 const app = useAppStore()
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
+const labels = computed(() => ({
+  details: tr({ en: 'Details', ru: 'Подробнее' }, locale.value),
+  mockTitle: tr({ en: 'Mock mode: open the original target directly', ru: 'Mock-режим: открываем исходный адрес напрямую' }, locale.value),
+}))
 </script>
 
 <template>
@@ -58,7 +68,7 @@ const app = useAppStore()
       </div>
 
       <div class="shortener-list__cell shortener-list__cell--actions shortener-list__actions" data-label="Actions">
-        <RouterLink :to="`/shortener/${link.id}`" class="shortener-list__link">Details</RouterLink>
+        <RouterLink :to="`/shortener/${link.id}`" class="shortener-list__link">{{ labels.details }}</RouterLink>
         <a
           v-if="link.short_url && !app.isMock"
           :href="link.short_url"
@@ -74,7 +84,7 @@ const app = useAppStore()
           target="_blank"
           rel="noopener noreferrer"
           class="shortener-list__link"
-          title="Mock mode: open the original target directly"
+          :title="labels.mockTitle"
         >
           Simulate
         </a>

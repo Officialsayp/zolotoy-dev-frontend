@@ -2,32 +2,71 @@
 /**
  * Public portfolio shell: semantic header/nav/main/footer, usable without
  * JavaScript. Public navigation is ordinary anchors (full document
- * navigation) — there is no second Vue Router here.
+ * navigation) — there is no second Vue Router here. The language switcher
+ * navigates to the equivalent document in the other locale.
  */
+import { computed } from 'vue'
 import { serviceCaseStudyUrl } from '@/content/service-registry'
-import { AUTHOR_SITE_URL } from '@/shared/routing/site-routes'
+import { AUTHOR_SITE_URL, publicPathFor } from '@/shared/routing/site-routes'
+import { tr } from '@/portfolio/i18n'
+import PortfolioLocaleSwitcher from '@/portfolio/components/portfolio-locale-switcher.vue'
 import PortfolioThemeToggle from '@/portfolio/components/portfolio-theme-toggle.vue'
 
-defineProps<{
+const props = defineProps<{
   /** Canonical path of the current document ('/', '/architecture/', ...). */
   currentPath: string
+  locale?: 'en' | 'ru'
 }>()
 
+const locale = computed(() => props.locale ?? 'en')
+
 const services = [
-  { id: 'order', label: 'Order' },
-  { id: 'auth', label: 'Auth' },
-  { id: 'notification', label: 'Notification' },
-  { id: 'shortener', label: 'URL Shortener' },
+  { id: 'order', label: { en: 'Order', ru: 'Заказы' } },
+  { id: 'auth', label: { en: 'Auth', ru: 'Аутентификация' } },
+  { id: 'notification', label: { en: 'Notification', ru: 'Уведомления' } },
+  { id: 'shortener', label: { en: 'URL Shortener', ru: 'Сокращатель' } },
 ] as const
+
+const nav = computed(() => ({
+  home: tr({ en: 'Home', ru: 'Главная' }, locale.value),
+  architecture: tr({ en: 'Architecture', ru: 'Архитектура' }, locale.value),
+  demo: tr({ en: 'Demo', ru: 'Демо' }, locale.value),
+  author: tr({ en: 'Author', ru: 'Автор' }, locale.value),
+  ariaLabel: tr({ en: 'Portfolio', ru: 'Портфолио' }, locale.value),
+  skip: tr({ en: 'Skip to main content', ru: 'Перейти к основному содержимому' }, locale.value),
+  brandAria: tr(
+    { en: 'zolotoy.dev — portfolio home', ru: 'zolotoy.dev — главная портфолио' },
+    locale.value,
+  ),
+}))
+
+const footer = computed(() => ({
+  tagline: tr(
+    { en: 'zolotoy.dev — Go backend engineering portfolio', ru: 'zolotoy.dev — портфолио Go-бэкенд-инженера' },
+    locale.value,
+  ),
+  backendSource: tr({ en: 'Backend source', ru: 'Исходники бэкенда' }, locale.value),
+}))
+
+const isRu = computed(() => locale.value === 'ru')
+
+function serviceHref(id: 'order' | 'auth' | 'notification' | 'shortener'): string {
+  const en = serviceCaseStudyUrl(id)
+  return isRu.value ? '/ru' + en : en
+}
+
+function serviceCurrent(id: 'order' | 'auth' | 'notification' | 'shortener'): boolean {
+  return props.currentPath === serviceHref(id)
+}
 </script>
 
 <template>
   <div class="portfolio">
-    <a class="portfolio__skip-link" href="#main-content">Skip to main content</a>
+    <a class="portfolio__skip-link" href="#main-content">{{ nav.skip }}</a>
 
     <header class="portfolio__header">
       <div class="portfolio__header-inner">
-        <a class="portfolio__brand" href="/" aria-label="zolotoy.dev — portfolio home">
+        <a class="portfolio__brand" :href="publicPathFor('home', locale)" :aria-label="nav.brandAria">
           <svg viewBox="0 0 1024 1024" aria-hidden="true">
             <path
               fill="currentColor"
@@ -37,22 +76,25 @@ const services = [
           <span>zolotoy.dev</span>
         </a>
 
-        <nav class="portfolio__nav" aria-label="Portfolio">
-          <a href="/" :aria-current="currentPath === '/' ? 'page' : undefined">Home</a>
-          <a href="/architecture/" :aria-current="currentPath === '/architecture/' ? 'page' : undefined">Architecture</a>
+        <nav class="portfolio__nav" :aria-label="nav.ariaLabel">
+          <a :href="publicPathFor('home', locale)" :aria-current="currentPath === publicPathFor('home', locale) ? 'page' : undefined">{{ nav.home }}</a>
+          <a :href="publicPathFor('architecture', locale)" :aria-current="currentPath === publicPathFor('architecture', locale) ? 'page' : undefined">{{ nav.architecture }}</a>
           <a
             v-for="service in services"
             :key="service.id"
-            :href="serviceCaseStudyUrl(service.id)"
-            :aria-current="currentPath === serviceCaseStudyUrl(service.id) ? 'page' : undefined"
+            :href="serviceHref(service.id)"
+            :aria-current="serviceCurrent(service.id) ? 'page' : undefined"
           >
-            {{ service.label }}
+            {{ tr(service.label, locale) }}
           </a>
-          <a href="/demo/">Demo</a>
-          <a :href="AUTHOR_SITE_URL" rel="noopener noreferrer">Author</a>
+          <a :href="locale === 'ru' ? '/demo/?lang=ru' : '/demo/'">{{ nav.demo }}</a>
+          <a :href="AUTHOR_SITE_URL" rel="noopener noreferrer">{{ nav.author }}</a>
         </nav>
 
-        <PortfolioThemeToggle />
+        <div class="portfolio__controls">
+          <PortfolioLocaleSwitcher :locale="locale" :current-path="currentPath" />
+          <PortfolioThemeToggle :locale="locale" />
+        </div>
       </div>
     </header>
 
@@ -62,9 +104,9 @@ const services = [
 
     <footer class="portfolio__footer">
       <div class="portfolio__footer-inner">
-        <span>zolotoy.dev — Go backend engineering portfolio</span>
+        <span>{{ footer.tagline }}</span>
         <span>
-          <a href="https://github.com/Officialsayp/zolotoy-dev-backend" rel="noopener noreferrer">Backend source</a>
+          <a href="https://github.com/Officialsayp/zolotoy-dev-backend" rel="noopener noreferrer">{{ footer.backendSource }}</a>
           <span aria-hidden="true"> · </span>
           <a :href="AUTHOR_SITE_URL" rel="noopener noreferrer">maxzolotoy.com</a>
         </span>

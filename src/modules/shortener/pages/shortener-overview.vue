@@ -12,6 +12,8 @@ import ShortenerHelpPanel from '../components/shortener-help-panel.vue'
 import ShortenerList from '../components/shortener-list.vue'
 import type { ShortLinkListQuery } from '../models/shortener-dto'
 import { useShortLinksListQuery } from '../queries/use-shortener-queries'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
 
 /**
  * URL Shortener management dashboard (MASTER_FRONTEND_PLAN §17.2). Combines the
@@ -23,6 +25,27 @@ import { useShortLinksListQuery } from '../queries/use-shortener-queries'
 const PAGE_LIMIT = 8
 
 const router = useRouter()
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
+const labels = computed(() => ({
+  title: tr({ en: 'URL Shortener', ru: 'URL-сокращатель' }, locale.value),
+  subtitle: tr(
+    { en: 'Hot redirect path, Redis cache-aside, singleflight and bounded analytics.', ru: 'Горячий путь редиректа, Redis cache-aside, singleflight и ограниченная аналитика.' },
+    locale.value,
+  ),
+  listTitle: tr({ en: 'Your links', ru: 'Ваши ссылки' }, locale.value),
+  denied: tr({ en: 'Access denied', ru: 'Доступ запрещён' }, locale.value),
+  loadError: tr({ en: 'Unable to load links', ru: 'Не удалось загрузить ссылки' }, locale.value),
+  emptyTitle: tr({ en: 'No links in this scenario', ru: 'В этом сценарии нет ссылок' }, locale.value),
+  emptyDesc: tr(
+    { en: 'Create a short link above or switch the demo scenario.', ru: 'Создайте короткую ссылку выше или переключите демо-сценарий.' },
+    locale.value,
+  ),
+  next: tr({ en: 'Next', ru: 'Далее' }, locale.value),
+  previous: tr({ en: 'Previous', ru: 'Назад' }, locale.value),
+  pagination: tr({ en: 'Links pagination', ru: 'Пагинация ссылок' }, locale.value),
+}))
 
 const cursor = ref<string | undefined>(undefined)
 const cursorStack = ref<string[]>([])
@@ -75,42 +98,40 @@ function onCreated(linkId: string): void {
   <section class="shortener-overview">
     <header class="shortener-overview__header">
       <div>
-        <h2 class="shortener-overview__title">URL Shortener</h2>
-        <p class="shortener-overview__subtitle">
-          Hot redirect path, Redis cache-aside, singleflight and bounded analytics.
-        </p>
+        <h2 class="shortener-overview__title">{{ labels.title }}</h2>
+        <p class="shortener-overview__subtitle">{{ labels.subtitle }}</p>
       </div>
     </header>
 
     <ShortenerCreateForm @created="onCreated" />
 
     <div class="shortener-overview__list-head">
-      <h3 class="shortener-overview__list-title">Your links</h3>
+      <h3 class="shortener-overview__list-title">{{ labels.listTitle }}</h3>
     </div>
 
     <LoadingSkeleton v-if="query.isLoading.value" :rows="5" :columns="5" />
 
     <ErrorState
       v-else-if="query.isError.value"
-      :title="isDenied ? 'Access denied' : 'Unable to load links'"
+      :title="isDenied ? labels.denied : labels.loadError"
       :message="listMessage"
       :on-retry="() => query.refetch()"
     />
 
     <EmptyState
       v-else-if="rows.length === 0"
-      title="No links in this scenario"
-      description="Create a short link above or switch the demo scenario."
+      :title="labels.emptyTitle"
+      :description="labels.emptyDesc"
     />
 
     <template v-else>
       <ShortenerList :links="rows" />
 
-      <nav class="shortener-overview__pager" aria-label="Links pagination">
+      <nav class="shortener-overview__pager" :aria-label="labels.pagination">
         <AppButton variant="secondary" size="sm" :disabled="cursorStack.length === 0" @click="previousPage">
-          Previous
+          {{ labels.previous }}
         </AppButton>
-        <AppButton variant="secondary" size="sm" :disabled="!hasNext" @click="nextPage">Next</AppButton>
+        <AppButton variant="secondary" size="sm" :disabled="!hasNext" @click="nextPage">{{ labels.next }}</AppButton>
       </nav>
     </template>
 

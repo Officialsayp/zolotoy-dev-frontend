@@ -1,16 +1,22 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 
+import { computed } from 'vue'
 import CardPanel from '@/shared/ui/card-panel.vue'
 import AppButton from '@/shared/ui/app-button.vue'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { uiString } from '@/shared/i18n/ui-strings'
+
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
 </script>
 
 <template>
   <CardPanel class="not-found">
     <p class="not-found__code">404</p>
-    <p class="not-found__message">This route does not exist.</p>
+    <p class="not-found__message">{{ uiString('notFoundMessage', locale) }}</p>
     <RouterLink to="/">
-      <AppButton variant="secondary">Back to overview</AppButton>
+      <AppButton variant="secondary">{{ uiString('backToOverview', locale) }}</AppButton>
     </RouterLink>
   </CardPanel>
 </template>

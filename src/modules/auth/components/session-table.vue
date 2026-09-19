@@ -3,17 +3,37 @@ import { computed } from 'vue'
 
 import AppButton from '@/shared/ui/app-button.vue'
 import StatusBadge from '@/shared/ui/status-badge.vue'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
 import type { AuthSessionDto } from '../models/auth-dto'
 import { formatDate } from '../utils/auth-format'
+import { tr } from '@/portfolio/i18n'
 
 const props = defineProps<{ sessions: AuthSessionDto[] }>()
+
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
+const labels = computed(() => ({
+  table: tr({ en: 'Active sessions', ru: 'Активные сессии' }, locale.value),
+  device: tr({ en: 'Device', ru: 'Устройство' }, locale.value),
+  created: tr({ en: 'Created', ru: 'Создана' }, locale.value),
+  lastUsed: tr({ en: 'Last used', ru: 'Использована' }, locale.value),
+  expires: tr({ en: 'Expires', ru: 'Истекает' }, locale.value),
+  status: tr({ en: 'Status', ru: 'Статус' }, locale.value),
+  action: tr({ en: 'Action', ru: 'Действие' }, locale.value),
+  current: tr({ en: 'Current', ru: 'Текущая' }, locale.value),
+  active: tr({ en: 'Active', ru: 'Активна' }, locale.value),
+  revoked: tr({ en: 'Revoked', ru: 'Отозвана' }, locale.value),
+  revoke: tr({ en: 'Revoke', ru: 'Отозвать' }, locale.value),
+  unknownDevice: tr({ en: 'Unknown device', ru: 'Неизвестное устройство' }, locale.value),
+}))
 
 const emit = defineEmits<{ (e: 'revoke', sessionId: string): void }>()
 
 const rows = computed(() =>
   props.sessions.map((session) => ({
     ...session,
-    deviceLabel: session.device_label || 'Unknown device',
+    deviceLabel: session.device_label || '',
     active: session.status === 'revoked' ? false : true,
     current: session.current === true,
   })),
@@ -21,37 +41,37 @@ const rows = computed(() =>
 </script>
 
 <template>
-  <div class="session-table" role="table" aria-label="Active sessions">
+  <div class="session-table" role="table" :aria-label="labels.table">
     <div class="session-table__head session-table__row" role="row">
-      <span role="columnheader">Device</span>
-      <span role="columnheader">Created</span>
-      <span role="columnheader">Last used</span>
-      <span role="columnheader">Expires</span>
-      <span role="columnheader">Status</span>
-      <span role="columnheader" class="session-table__actions-cell">Action</span>
+      <span role="columnheader">{{ labels.device }}</span>
+      <span role="columnheader">{{ labels.created }}</span>
+      <span role="columnheader">{{ labels.lastUsed }}</span>
+      <span role="columnheader">{{ labels.expires }}</span>
+      <span role="columnheader">{{ labels.status }}</span>
+      <span role="columnheader" class="session-table__actions-cell">{{ labels.action }}</span>
     </div>
 
     <div v-for="session in rows" :key="session.id" class="session-table__row" role="row">
-      <span class="session-table__cell" data-label="Device" role="cell">
+      <span class="session-table__cell" :data-label="labels.device" role="cell">
         <span class="session-table__device">
-          {{ session.deviceLabel }}
-          <StatusBadge v-if="session.current" tone="accent" label="Current" />
+          {{ session.deviceLabel || labels.unknownDevice }}
+          <StatusBadge v-if="session.current" tone="accent" :label="labels.current" />
         </span>
       </span>
-      <span class="session-table__cell" data-label="Created" role="cell">{{ formatDate(session.created_at) }}</span>
-      <span class="session-table__cell" data-label="Last used" role="cell">{{ formatDate(session.last_used_at) }}</span>
-      <span class="session-table__cell" data-label="Expires" role="cell">{{ formatDate(session.expires_at) }}</span>
-      <span class="session-table__cell" data-label="Status" role="cell">
-        <StatusBadge :tone="session.active ? 'success' : 'neutral'" :label="session.active ? 'Active' : 'Revoked'" />
+      <span class="session-table__cell" :data-label="labels.created" role="cell">{{ formatDate(session.created_at) }}</span>
+      <span class="session-table__cell" :data-label="labels.lastUsed" role="cell">{{ formatDate(session.last_used_at) }}</span>
+      <span class="session-table__cell" :data-label="labels.expires" role="cell">{{ formatDate(session.expires_at) }}</span>
+      <span class="session-table__cell" :data-label="labels.status" role="cell">
+        <StatusBadge :tone="session.active ? 'success' : 'neutral'" :label="session.active ? labels.active : labels.revoked" />
       </span>
-      <span class="session-table__cell session-table__actions-cell" data-label="Action" role="cell">
+      <span class="session-table__cell session-table__actions-cell" :data-label="labels.action" role="cell">
         <AppButton
           variant="ghost"
           size="sm"
           :disabled="!session.active"
           @click="emit('revoke', session.id)"
         >
-          Revoke
+          {{ labels.revoke }}
         </AppButton>
       </span>
     </div>

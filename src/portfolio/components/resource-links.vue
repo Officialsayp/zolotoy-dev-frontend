@@ -1,20 +1,31 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { ServiceCase } from '@/content/types'
 import { serviceDemoUrl } from '@/content/service-registry'
+import { tr } from '@/portfolio/i18n'
 
-defineProps<{ service: ServiceCase }>()
+const props = defineProps<{ service: ServiceCase; locale?: 'en' | 'ru' }>()
+
+const locale = computed(() => props.locale ?? 'en')
+
+const labels = computed(() => ({
+  spec: tr({ en: 'Specification', ru: 'Спецификация' }, locale.value),
+  source: tr({ en: 'Source (backend)', ru: 'Исходники (бэкенд)' }, locale.value),
+  demo: tr({ en: 'Interactive demo', ru: 'Интерактивное демо' }, locale.value),
+  demoUrl: locale.value === 'ru' ? serviceDemoUrl(props.service.id) + '?lang=ru' : serviceDemoUrl(props.service.id),
+}))
 </script>
 
 <template>
   <ul class="resource-links">
     <li v-if="service.specUrl">
-      <a :href="service.specUrl" rel="noopener noreferrer">Specification</a>
+      <a :href="service.specUrl" rel="noopener noreferrer">{{ labels.spec }}</a>
     </li>
     <li v-if="service.sourceUrl">
-      <a :href="service.sourceUrl" rel="noopener noreferrer">Source (backend)</a>
+      <a :href="service.sourceUrl" rel="noopener noreferrer">{{ labels.source }}</a>
     </li>
     <li>
-      <a :href="serviceDemoUrl(service.id)">Interactive demo</a>
+      <a :href="labels.demoUrl">{{ labels.demo }}</a>
     </li>
   </ul>
 </template>

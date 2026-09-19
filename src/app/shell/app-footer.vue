@@ -2,14 +2,19 @@
 import { Github, ExternalLink } from 'lucide-vue-next'
 
 import { getServiceRegistry } from '@/shared/config/service-registry'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { uiString } from '@/shared/i18n/ui-strings'
+import { computed } from 'vue'
 
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
 const services = getServiceRegistry()
 const githubUrl = services[0]?.githubUrl
 </script>
 
 <template>
   <footer class="app-footer">
-    <span class="app-footer__meta">zolotoy.dev — technical developer/admin environment</span>
+    <span class="app-footer__meta">{{ uiString('demoFooter', locale) }}</span>
     <span v-if="githubUrl" class="app-footer__links">
       <a :href="githubUrl" target="_blank" rel="noopener noreferrer" class="app-footer__link">
         <Github aria-hidden="true" /> GitHub <ExternalLink aria-hidden="true" class="app-footer__ext" />

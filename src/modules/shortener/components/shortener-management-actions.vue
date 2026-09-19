@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
 import { ref } from 'vue'
 
 import AppButton from '@/shared/ui/app-button.vue'
@@ -17,6 +20,27 @@ import type { ShortLinkDto } from '../models/shortener-dto'
  * rather than inventing a generic edit form or a guessed PUT DTO.
  */
 
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
+const labels = computed(() => ({
+  disable: tr({ en: 'Disable', ru: 'Отключить' }, locale.value),
+  enable: tr({ en: 'Enable', ru: 'Включить' }, locale.value),
+  delete: tr({ en: 'Delete link', ru: 'Удалить ссылку' }, locale.value),
+  deleteTitle: tr({ en: 'Delete this link?', ru: 'Удалить эту ссылку?' }, locale.value),
+  title: tr({ en: 'Management actions', ru: 'Управляющие действия' }, locale.value),
+  deleteNote: tr({ en: 'Logical delete; requires confirmation.', ru: 'Логическое удаление; требуется подтверждение.' }, locale.value),
+  enableTitle: tr({ en: 'Enable requires an agreed PUT contract', ru: 'Включение требует согласованного PUT-контракта' }, locale.value),
+  disableTitle: tr({ en: 'Disable requires an agreed PUT contract', ru: 'Отключение требует согласованного PUT-контракта' }, locale.value),
+  gateNote: tr(
+    {
+      en: 'Enable/disable is capability-gated: the exact PUT request/response contract is still TBD, so the frontend does not guess a mutation.',
+      ru: 'Включение/отключение ограничено возможностями API: точный PUT-контракт ещё TBD, фронтенд не выдумывает мутацию.',
+    },
+    locale.value,
+  ),
+}))
+
 const props = defineProps<{
   link: ShortLinkDto
   deleteBusy?: boolean
@@ -29,32 +53,37 @@ const confirmOpen = ref(false)
 
 <template>
   <CardPanel class="shortener-actions">
-    <h3 class="shortener-actions__title">Management actions</h3>
+    <h3 class="shortener-actions__title">{{ labels.title }}</h3>
 
     <div class="shortener-actions__row">
       <AppButton variant="danger" data-testid="delete-link" :disabled="deleteBusy" @click="confirmOpen = true">
-        Delete link
+        {{ labels.delete }}
       </AppButton>
-      <span class="shortener-actions__note">Logical delete; requires confirmation.</span>
+      <span class="shortener-actions__note">{{ labels.deleteNote }}</span>
     </div>
 
     <div class="shortener-actions__row">
-      <AppButton variant="secondary" disabled title="Enable requires an agreed PUT contract" data-testid="enable-link">
+      <AppButton variant="secondary" disabled :title="labels.enableTitle" data-testid="enable-link">
         Enable
       </AppButton>
-      <AppButton variant="secondary" disabled title="Disable requires an agreed PUT contract" data-testid="disable-link">
+      <AppButton variant="secondary" disabled :title="labels.disableTitle" data-testid="disable-link">
         Disable
       </AppButton>
-      <span class="shortener-actions__note">
-        Enable/disable is capability-gated: the exact PUT request/response contract is still
-        TBD, so the frontend does not guess a mutation.
-      </span>
+      <span class="shortener-actions__note">{{ labels.gateNote }}</span>
     </div>
 
     <ConfirmDialog
       :open="confirmOpen"
-      title="Delete this link?"
-      :message="`Deleting ${props.link.code} permanently stops its redirects and invalidates its cache entry on the backend.`"
+      :title="labels.deleteTitle"
+      :message="
+        tr(
+          {
+            en: `Deleting ${props.link.code} permanently stops its redirects and invalidates its cache entry on the backend.`,
+            ru: `Удаление ${props.link.code} навсегда останавливает редиректы и инвалидирует запись кэша на бэкенде.`,
+          },
+          locale,
+        )
+      "
       confirm-label="Delete"
       variant="danger"
       :busy="deleteBusy"

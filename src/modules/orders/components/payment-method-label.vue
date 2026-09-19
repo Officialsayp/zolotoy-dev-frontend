@@ -2,6 +2,11 @@
 import { computed } from 'vue'
 
 import { PAYMENT_METHOD_META, type PaymentMethod } from '../models/order-types'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { labelFor } from '@/shared/i18n/label-strings'
+
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
 
 const props = defineProps<{ method: PaymentMethod; showDescription?: boolean }>()
 
@@ -10,8 +15,8 @@ const meta = computed(() => PAYMENT_METHOD_META[props.method])
 
 <template>
   <span class="payment-method">
-    <span class="payment-method__label">{{ meta.label }}</span>
-    <span v-if="showDescription" class="payment-method__desc">{{ meta.description }}</span>
+    <span class="payment-method__label">{{ labelFor(meta.label, locale) }}</span>
+    <span v-if="showDescription" class="payment-method__desc">{{ labelFor(meta.description, locale) }}</span>
   </span>
 </template>
 

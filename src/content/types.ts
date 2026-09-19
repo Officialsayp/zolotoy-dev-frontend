@@ -17,9 +17,13 @@
  *    measurement artifact).
  */
 
+import type { Localized } from '@/shared/i18n/locale'
 import type { ServiceId } from '@/shared/routing/site-routes'
 
 export type { ServiceId } from '@/shared/routing/site-routes'
+
+/** Localized free-text for a claim/decision/failure copy. */
+export type LText = Localized
 
 /** Backend implementation status. */
 export type ImplementationStatus = 'planned' | 'in-development' | 'implemented'
@@ -54,7 +58,7 @@ export interface EvidenceSource {
   /** File path inside the repository, or an absolute URL. */
   path: string
   /** Descriptive human-readable label. */
-  label: string
+  label: LText
   /** Date the evidence was last reviewed against the repository. */
   reviewedOn: string
 }
@@ -75,31 +79,36 @@ export interface MeasurementRecord {
   limitations: string
 }
 
+/** Resolve localized copy at render time. */
+export function t(value: LText, locale: 'en' | 'ru'): string {
+  return value[locale]
+}
+
 /** One technical claim with a stable ID, category, text and evidence refs. */
 export interface ServiceClaim {
   id: string
   category: ClaimCategory
-  text: string
+  text: LText
   /** Evidence record IDs backing this claim. */
   evidenceIds: string[]
 }
 
 export interface ServiceDecision {
   id: string
-  title: string
-  text: string
+  title: LText
+  text: LText
   claimIds?: string[]
 }
 
 export interface ServiceFailureMode {
   id: string
-  topic: string
-  text: string
+  topic: LText
+  text: LText
 }
 
 export interface ServiceDiagram {
   id: string
-  caption: string
+  caption: LText
   category: ClaimCategory
   nodes: DiagramNode[]
   connections: DiagramConnection[]
@@ -108,8 +117,8 @@ export interface ServiceDiagram {
 
 export interface DiagramNode {
   id: string
-  label: string
-  description: string
+  label: LText
+  description: LText
   kind: 'browser' | 'frontend' | 'service' | 'infrastructure' | 'data'
   /** Planned/absent infrastructure — must not look currently deployed. */
   planned?: boolean
@@ -118,14 +127,14 @@ export interface DiagramNode {
 export interface DiagramConnection {
   from: string
   to: string
-  label: string
+  label: LText
   /** Planned connection — labelled as target in the rendering. */
   planned?: boolean
 }
 
 export interface DiagramGroup {
   id: string
-  label: string
+  label: LText
   nodeIds: string[]
 }
 
@@ -133,19 +142,21 @@ export interface ServiceCase {
   id: ServiceId
   slug: string
   name: string
-  shortLabel: string
-  summary: string
-  declaredScope: string
+  /** Localized display name (RU adds a human word: «Order-сервис» etc.). */
+  nameLocalized: LText
+  shortLabel: LText
+  summary: LText
+  declaredScope: LText
   /** What the service explicitly is NOT (scope honesty). */
-  notScope: string[]
+  notScope: LText[]
   implementationStatus: ImplementationStatus
   currentMilestone: MilestoneId | null
   nextMilestone: MilestoneId | null
   demoMode: DemoMode
   runtime: ServiceRuntime
   /** Visible wording for runtime availability, e.g. "Local development only". */
-  runtimeLabel: string
-  engineeringFocus: string
+  runtimeLabel: LText
+  engineeringFocus: LText
   currentImplementation: ServiceClaim[]
   targetArchitecture: ServiceClaim[]
   decisions: ServiceDecision[]
@@ -161,12 +172,12 @@ export interface ServiceCase {
 
 export interface RoadmapMilestone {
   id: MilestoneId
-  title: string
+  title: LText
   state: 'completed' | 'current' | 'future'
   serviceIds: ServiceId[]
-  summary: string
+  summary: LText
   /** What will prove this milestone done (planned acceptance evidence). */
-  acceptanceEvidence: string[]
+  acceptanceEvidence: LText[]
   /** Reference into the backend roadmap documentation. */
   sourceReference: string
 }
@@ -179,25 +190,25 @@ export interface ArchitectureContent {
 
 export interface ArchitectureSection {
   id: string
-  title: string
-  paragraphs: string[]
+  title: LText
+  paragraphs: LText[]
   claims?: ServiceClaim[]
 }
 
 export interface IntegrationContractArea {
   id: string
-  title: string
-  description: string
-  openQuestions: string[]
+  title: LText
+  description: LText
+  openQuestions: LText[]
 }
 
 export interface SiteContent {
   hero: {
-    title: string
-    subtitle: string
-    intro: string
+    title: LText
+    subtitle: LText
+    intro: LText
   }
-  principles: { id: string; title: string; text: string }[]
+  principles: { id: string; title: LText; text: LText }[]
   architecture: ArchitectureContent
   services: Record<ServiceId, ServiceCase>
   roadmap: RoadmapMilestone[]

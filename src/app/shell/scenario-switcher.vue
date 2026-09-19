@@ -8,8 +8,13 @@ import {
   setScenario,
   type DemoScenarioId,
 } from '@/mocks/scenario-registry'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { uiString } from '@/shared/i18n/ui-strings'
+import { labelFor } from '@/shared/i18n/label-strings'
 
 const queryClient = useQueryClient()
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
 const current = computed<DemoScenarioId>(() => getScenario())
 
 async function onChange(event: Event): Promise<void> {
@@ -29,10 +34,10 @@ async function onChange(event: Event): Promise<void> {
 
 <template>
   <label class="scenario-switcher">
-    <span class="scenario-switcher__label">Demo scenario</span>
+    <span class="scenario-switcher__label">{{ uiString('scenarioLabel', locale) }}</span>
     <select :value="current" class="scenario-switcher__select" @change="onChange">
       <option v-for="scenario in DEMO_SCENARIOS" :key="scenario.id" :value="scenario.id">
-        {{ scenario.label }}
+        {{ labelFor(scenario.label, locale) }}
       </option>
     </select>
   </label>

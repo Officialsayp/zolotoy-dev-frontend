@@ -8,6 +8,10 @@ import { computed } from 'vue'
 import { ARCHITECTURE_CONTENT } from '@/content/architecture'
 import ArchitectureDiagram from '@/portfolio/components/architecture-diagram.vue'
 import ClaimSection from '@/portfolio/components/claim-section.vue'
+import { tr } from '@/portfolio/i18n'
+
+const props = defineProps<{ locale?: 'en' | 'ru' }>()
+const locale = computed(() => props.locale ?? 'en')
 
 const sections = computed(() => ARCHITECTURE_CONTENT.sections)
 const diagrams = computed(() => ARCHITECTURE_CONTENT.diagrams)
@@ -19,17 +23,24 @@ const targetDiagram = computed(() => diagrams.value.find((d) => d.category === '
 
 <template>
   <section class="portfolio-hero">
-    <h1>System Architecture</h1>
+    <h1>{{ tr({ en: 'System Architecture', ru: 'Архитектура системы' }, locale) }}</h1>
     <p class="portfolio-hero__intro">
-      How zolotoy.dev is built today, where it is going, and which contracts are
-      still unresolved. Current and target states are kept deliberately separate.
+      {{
+        tr(
+          {
+            en: 'How zolotoy.dev is built today, where it is going, and which contracts are still unresolved. Current and target states are kept deliberately separate.',
+            ru: 'Как устроен zolotoy.dev сегодня, куда он движется и какие контракты ещё не решены. Current и target намеренно разделены.',
+          },
+          locale,
+        )
+      }}
     </p>
   </section>
 
   <template v-for="section in sections" :key="section.id">
     <section :id="section.id" class="portfolio-section" :aria-labelledby="`${section.id}-heading`">
-      <h2 :id="`${section.id}-heading`">{{ section.title }}</h2>
-      <p v-for="(paragraph, index) in section.paragraphs" :key="index">{{ paragraph }}</p>
+      <h2 :id="`${section.id}-heading`">{{ tr(section.title, locale) }}</h2>
+      <p v-for="(paragraph, index) in section.paragraphs" :key="index">{{ tr(paragraph, locale) }}</p>
       <ClaimSection
         v-if="section.claims && section.claims.length > 0"
         title=""
@@ -54,10 +65,10 @@ const targetDiagram = computed(() => diagrams.value.find((d) => d.category === '
     </p>
     <div class="portfolio-grid">
       <article v-for="contract in contracts" :key="contract.id" class="portfolio-card">
-        <h3>{{ contract.title }}</h3>
-        <p>{{ contract.description }}</p>
+        <h3>{{ tr(contract.title, locale) }}</h3>
+        <p>{{ tr(contract.description, locale) }}</p>
         <ul>
-          <li v-for="question in contract.openQuestions" :key="question">{{ question }}</li>
+          <li v-for="question in contract.openQuestions" :key="question.en">{{ tr(question, locale) }}</li>
         </ul>
       </article>
     </div>

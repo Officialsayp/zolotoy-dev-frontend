@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
 // Tabular/block skeleton for initial page loads. Mirrors the surrounding layout
 // instead of replacing real data with a full-page spinner on background refetch.
 withDefaults(
@@ -13,13 +16,17 @@ withDefaults(
     rowsHeight: 20,
   },
 )
+
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+const loadingLabel = computed(() => tr({ en: 'Loading', ru: 'Загрузка' }, locale.value))
 </script>
 
 <template>
   <div
     class="loading-skeleton"
     aria-busy="true"
-    aria-label="Loading"
+    :aria-label="loadingLabel"
     :style="{ '--skeleton-rows-height': `${rowsHeight}px` }"
   >
     <div v-for="row in rows" :key="row" class="loading-skeleton__row">

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { authString } from '@/shared/i18n/auth-strings'
+import { tr } from '@/portfolio/i18n'
 
 import CardPanel from '@/shared/ui/card-panel.vue'
 import StatusBadge from '@/shared/ui/status-badge.vue'
@@ -18,20 +21,40 @@ const statusTone = computed(() => {
   return head.value.tone
 })
 
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
 const statusLabel = computed(() => {
-  if (session.isAuthenticated) return session.isAdmin ? 'Authenticated · admin' : 'Authenticated · user'
+  if (session.isAuthenticated) {
+    return tr(
+      session.isAdmin
+        ? { en: 'Authenticated · admin', ru: 'Аутентифицирован · админ' }
+        : { en: 'Authenticated · user', ru: 'Аутентифицирован · пользователь' },
+      locale.value,
+    )
+  }
   return head.value.label
 })
+
+const labels = computed(() => ({
+  title: tr({ en: 'Auth Service', ru: 'Auth-сервис' }, locale.value),
+  blurb: tr(
+    {
+      en: 'A security/session demonstrator: registration, login, a memory-only access token, HttpOnly refresh cookie, session revocation, logout all, RBAC and replay detection.',
+      ru: 'Демонстратор безопасности и сессий: регистрация, вход, access-токен только в памяти, HttpOnly refresh-cookie, отзыв сессий, выход со всех устройств, RBAC и обнаружение повторного использования токенов.',
+    },
+    locale.value,
+  ),
+  profile: authString('profileTitle', locale.value),
+  sessions: tr({ en: 'Sessions & devices', ru: 'Сессии и устройства' }, locale.value),
+}))
 </script>
 
 <template>
   <div class="auth-overview">
     <CardPanel class="auth-overview__hero">
-      <h2 class="auth-overview__title">Auth Service</h2>
-      <p class="auth-overview__blurb">
-        A security/session demonstrator: registration, login, a memory-only access token,
-        HttpOnly refresh cookie, session revocation, logout all, RBAC and replay detection.
-      </p>
+      <h2 class="auth-overview__title">{{ labels.title }}</h2>
+      <p class="auth-overview__blurb">{{ labels.blurb }}</p>
       <div class="auth-overview__status">
         <StatusBadge :tone="statusTone" :label="statusLabel" />
       </div>
@@ -39,13 +62,13 @@ const statusLabel = computed(() => {
 
     <div class="auth-overview__grid">
       <template v-if="session.isAuthenticated">
-        <RouterLink class="auth-overview__card" to="/auth/profile">Profile</RouterLink>
-        <RouterLink class="auth-overview__card" to="/auth/sessions">Sessions &amp; devices</RouterLink>
-        <RouterLink v-if="session.isAdmin" class="auth-overview__card" to="/auth/admin">Admin demo</RouterLink>
+        <RouterLink class="auth-overview__card" to="/auth/profile">{{ labels.profile }}</RouterLink>
+        <RouterLink class="auth-overview__card" to="/auth/sessions">{{ labels.sessions }}</RouterLink>
+        <RouterLink v-if="session.isAdmin" class="auth-overview__card" to="/auth/admin">{{ authString('adminDemo', locale) }}</RouterLink>
       </template>
       <template v-else>
-        <RouterLink class="auth-overview__card" to="/auth/login">Sign in</RouterLink>
-        <RouterLink class="auth-overview__card" to="/auth/register">Create account</RouterLink>
+        <RouterLink class="auth-overview__card" to="/auth/login">{{ authString('signIn', locale) }}</RouterLink>
+        <RouterLink class="auth-overview__card" to="/auth/register">{{ authString('registerTitle', locale) }}</RouterLink>
       </template>
     </div>
   </div>

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
+
 import { computed } from 'vue'
 
 import EmptyState from '@/shared/ui/empty-state.vue'
@@ -9,6 +12,17 @@ import {
   type PaymentStatus,
 } from '../models/order-types'
 import type { HistoryEntryView } from '../models/order-view-model'
+
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
+const emptyTitle = computed(() => tr({ en: 'No history yet', ru: 'Истории пока нет' }, locale.value))
+const emptyDesc = computed(() =>
+  tr(
+    { en: 'This order has not recorded any lifecycle transitions.', ru: 'У этого заказа ещё нет переходов жизненного цикла.' },
+    locale.value,
+  ),
+)
 
 const props = defineProps<{ entries: HistoryEntryView[]; loading?: boolean }>()
 
@@ -61,8 +75,8 @@ const ordered = computed(() => [...props.entries].reverse())
 
   <EmptyState
     v-if="!loading && ordered.length === 0"
-    title="No history yet"
-    description="This order has not recorded any lifecycle transitions."
+    :title="emptyTitle"
+    :description="emptyDesc"
   />
 </template>
 

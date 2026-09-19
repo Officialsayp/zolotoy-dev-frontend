@@ -11,8 +11,37 @@ import NotificationHelpPanel from '../components/notification-help-panel.vue'
 import NotificationListTable from '../components/notification-list-table.vue'
 import type { NotificationChannel, NotificationEventType, NotificationJobStatus } from '../models/notification-types'
 import { useNotificationsListQuery } from '../queries/use-notification-queries'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
 
 const PAGE_LIMIT = 10
+
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
+const labels = computed(() => ({
+  title: tr({ en: 'Notifications', ru: 'Уведомления' }, locale.value),
+  subtitle: tr(
+    { en: 'Kafka at-least-once → durable delivery jobs → provider attempts.', ru: 'Kafka at-least-once → durable-задачи доставки → попытки провайдера.' },
+    locale.value,
+  ),
+  denied: tr({ en: 'Access denied', ru: 'Доступ запрещён' }, locale.value),
+  loadError: tr({ en: 'Unable to load notifications', ru: 'Не удалось загрузить уведомления' }, locale.value),
+  emptyTitle: tr(
+    { en: 'No notification jobs in this scenario', ru: 'В этом сценарии нет задач уведомлений' },
+    locale.value,
+  ),
+  emptyDesc: tr(
+    {
+      en: 'Switch the demo scenario or clear the filters to see delivery jobs.',
+      ru: 'Переключите демо-сценарий или сбросьте фильтры, чтобы увидеть задачи доставки.',
+    },
+    locale.value,
+  ),
+  previous: tr({ en: 'Previous', ru: 'Назад' }, locale.value),
+  next: tr({ en: 'Next', ru: 'Далее' }, locale.value),
+  pagination: tr({ en: 'Notifications pagination', ru: 'Пагинация уведомлений' }, locale.value),
+}))
 
 const status = ref<NotificationJobStatus | undefined>(undefined)
 const channel = ref<NotificationChannel | undefined>(undefined)
@@ -78,10 +107,8 @@ function previousPage(): void {
   <section class="notifications-list-page">
     <header class="notifications-list-page__header">
       <div>
-        <h2 class="notifications-list-page__title">Notifications</h2>
-        <p class="notifications-list-page__subtitle">
-          Kafka at-least-once → durable delivery jobs → provider attempts.
-        </p>
+        <h2 class="notifications-list-page__title">{{ labels.title }}</h2>
+        <p class="notifications-list-page__subtitle">{{ labels.subtitle }}</p>
       </div>
     </header>
 
@@ -98,25 +125,25 @@ function previousPage(): void {
 
     <ErrorState
       v-else-if="query.isError.value"
-      :title="isDenied ? 'Access denied' : 'Unable to load notifications'"
+      :title="isDenied ? labels.denied : labels.loadError"
       :message="listError"
       :on-retry="() => query.refetch()"
     />
 
     <EmptyState
       v-else-if="rows.length === 0"
-      title="No notification jobs in this scenario"
-      description="Switch the demo scenario or clear the filters to see delivery jobs."
+      :title="labels.emptyTitle"
+      :description="labels.emptyDesc"
     />
 
     <template v-else>
       <NotificationListTable :jobs="rows" />
 
-      <nav class="notifications-list-page__pager" aria-label="Notifications pagination">
+      <nav class="notifications-list-page__pager" :aria-label="labels.pagination">
         <AppButton variant="secondary" size="sm" :disabled="cursorStack.length === 0" @click="previousPage">
-          Previous
+          {{ labels.previous }}
         </AppButton>
-        <AppButton variant="secondary" size="sm" :disabled="!hasNext" @click="nextPage">Next</AppButton>
+        <AppButton variant="secondary" size="sm" :disabled="!hasNext" @click="nextPage">{{ labels.next }}</AppButton>
       </nav>
     </template>
 

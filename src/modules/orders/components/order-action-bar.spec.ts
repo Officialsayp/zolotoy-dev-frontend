@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 
 import OrderActionBar from './order-action-bar.vue'
 import type { OrderActionSpec } from '../models/order-action-policy'
@@ -20,6 +21,9 @@ const blocked: OrderActionSpec = {
 }
 
 describe('OrderActionBar', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
   it('renders one button per action and emits run with the action on click', async () => {
     const wrapper = mount(OrderActionBar, {
       props: { actions: [enabled], pendingAction: null },

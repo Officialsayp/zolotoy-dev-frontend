@@ -12,6 +12,21 @@
  * Worker all consume these same patterns.
  */
 
+/**
+ * Locale primitives, inlined on purpose: this module is loaded by the Vite
+ * config and the Edge Worker bundle and must stay dependency-free. The strict
+ * Locale type lives in @/shared/i18n/locale; the values are identical.
+ */
+
+export const PUBLIC_LOCALES = ['en', 'ru'] as const
+export type Locale = (typeof PUBLIC_LOCALES)[number]
+export const DEFAULT_LOCALE: Locale = 'en'
+
+/** Public path prefix for a locale (EN at root, RU under /ru). */
+export function localePathPrefix(locale: Locale): string {
+  return locale === 'en' ? '' : '/ru'
+}
+
 /** Browser base path the demo SPA is served from. */
 export const DEMO_BASE = '/demo/'
 
@@ -37,6 +52,9 @@ export interface PublicRoute {
   file: string
   title: string
   description: string
+  /** Russian title/description (1:1 with the EN copy). */
+  titleRu: string
+  descriptionRu: string
 }
 
 /**
@@ -51,6 +69,9 @@ export const PUBLIC_ROUTES: readonly PublicRoute[] = [
     title: 'zolotoy.dev — Go backend portfolio',
     description:
       'Maxim Zolotoy’s Go backend engineering portfolio: four service case studies with honest current-vs-target architecture and an interactive demo.',
+    titleRu: 'zolotoy.dev — портфолио Go-бэкендера',
+    descriptionRu:
+      'Портфолио Go-бэкенд-инженера Максима Золотого: четыре технических кейса с честным разделением current/target и интерактивным демо.',
   },
   {
     id: 'architecture',
@@ -59,6 +80,9 @@ export const PUBLIC_ROUTES: readonly PublicRoute[] = [
     title: 'System architecture — zolotoy.dev',
     description:
       'Current and target system architecture of the zolotoy.dev Go backend portfolio: service boundaries, data ownership, integration contracts and runtime modes.',
+    titleRu: 'Архитектура системы — zolotoy.dev',
+    descriptionRu:
+      'Текущая и целевая архитектура Go-бэкенд-портфолио zolotoy.dev: границы сервисов, владение данными, интеграционные контракты и режимы рантайма.',
   },
   {
     id: 'order',
@@ -67,6 +91,9 @@ export const PUBLIC_ROUTES: readonly PublicRoute[] = [
     title: 'Order service case study — zolotoy.dev',
     description:
       'Order service case study: HTTP validation and service boundaries today, state machines, idempotency, optimistic concurrency and transactional outbox as the target.',
+    titleRu: 'Кейс Order-сервиса — zolotoy.dev',
+    descriptionRu:
+      'Кейс Order-сервиса: сегодня — HTTP-валидация и границы сервиса; цель — машина состояний, идемпотентность, оптимистичная конкурентность и transactional outbox.',
   },
   {
     id: 'auth',
@@ -75,6 +102,9 @@ export const PUBLIC_ROUTES: readonly PublicRoute[] = [
     title: 'Auth service case study — zolotoy.dev',
     description:
       'Auth service case study: planned Argon2id credentials, rotating refresh sessions, reuse detection, RBAC and rate limiting for the zolotoy.dev Go portfolio.',
+    titleRu: 'Кейс Auth-сервиса — zolotoy.dev',
+    descriptionRu:
+      'Кейс Auth-сервиса (план): учётные данные Argon2id, ротация refresh-сессий, обнаружение повторного использования, RBAC и rate limiting.',
   },
   {
     id: 'notification',
@@ -83,6 +113,9 @@ export const PUBLIC_ROUTES: readonly PublicRoute[] = [
     title: 'Notification service case study — zolotoy.dev',
     description:
       'Notification service case study: planned at-least-once event processing, durable inbox, retry with backoff and recovery for the zolotoy.dev Go portfolio.',
+    titleRu: 'Кейс Notification-сервиса — zolotoy.dev',
+    descriptionRu:
+      'Кейс Notification-сервиса (план): обработка событий at-least-once, durable inbox, ретраи с backoff и восстановление.',
   },
   {
     id: 'shortener',
@@ -91,6 +124,9 @@ export const PUBLIC_ROUTES: readonly PublicRoute[] = [
     title: 'URL shortener case study — zolotoy.dev',
     description:
       'URL shortener case study: planned redirect hot path, Redis cache-aside with bounded fallback, per-instance singleflight and reproducible benchmarks.',
+    titleRu: 'Кейс URL-сокращателя — zolotoy.dev',
+    descriptionRu:
+      'Кейс URL-сокращателя (план): redirect hot path, Redis cache-aside с ограниченным фолбэком, per-instance singleflight и воспроизводимые бенчмарки.',
   },
 ]
 
@@ -318,6 +354,13 @@ export function legacyRedirectTarget(pathname: string): string | null {
 
 /** Normalized canonical URL for a public document given a request pathname. */
 export function canonicalizePublicUrl(pathname: string): string | null {
+  // RU namespace: /ru, /ru/ and /ru/index.html normalize to the RU home; deeper
+  // /ru/... paths strip the prefix and canonicalize against the EN set.
+  if (pathname === '/ru' || pathname === '/ru/' || pathname === '/ru/index.html') return '/ru/'
+  if (pathname.startsWith('/ru/')) {
+    const inner = canonicalizePublicUrl(pathname.slice(3))
+    return inner === null ? null : '/ru' + (inner === '/' ? '/' : inner)
+  }
   if (pathname === '/' || pathname === '/index.html') return '/'
   const bare = stripTrailingSlash(pathname)
   if (bare === '/index.html') return '/'
@@ -328,3 +371,50 @@ export function canonicalizePublicUrl(pathname: string): string | null {
 
 export { canonicalizePublicUrl as canonicalizePublicPath }
 
+
+// ---- Locale-aware public routes ---------------------------------------------
+
+/**
+ * Canonical path of a public document for a locale: EN keeps the root path,
+ * RU gets the /ru prefix (/ru/architecture/ etc.).
+ */
+export function publicPathFor(id: PublicRouteId, locale: Locale): string {
+  const route = PUBLIC_ROUTES.find((r) => r.id === id)
+  if (!route) throw new Error(`Unknown public route id: ${id}`)
+  return localePathPrefix(locale) + (route.path === '/' ? '/' : route.path)
+}
+
+/**
+ * Resolve a request pathname (with optional /ru prefix) to a public route ID
+ * and its locale. Returns null when the path is not a public document.
+ */
+export function resolvePublicPathForLocale(
+  pathname: string,
+): { id: PublicRouteId; locale: Locale; canonicalPath: string } | null {
+  let locale: Locale = DEFAULT_LOCALE
+  let bare = pathname
+  if (bare === '/ru' || bare.startsWith('/ru/')) {
+    locale = 'ru'
+    bare = bare.slice(3) || '/'
+  }
+  const canonical = canonicalizePublicUrl(bare)
+  if (canonical === null) return null
+  return { id: routeIdForPath(canonical), locale, canonicalPath: localePathPrefix(locale) + canonical }
+}
+
+/** Public route ID for a canonical EN path. */
+export function routeIdForPath(canonicalPath: string): PublicRouteId {
+  const route = PUBLIC_ROUTES.find((r) => r.path === canonicalPath)
+  if (!route) throw new Error(`No public route for path: ${canonicalPath}`)
+  return route.id
+}
+
+/**
+ * The equivalent public document path in the other locale (switch preserves
+ * the semantic page). Returns null for unknown paths.
+ */
+export function counterpartPath(pathname: string, target: Locale): string | null {
+  const resolved = resolvePublicPathForLocale(pathname)
+  if (resolved === null) return null
+  return publicPathFor(resolved.id, target)
+}

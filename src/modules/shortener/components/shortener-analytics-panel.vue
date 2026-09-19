@@ -8,6 +8,9 @@ import LoadingSkeleton from '@/shared/ui/loading-skeleton.vue'
 
 import { analyticsViewModel } from '../models/shortener-domain'
 import type { ShortLinkAnalyticsDto } from '../models/shortener-dto'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { labelFor } from '@/shared/i18n/label-strings'
+import { tr } from '@/portfolio/i18n'
 
 /**
  * Link analytics (MASTER_FRONTEND_PLAN §17.6). Both the lightweight SVG/CSS
@@ -15,6 +18,21 @@ import type { ShortLinkAnalyticsDto } from '../models/shortener-dto'
  * derived from the DTO — so they can never show different numbers. No new
  * charting dependency: by-day is an SVG polyline, referrer/device are bar lists.
  */
+
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
+const labels = computed(() => ({
+  title: tr({ en: 'Analytics', ru: 'Аналитика' }, locale.value),
+  unavailable: tr({ en: 'Analytics unavailable', ru: 'Аналитика недоступна' }, locale.value),
+  unavailableMsg: tr({ en: 'Click analytics could not be loaded for this link.', ru: 'Аналитику кликов для этой ссылки загрузить не удалось.' }, locale.value),
+  noClicks: tr({ en: 'No clicks yet', ru: 'Кликов пока нет' }, locale.value),
+  noClicksMsg: tr({ en: 'This link has not recorded any redirects.', ru: 'Эта ссылка ещё не зафиксировала переходов.' }, locale.value),
+  totalClicks: tr({ en: 'total clicks', ru: 'всего переходов' }, locale.value),
+  byDay: tr({ en: 'Clicks by day', ru: 'Переходы по дням' }, locale.value),
+  byReferrer: tr({ en: 'Top referrers', ru: 'Источники переходов' }, locale.value),
+  byDevice: tr({ en: 'Devices', ru: 'Устройства' }, locale.value),
+}))
 
 const props = defineProps<{
   analytics?: ShortLinkAnalyticsDto | null
@@ -57,31 +75,31 @@ const chart = computed<ChartDefs | null>(() => (vm.value ? chartDefs(vm.value) :
 
 <template>
   <CardPanel class="shortener-analytics" data-testid="shortener-analytics">
-    <h3 class="shortener-analytics__title">Analytics</h3>
+    <h3 class="shortener-analytics__title">{{ labels.title }}</h3>
 
     <LoadingSkeleton v-if="loading" :rows="4" :columns="3" />
 
     <ErrorState
       v-else-if="hasError"
-      title="Analytics unavailable"
-      message="Click analytics could not be loaded for this link."
+      :title="labels.unavailable"
+      :message="labels.unavailableMsg"
     />
 
     <EmptyState
       v-else-if="emptyAnalytics"
-      title="No clicks yet"
-      description="This link has not recorded any redirects."
+      :title="labels.noClicks"
+      :description="labels.noClicksMsg"
     />
 
     <template v-else-if="vm">
       <p class="shortener-analytics__total">
         <span class="shortener-analytics__total-value">{{ vm.totalClicks.toLocaleString() }}</span>
-        total clicks
+        {{ labels.totalClicks }}
       </p>
 
       <!-- Clicks by day: SVG polyline + accessible table share `vm.byDay`. -->
       <section class="shortener-analytics__section" aria-labelledby="byday-title">
-        <h4 id="byday-title" class="shortener-analytics__subtitle">Clicks by day</h4>
+        <h4 id="byday-title" class="shortener-analytics__subtitle">{{ labels.byDay }}</h4>
         <div v-if="chart && vm.byDay.length" class="shortener-analytics__chart">
           <svg
             class="shortener-analytics__line"
@@ -105,7 +123,7 @@ const chart = computed<ChartDefs | null>(() => (vm.value ? chartDefs(vm.value) :
           </svg>
         </div>
         <table class="shortener-analytics__table">
-          <caption class="shortener-analytics__sr-only">Clicks by day</caption>
+          <caption class="shortener-analytics__sr-only">{{ labels.byDay }}</caption>
           <thead>
             <tr>
               <th scope="col">Date</th>
@@ -123,7 +141,7 @@ const chart = computed<ChartDefs | null>(() => (vm.value ? chartDefs(vm.value) :
 
       <!-- Referrers: bar list + table share `vm.referrers`. -->
       <section class="shortener-analytics__section" aria-labelledby="ref-title">
-        <h4 id="ref-title" class="shortener-analytics__subtitle">Top referrer domains</h4>
+        <h4 id="ref-title" class="shortener-analytics__subtitle">{{ labels.byReferrer }}</h4>
         <ol v-if="vm.referrers.length" class="shortener-analytics__bars">
           <li v-for="r in vm.referrers" :key="r.domain" class="shortener-analytics__bar-row">
             <span class="shortener-analytics__bar-label">{{ r.domain }}</span>
@@ -137,7 +155,7 @@ const chart = computed<ChartDefs | null>(() => (vm.value ? chartDefs(vm.value) :
           </li>
         </ol>
         <table class="shortener-analytics__table">
-          <caption class="shortener-analytics__sr-only">Clicks by referrer domain</caption>
+          <caption class="shortener-analytics__sr-only">{{ labels.byReferrer }}</caption>
           <thead>
             <tr>
               <th scope="col">Referrer</th>
@@ -157,10 +175,10 @@ const chart = computed<ChartDefs | null>(() => (vm.value ? chartDefs(vm.value) :
 
       <!-- Devices: bar list + table share `vm.devices`. -->
       <section class="shortener-analytics__section" aria-labelledby="dev-title">
-        <h4 id="dev-title" class="shortener-analytics__subtitle">Device category</h4>
+        <h4 id="dev-title" class="shortener-analytics__subtitle">{{ labels.byDevice }}</h4>
         <ul v-if="vm.devices.length" class="shortener-analytics__bars">
           <li v-for="d in vm.devices" :key="d.category" class="shortener-analytics__bar-row">
-            <span class="shortener-analytics__bar-label">{{ d.category }}</span>
+            <span class="shortener-analytics__bar-label">{{ labelFor(d.category, locale) }}</span>
             <span class="shortener-analytics__bar-track" aria-hidden="true">
               <span
                 class="shortener-analytics__bar-fill"
@@ -171,7 +189,7 @@ const chart = computed<ChartDefs | null>(() => (vm.value ? chartDefs(vm.value) :
           </li>
         </ul>
         <table class="shortener-analytics__table">
-          <caption class="shortener-analytics__sr-only">Clicks by device category</caption>
+          <caption class="shortener-analytics__sr-only">{{ labels.byDevice }}</caption>
           <thead>
             <tr>
               <th scope="col">Device</th>
@@ -181,7 +199,7 @@ const chart = computed<ChartDefs | null>(() => (vm.value ? chartDefs(vm.value) :
           </thead>
           <tbody>
             <tr v-for="d in vm.devices" :key="d.category">
-              <td>{{ d.category }}</td>
+              <td>{{ labelFor(d.category, locale) }}</td>
               <td>{{ d.clicks }}</td>
               <td>{{ d.share }}%</td>
             </tr>

@@ -1,5 +1,17 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { ROADMAP_MILESTONES } from '@/content/roadmap'
+import { tr } from '@/portfolio/i18n'
+
+const props = defineProps<{ locale?: 'en' | 'ru' }>()
+const locale = computed(() => props.locale ?? 'en')
+
+const stateLabel = computed(() => ({
+  current: tr({ en: 'Current', ru: 'Текущая' }, locale.value),
+  completed: tr({ en: 'Completed', ru: 'Завершена' }, locale.value),
+  future: tr({ en: 'Future', ru: 'Далее' }, locale.value),
+  services: tr({ en: 'Services', ru: 'Сервисы' }, locale.value),
+}))
 </script>
 
 <template>
@@ -10,12 +22,12 @@ import { ROADMAP_MILESTONES } from '@/content/roadmap'
       :class="['roadmap-item', milestone.state === 'current' ? 'roadmap-item--current' : '']"
     >
       <span :class="['roadmap-item__state', `roadmap-item__state--${milestone.state}`]">
-        {{ milestone.state === 'current' ? 'Current' : milestone.state === 'completed' ? 'Completed' : 'Future' }}
+        {{ stateLabel[milestone.state] }}
       </span>
-      <h3>{{ milestone.title }}</h3>
-      <p>{{ milestone.summary }}</p>
+      <h3>{{ tr(milestone.title, locale) }}</h3>
+      <p>{{ tr(milestone.summary, locale) }}</p>
       <p class="roadmap-item__services">
-        Services: {{ milestone.serviceIds.join(', ') }}
+        {{ stateLabel.services }}: {{ milestone.serviceIds.join(', ') }}
       </p>
     </li>
   </ol>

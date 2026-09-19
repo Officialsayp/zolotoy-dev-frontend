@@ -27,6 +27,64 @@ import { toHistoryEntryView, toOrderDetailView } from '../models/order-view-mode
 import { useOrderActions } from '../queries/use-order-actions'
 import { useOrderDetailQuery, useOrderHistoryQuery } from '../queries/use-order-queries'
 import { useOrderRole } from '../queries/use-order-role'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { tr } from '@/portfolio/i18n'
+
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
+
+const labels = computed(() => ({
+  items: tr({ en: 'Items', ru: 'Позиции' }, locale.value),
+  payment: tr({ en: 'Payment', ru: 'Оплата' }, locale.value),
+  paymentStatus: tr({ en: 'Payment status', ru: 'Статус оплаты' }, locale.value),
+  paymentNotePlain: tr(
+    {
+      en: 'No card / provider UI — real online acquiring is out of project scope. Use the',
+      ru: 'Без UI карты/провайдера — реальный эквайринг вне рамок проекта. Машину состояний оплаты приводит в действие',
+    },
+    locale.value,
+  ),
+  payAction: tr({ en: 'Pay', ru: 'Pay' }, locale.value),
+  paymentNoteTail: tr({ en: 'action to drive the payment state machine.', ru: 'действие — машину состояний оплаты.' }, locale.value),
+  actions: tr({ en: 'Actions', ru: 'Действия' }, locale.value),
+  history: tr({ en: 'History', ru: 'История' }, locale.value),
+  notFound: tr({ en: 'Order not found', ru: 'Заказ не найден' }, locale.value),
+  notFoundMsg: tr(
+    { en: 'This order does not exist or is not visible to the current viewer.', ru: 'Этот заказ не существует или не виден текущему пользователю.' },
+    locale.value,
+  ),
+  forbidden: tr({ en: 'Access denied', ru: 'Доступ запрещён' }, locale.value),
+  forbiddenMsg: tr(
+    { en: 'You do not have permission to view this order.', ru: 'У вас нет прав на просмотр этого заказа.' },
+    locale.value,
+  ),
+  loadError: tr({ en: 'Unable to load order', ru: 'Не удалось загрузить заказ' }, locale.value),
+  loadErrorMsg: tr({ en: 'The order could not be loaded.', ru: 'Заказ не удалось загрузить.' }, locale.value),
+  historyError: tr({ en: 'Unable to load history', ru: 'Не удалось загрузить историю' }, locale.value),
+  historyErrorMsg: tr({ en: 'History could not be loaded.', ru: 'Историю не удалось загрузить.' }, locale.value),
+  idempotencyNote: tr(
+    {
+      en: 'Idempotency-Key was reused with a different request — this is not silently retried.',
+      ru: 'Idempotency-Key переиспользован с другим запросом — тихий ретрай не выполняется.',
+    },
+    locale.value,
+  ),
+  retrySameKey: tr({ en: 'Retry request (same idempotency key)', ru: 'Повторить запрос (тот же ключ идемпотентности)' }, locale.value),
+  cancelTitle: tr({ en: 'Cancel order', ru: 'Отмена заказа' }, locale.value),
+  cancelConfirm: tr({ en: 'Cancel order', ru: 'Отменить заказ' }, locale.value),
+  cancelIrreversible: tr(
+    { en: 'Cancelling this order is irreversible. ', ru: 'Отмена этого заказа необратима. ' },
+    locale.value,
+  ),
+  cancelPaid: tr(
+    {
+      en: 'This order is paid — cancellation requires a refund workflow and is not available.',
+      ru: 'Заказ оплачен — отмена требует процедуры возврата и недоступна.',
+    },
+    locale.value,
+  ),
+  cancelPlain: tr({ en: 'Confirm to cancel the order.', ru: 'Подтвердите отмену заказа.' }, locale.value),
+}))
 
 const route = useRoute()
 const app = useAppStore()
@@ -45,7 +103,7 @@ function asAppError(error: unknown): AppError | undefined {
 }
 
 const orderDto = computed(() => detail.data.value)
-const detailView = computed(() => (orderDto.value ? toOrderDetailView(orderDto.value) : undefined))
+const detailView = computed(() => (orderDto.value ? toOrderDetailView(orderDto.value, locale.value) : undefined))
 
 const actionsApi = useOrderActions(orderDto, role)
 
@@ -71,7 +129,7 @@ async function onConfirm(): Promise<void> {
   if (action) void actionsApi.execute(action)
 }
 
-const historyEntries = computed(() => (history.data.value ?? []).map(toHistoryEntryView))
+const historyEntries = computed(() => (history.data.value ?? []).map((dto) => toHistoryEntryView(dto, locale.value)))
 </script>
 
 <template>
@@ -79,20 +137,20 @@ const historyEntries = computed(() => (history.data.value ?? []).map(toHistoryEn
 
   <ErrorState
     v-else-if="isNotFound"
-    title="Order not found"
-    message="This order does not exist or is not visible to the current viewer."
+    :title="labels.notFound"
+    :message="labels.notFoundMsg"
   />
 
   <ErrorState
     v-else-if="isForbidden"
-    title="Access denied"
-    message="You do not have permission to view this order."
+    :title="labels.forbidden"
+    :message="labels.forbiddenMsg"
   />
 
   <ErrorState
     v-else-if="detail.isError.value"
-    title="Unable to load order"
-    :message="detailError?.message ?? 'The order could not be loaded.'"
+    :title="labels.loadError"
+    :message="detailError?.message ?? labels.loadErrorMsg"
     :on-retry="() => detail.refetch()"
   />
 
@@ -117,25 +175,26 @@ const historyEntries = computed(() => (history.data.value ?? []).map(toHistoryEn
         <OrderSummaryCard :order="detailView" />
 
         <CardPanel class="order-detail__section">
-          <h3 class="order-detail__section-title">Items</h3>
+          <h3 class="order-detail__section-title">{{ labels.items }}</h3>
           <OrderItemsTable :items="detailView.items" />
         </CardPanel>
 
         <CardPanel class="order-detail__section">
-          <h3 class="order-detail__section-title">Payment</h3>
+          <h3 class="order-detail__section-title">{{ labels.payment }}</h3>
           <p class="order-detail__payment-status">
-            Payment status: <PaymentStatusBadge :status="orderDto.payment_status" />
+            {{ labels.paymentStatus }}: <PaymentStatusBadge :status="orderDto.payment_status" />
           </p>
           <p class="order-detail__payment-note">
-            No card / provider UI — real online acquiring is out of project scope. Use the
-            <strong>Pay</strong> action to drive the payment state machine.
+            {{ labels.paymentNotePlain }}
+            <strong>{{ labels.payAction }}</strong>
+            {{ labels.paymentNoteTail }}
           </p>
         </CardPanel>
       </div>
 
       <div class="order-detail__side">
         <CardPanel class="order-detail__section">
-          <h3 class="order-detail__section-title">Actions</h3>
+          <h3 class="order-detail__section-title">{{ labels.actions }}</h3>
           <OrderActionBar
             :actions="actionsApi.actions.value"
             :pending-action="actionsApi.pendingAction.value"
@@ -145,13 +204,13 @@ const historyEntries = computed(() => (history.data.value ?? []).map(toHistoryEn
         </CardPanel>
 
         <CardPanel class="order-detail__section">
-          <h3 class="order-detail__section-title">History</h3>
+          <h3 class="order-detail__section-title">{{ labels.history }}</h3>
           <LoadingSkeleton v-if="history.isLoading.value" :rows="3" :columns="1" />
           <OrderHistoryTimeline v-else-if="!history.isError.value" :entries="historyEntries" />
           <ErrorState
             v-else
-            title="Unable to load history"
-            :message="asAppError(history.error.value)?.message ?? 'History could not be loaded.'"
+            :title="labels.historyError"
+            :message="asAppError(history.error.value)?.message ?? labels.historyErrorMsg"
           />
         </CardPanel>
       </div>
@@ -166,7 +225,7 @@ const historyEntries = computed(() => (history.data.value ?? []).map(toHistoryEn
     <div v-if="actionsApi.lastError.value" class="order-detail__error" role="alert" data-testid="order-action-error">
       <span>{{ actionsApi.lastError.value }}</span>
       <span v-if="actionsApi.idempotencyConflict.value" class="order-detail__error-note">
-        Idempotency-Key was reused with a different request — this is not silently retried.
+        {{ labels.idempotencyNote }}
       </span>
     </div>
 
@@ -175,7 +234,7 @@ const historyEntries = computed(() => (history.data.value ?? []).map(toHistoryEn
       variant="secondary"
       @click="actionsApi.replayExact()"
     >
-      Retry request (same idempotency key)
+      {{ labels.retrySameKey }}
     </AppButton>
 
     <OrderIdempotencyPanel
@@ -187,14 +246,12 @@ const historyEntries = computed(() => (history.data.value ?? []).map(toHistoryEn
 
     <ConfirmDialog
       :open="confirmAction !== null"
-      title="Cancel order"
+      :title="labels.cancelTitle"
       :message="
-        'Cancelling this order is irreversible. ' +
-        (orderDto.payment_status === 'paid'
-          ? 'This order is paid — cancellation requires a refund workflow and is not available.'
-          : 'Confirm to cancel the order.')
+        labels.cancelIrreversible +
+        (orderDto.payment_status === 'paid' ? labels.cancelPaid : labels.cancelPlain)
       "
-      confirm-label="Cancel order"
+      :confirm-label="labels.cancelConfirm"
       variant="danger"
       :busy="actionsApi.pendingAction.value !== null"
       @confirm="onConfirm"

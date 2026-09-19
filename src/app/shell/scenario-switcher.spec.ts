@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 
 const queryMocks = vi.hoisted(() => ({
   invalidateQueries: vi.fn().mockResolvedValue(undefined),
@@ -16,6 +17,7 @@ import ScenarioSwitcher from './scenario-switcher.vue'
 
 describe('ScenarioSwitcher', () => {
   beforeEach(() => {
+    setActivePinia(createPinia())
     queryMocks.invalidateQueries.mockClear()
   })
 

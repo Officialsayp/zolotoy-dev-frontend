@@ -10,7 +10,12 @@ import StatusBadge from '@/shared/ui/status-badge.vue'
 
 import { useAdminExampleQuery, useMeQuery } from '../queries/use-auth-queries'
 import { useSessionStore } from '../store/session-store'
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { authString } from '@/shared/i18n/auth-strings'
+import { tr } from '@/portfolio/i18n'
 
+const localeStore = useLocaleStore()
+const locale = computed(() => localeStore.get())
 const session = useSessionStore()
 const { data: admin, isLoading, isError, error, refetch } = useAdminExampleQuery()
 const { data: me } = useMeQuery()
@@ -21,43 +26,67 @@ const denied = computed(
 
 const deniedMessage = computed(() => {
   if (session.isAuthenticated && !session.isAdmin) {
-    return 'Your account does not have the admin role. The backend rejected this request.'
+    return tr(
+      {
+        en: 'Your account does not have the admin role. The backend rejected this request.',
+        ru: 'У аккаунта нет роли admin. Бэкенд отклонил запрос.',
+      },
+      locale.value,
+    )
   }
-  return 'This endpoint requires the admin role and returned 403.'
+  return tr(
+    {
+      en: 'This endpoint requires the admin role and returned 403.',
+      ru: 'Эндпоинт требует роль admin и вернул 403.',
+    },
+    locale.value,
+  )
 })
 
 const unexpectedError = computed(() =>
   isError.value && !denied.value
     ? typeof error.value === 'object' && error.value !== null && 'message' in error.value
       ? String((error.value as { message: unknown }).message)
-      : 'The admin endpoint could not be reached.'
+      : tr({ en: 'The admin endpoint could not be reached.', ru: 'Не удалось связаться с админ-эндпоинтом.' }, locale.value)
     : '',
 )
 </script>
 
 <template>
   <div class="auth-admin">
-    <h2 class="auth-admin__title">Admin demo</h2>
+    <h2 class="auth-admin__title">{{ authString('adminDemo', locale) }}</h2>
     <p class="auth-admin__intro">
-      Calls <code>/api/v1/admin/example</code>. The route guard and this badge are convenience UX —
-      the backend role middleware stays authoritative.
+      {{ tr({ en: 'Calls', ru: 'Вызывает' }, locale) }} <code>/api/v1/admin/example</code>.
+      {{ tr(
+        {
+          en: 'The route guard and this badge are convenience UX — the backend role middleware stays authoritative.',
+          ru: 'Роут-гард и этот бейдж — вспомогательный UX; авторитетным остаётся ролевой middleware бэкенда.',
+        },
+        locale,
+      ) }}
     </p>
 
     <div class="auth-admin__roles">
-      <StatusBadge tone="neutral" :label="session.isAuthenticated ? session.isAdmin ? 'Authenticated admin' : 'Authenticated user' : 'Anonymous'" />
+      <StatusBadge tone="neutral"  :label="
+        session.isAuthenticated
+          ? session.isAdmin
+            ? tr({ en: 'Authenticated admin', ru: 'Аутентифицированный админ' }, locale)
+            : tr({ en: 'Authenticated user', ru: 'Аутентифицированный пользователь' }, locale)
+          : tr({ en: 'Anonymous', ru: 'Гость' }, locale)
+      " />
     </div>
 
     <LoadingSkeleton v-if="isLoading" :rows="4" :columns="1" />
 
     <ErrorState
       v-else-if="denied"
-      title="Access denied"
+      :title="authString('accessDenied', locale)"
       :message="deniedMessage"
     />
 
     <ErrorState
       v-else-if="isError"
-      title="Admin endpoint error"
+      :title="tr({ en: 'Admin endpoint error', ru: 'Ошибка админ-эндпоинта' }, locale)"
       :message="unexpectedError"
       :on-retry="() => refetch()"
     />
@@ -68,11 +97,16 @@ const unexpectedError = computed(() =>
         <li v-for="policy in admin.policies" :key="policy"><CodeValue :value="policy" /></li>
       </ul>
       <p v-if="me" class="auth-admin__principal">
-        Acting principal: {{ me.email }} (roles: {{ me.roles.join(', ') }})
+        {{ tr({ en: 'Acting principal', ru: 'Действующий субъект' }, locale) }}: {{ me.email }}
+        ({{ tr({ en: 'roles', ru: 'роли' }, locale) }}: {{ me.roles.join(', ') }})
       </p>
     </CardPanel>
 
-    <EmptyState v-else title="No response" description="The admin endpoint returned no content." />
+    <EmptyState
+      v-else
+      :title="tr({ en: 'No response', ru: 'Нет ответа' }, locale)"
+      :description="tr({ en: 'The admin endpoint returned no content.', ru: 'Админ-эндпоинт вернул пустой ответ.' }, locale)"
+    />
   </div>
 </template>
 
