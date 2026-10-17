@@ -49,9 +49,16 @@ describe('ScenarioSwitcher', () => {
     expect(predicate({ queryKey: ['notifications', 'event', 'evt-1'], observers: [] })).toBe(true)
     expect(predicate({ queryKey: ['shortener', 'analytics', 'link-1'], observers: [] })).toBe(true)
 
-    // Auth and system queries are not scenario-scoped and stay untouched.
-    expect(predicate({ queryKey: ['auth', 'profile'], observers: [{}] })).toBe(false)
-    expect(predicate({ queryKey: ['system', 'health', 'auth'], observers: [{}] })).toBe(false)
+    // Mock system HEALTH is scenario-scoped (degraded answers 503): the badges
+    // must not wait for the 30s polling tick.
+    expect(predicate({ queryKey: ['system', 'health', 'orders'], observers: [{}] })).toBe(true)
+    expect(predicate({ queryKey: ['system', 'health', 'orders'], observers: [] })).toBe(true)
+    // Auth queries are scenario-scoped: the auth mock wipes issued sessions on
+    // every switch, so cached me/sessions data must not outlive the baseline.
+    expect(predicate({ queryKey: ['auth', 'me'], observers: [{}] })).toBe(true)
+    expect(predicate({ queryKey: ['auth', 'sessions'], observers: [] })).toBe(true)
+    // Other system queries are not scenario-scoped.
+    expect(predicate({ queryKey: ['system', 'config'], observers: [{}] })).toBe(false)
   })
 
   it('does not touch queries when the selected scenario did not change', async () => {

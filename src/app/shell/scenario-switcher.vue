@@ -20,6 +20,19 @@ const current = computed<DemoScenarioId>(() => getScenario())
 /** Service roots whose cached data is scenario-scoped. */
 const SERVICE_ROOTS = new Set(['orders', 'notifications', 'shortener'])
 
+/**
+ * Is this query's data scoped to the current mock baseline? The switcher only
+ * renders in mock mode, where system HEALTH is scenario-scoped too (degraded
+ * answers 503) — other system queries are not. Auth queries are: the auth mock
+ * rebuilds its store on every switch and wipes issued sessions, so cached
+ * me/sessions data of the previous baseline must not be served after it.
+ */
+function isScenarioScoped(queryKey: readonly unknown[]): boolean {
+  const root = String(queryKey[0])
+  if (root === 'system') return String(queryKey[1]) === 'health'
+  return SERVICE_ROOTS.has(root) || root === 'auth'
+}
+
 function onChange(event: Event): void {
   const target = event.target as HTMLSelectElement
   const next = target.value as DemoScenarioId
@@ -33,15 +46,19 @@ function onChange(event: Event): void {
   // getScenario), which rekeys their queries to the first page and refetches
   // it exactly once — invalidating or resetting the list queries here would
   // fetch the previous scenario's stale cursor a second time. What is left to
-  // fix up are the other queries of the service roots: reset them so no
-  // cached data from the previous baseline survives (an active detail
-  // refetches, a cached one rewinds to pending). Auth and system queries are
-  // not scenario-scoped and stay untouched; resetQueries (not removeQueries —
-  // force-removing queries subscribed by live observers breaks subsequent
-  // fetches) only refetches the ones with live observers.
+  // fix up are the other scenario-scoped queries: reset them so no cached
+  // data from the previous baseline survives (an active query refetches, a
+  // cached one rewinds to pending). Mock system health is included — the
+  // degraded scenario answers 503 and the badges must not wait up to the 30s
+  // polling tick. Auth queries are included as well — the auth mock wipes
+  // issued sessions on every switch, and the refetched 401 resolves the stale
+  // session through the normal refresh/verdict contract (the session store
+  // itself is NOT cleared here: no special logout rule). resetQueries (not
+  // removeQueries — force-removing queries subscribed by live observers breaks
+  // subsequent fetches) only refetches the ones with live observers.
   queryClient.resetQueries({
     predicate: (query) =>
-      SERVICE_ROOTS.has(String(query.queryKey[0])) &&
+      isScenarioScoped(query.queryKey) &&
       (String(query.queryKey[1]) !== 'list' || query.observers.length === 0),
   })
 }
