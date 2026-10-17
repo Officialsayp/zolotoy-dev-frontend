@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 /**
  * R2-02: the auth mock rebuilds its store on every scenario switch (issued
@@ -16,7 +16,7 @@ const USER_EMAIL = 'user@zolotoy.dev'
 const PASSWORD = 'DemoPassword!123'
 const EXPIRED_BANNER = 'Your session expired. Sign in again.'
 
-async function signInAsUser(page: import('@playwright/test').Page): Promise<void> {
+async function signInAsUser(page: Page): Promise<void> {
   await page.goto('/demo/auth/login')
   await page.locator('select.scenario-switcher__select').selectOption('auth-active-user')
   await page.getByTestId('auth-email').fill(USER_EMAIL)
