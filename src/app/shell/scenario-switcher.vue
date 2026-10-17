@@ -17,7 +17,10 @@ const localeStore = useLocaleStore()
 const locale = computed(() => localeStore.get())
 const current = computed<DemoScenarioId>(() => getScenario())
 
-async function onChange(event: Event): Promise<void> {
+/** Service roots whose cached data is scenario-scoped. */
+const SERVICE_ROOTS = new Set(['orders', 'notifications', 'shortener'])
+
+function onChange(event: Event): void {
   const target = event.target as HTMLSelectElement
   const next = target.value as DemoScenarioId
 
@@ -25,16 +28,22 @@ async function onChange(event: Event): Promise<void> {
 
   setScenario(next)
 
-  // Scenario changes represent a new deterministic mock baseline. Mark active
-  // server-state queries stale and refetch them immediately so the UI does not
-  // keep showing data from the previous scenario until stale/refetch timers fire.
-  // Keyset pagination cursors are scenario-specific: kept cursors would yield
-  // empty pages against the new baseline. resetQueries (not removeQueries —
+  // Scenario changes represent a new deterministic mock baseline. List pages
+  // reset their page-local cursors synchronously on the change (watch on
+  // getScenario), which rekeys their queries to the first page and refetches
+  // it exactly once — invalidating or resetting the list queries here would
+  // fetch the previous scenario's stale cursor a second time. What is left to
+  // fix up are the other queries of the service roots: reset them so no
+  // cached data from the previous baseline survives (an active detail
+  // refetches, a cached one rewinds to pending). Auth and system queries are
+  // not scenario-scoped and stay untouched; resetQueries (not removeQueries —
   // force-removing queries subscribed by live observers breaks subsequent
-  // fetches) rewinds cached state to the first page and refetches active
-  // queries; shell/health probes ('system') stay warm.
-  await queryClient.invalidateQueries()
-  queryClient.resetQueries({ predicate: (query) => String(query.queryKey[0]) !== 'system' })
+  // fetches) only refetches the ones with live observers.
+  queryClient.resetQueries({
+    predicate: (query) =>
+      SERVICE_ROOTS.has(String(query.queryKey[0])) &&
+      (String(query.queryKey[1]) !== 'list' || query.observers.length === 0),
+  })
 }
 </script>
 

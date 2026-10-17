@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
+import { getScenario } from '@/mocks/scenario-registry'
 import AppButton from '@/shared/ui/app-button.vue'
 import EmptyState from '@/shared/ui/empty-state.vue'
 import ErrorState from '@/shared/ui/error-state.vue'
@@ -64,6 +65,26 @@ watch([status, channel, eventType], () => {
 })
 
 const query = useNotificationsListQuery(listQuery)
+
+// Scenario switches rebuild the mock baseline. A kept cursor is opaque to the
+// new baseline, and a kept first-page key would keep serving the previous
+// scenario's cache, so pagination restarts synchronously on the switch: a
+// changed key (page 2+) refetches through the rekey itself, an unchanged
+// first-page key refetches explicitly — exactly one first-page request either
+// way (flush: 'sync' runs before the scenario switcher touches the cache).
+// Filters stay as the user set them.
+watch(
+  getScenario,
+  () => {
+    cursorStack.value = []
+    if (cursor.value === undefined) {
+      void query.refetch()
+    } else {
+      cursor.value = undefined
+    }
+  },
+  { flush: 'sync' },
+)
 
 const rows = computed(() => (query.data.value ? query.data.value.items : []))
 const hasNext = computed(() => Boolean(query.data.value?.has_more))
