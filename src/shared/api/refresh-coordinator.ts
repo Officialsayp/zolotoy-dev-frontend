@@ -32,6 +32,30 @@ export interface RefreshCoordinator {
   ): Promise<TResult>
 }
 
+/**
+ * AppError kinds that describe infrastructure trouble, not an auth verdict.
+ * A refresh that failed because the service was unreachable (network blip,
+ * 5xx, timeout, backpressure) does not prove the session is invalid: tearing
+ * down on it would log users out on transient errors. 429 keeps its existing
+ * policy — it is never auto-retried, only surfaced (Retry-After is honored by
+ * the transport mapping, not by retry loops).
+ */
+export const TRANSIENT_REFRESH_KINDS: ReadonlySet<AppError['kind']> = new Set([
+  'network',
+  'timeout',
+  'server',
+  'rate-limit',
+])
+
+/** Is this refresh failure transient infrastructure trouble (not an auth verdict)? */
+export function isTransientRefreshError(error: unknown): boolean {
+  if (typeof error === 'object' && error !== null) {
+    const kind = (error as AppError).kind
+    return kind !== undefined && TRANSIENT_REFRESH_KINDS.has(kind)
+  }
+  return false
+}
+
 export function createRefreshCoordinator<TRefresh = unknown>(
   config: RefreshCoordinatorConfig<TRefresh>,
 ): RefreshCoordinator {
@@ -59,6 +83,16 @@ export function createRefreshCoordinator<TRefresh = unknown>(
         result = await refreshOnce()
       } catch (refreshError) {
         config.onRefreshFailure?.(refreshError)
+        // Propagate the error that actually happened. A transient refresh
+        // failure (network/timeout/5xx/429) must reach the caller as itself:
+        // surfacing the original 401 instead would make query clients classify
+        // the failure as a terminal authentication error (never auto-retried)
+        // while the session was actually kept. A refresh failure that IS an
+        // auth verdict (expired/revoked/replay) keeps propagating the original
+        // request error — the session is torn down either way and the callers'
+        // 401 contract is unchanged. Non-AppError refresh failures also keep
+        // propagating the original error.
+        if (isTransientRefreshError(refreshError)) throw refreshError
         throw error
       }
       config.onRefreshSuccess?.(result)

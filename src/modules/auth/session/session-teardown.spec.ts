@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient } from '@tanstack/vue-query'
 
 import { getAppQueryClient, setAppQueryClient } from '@/app/providers/query-client'
+import { createRefreshCoordinator, isAppErrorOfKind } from '@/shared/api/refresh-coordinator'
 import { AUTH_ERROR_CODES } from '../models/auth-dto'
 import { useSessionStore } from '../store/session-store'
 import { handleAuthFailure, teardownAfterLogout } from './session-teardown'
@@ -114,5 +115,59 @@ describe('session teardown', () => {
     handleAuthFailure({ kind: 'authentication', status: 401, code: 'AUTH_UNAUTHORIZED', message: 'x' })
     expect(store.status).toBe('anonymous')
     expect(store.lastReason).toBe('expired')
+  })
+})
+
+describe('refresh coordinator + teardown wiring (integration)', () => {
+  /**
+   * The full contract the app wires in http-clients.ts: onRefreshFailure →
+   * handleAuthFailure. A transient refresh failure must (a) keep the session
+   * and cache, (b) surface the refresh error itself to the caller so query
+   * retry classification treats it as retryable; an auth verdict must tear the
+   * session down and surface the original 401.
+   */
+
+  function authenticate(): ReturnType<typeof useSessionStore> {
+    const store = useSessionStore()
+    store.applyAuthenticated({ id: 'u1', email: 'u@z.dev', status: 'active', roles: ['user'] }, 'access-1')
+    seedQuery()
+    return store
+  }
+
+  it('transient refresh failure: session + cache kept, caller gets the retryable refresh error', async () => {
+    const wired = createRefreshCoordinator({
+      refresh: () => Promise.reject({ kind: 'network', message: 'blip' }),
+      onRefreshFailure: (error) => handleAuthFailure(error),
+    })
+    const store = authenticate()
+
+    await expect(
+      wired.runWithAuthRetry(
+        () => Promise.reject({ kind: 'authentication', status: 401, message: 'stale 401' }),
+        isAppErrorOfKind,
+      ),
+    ).rejects.toMatchObject({ kind: 'network' })
+
+    expect(store.status).toBe('authenticated')
+    expect(store.lastReason).toBe('none')
+    expect(client().getQueryData(['orders', 'detail', 'o1'])).toBeTruthy()
+    expect(client().getQueryData(['auth', 'me'])).toBeTruthy()
+  })
+
+  it('auth-verdict refresh failure: session + cache torn down, caller gets the original 401', async () => {
+    const wired = createRefreshCoordinator({
+      refresh: () => Promise.reject({ kind: 'authentication', status: 401, code: AUTH_ERROR_CODES.SESSION_EXPIRED, message: 'expired' }),
+      onRefreshFailure: (error) => handleAuthFailure(error),
+    })
+    const store = authenticate()
+    const original = { kind: 'authentication', status: 401, message: 'stale 401' }
+
+    await expect(
+      wired.runWithAuthRetry(() => Promise.reject(original), isAppErrorOfKind),
+    ).rejects.toBe(original)
+
+    expect(store.status).toBe('anonymous')
+    expect(store.lastReason).toBe('expired')
+    expect(client().getQueryData(['orders', 'detail', 'o1'])).toBeUndefined()
   })
 })
