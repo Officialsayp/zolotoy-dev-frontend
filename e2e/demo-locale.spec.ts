@@ -26,7 +26,7 @@ test('/demo/?lang=ru renders Russian and persists after navigation', async ({ pa
 
 test('switching locale preserves the route, other params and hash', async ({ page }) => {
   await page.goto('/demo/orders?lang=ru&x=1#fragment')
-  await page.getByRole('navigation', { name: 'Language' }).getByRole('link', { name: 'EN' }).click()
+  await page.getByRole('navigation', { name: /Language|Язык/ }).getByRole('link', { name: 'EN' }).click()
   // The lang param is updated in place; other params and the hash survive.
   await expect(page).toHaveURL(/\/demo\/orders\?lang=en&x=1#fragment$/)
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
@@ -36,12 +36,12 @@ test('switching locale updates rendered text in place (no reload)', async ({ pag
   await page.goto('/demo/orders')
   await expect(page.getByRole('heading', { name: 'Orders', level: 1 })).toBeVisible()
 
-  await page.getByRole('navigation', { name: 'Language' }).getByRole('link', { name: 'RU' }).click()
+  await page.getByRole('navigation', { name: /Language|Язык/ }).getByRole('link', { name: 'RU' }).click()
   // Same route component instance: the localized text must change reactively.
   await expect(page.getByRole('heading', { name: 'Заказы', level: 1 })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Заказы' }).first()).toBeVisible()
 
-  await page.getByRole('navigation', { name: 'Language' }).getByRole('link', { name: 'EN' }).click()
+  await page.getByRole('navigation', { name: /Language|Язык/ }).getByRole('link', { name: 'EN' }).click()
   await expect(page.getByRole('heading', { name: 'Orders', level: 1 })).toBeVisible()
 })
 
@@ -78,7 +78,7 @@ test('switching theme does not change locale and vice versa', async ({ page }) =
   await themeToggle.click()
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
   // Switch locale and verify data-theme (theme preference) is untouched by reading localStorage.
-  await page.getByRole('navigation', { name: 'Language' }).getByRole('link', { name: 'EN' }).click()
+  await page.getByRole('navigation', { name: /Language|Язык/ }).getByRole('link', { name: 'EN' }).click()
   const themePref = await page.evaluate(() => localStorage.getItem('zolotoy.dev:theme'))
   expect(themePref === 'light' || themePref === 'dark' || themePref === 'system').toBe(true)
 })

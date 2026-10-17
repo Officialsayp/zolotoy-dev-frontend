@@ -2,6 +2,9 @@
 import { computed, ref } from 'vue'
 import { Check, Copy } from 'lucide-vue-next'
 
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { uiString } from '@/shared/i18n/ui-strings'
+
 import { copyText } from '@/shared/lib/clipboard'
 
 const props = withDefaults(
@@ -16,6 +19,8 @@ const props = withDefaults(
 )
 
 const copied = ref(false)
+
+const locale = computed(() => useLocaleStore().get())
 
 const shown = computed(() => props.display || props.value)
 
@@ -36,8 +41,8 @@ async function onCopy(): Promise<void> {
     <button
       type="button"
       class="code-value__copy"
-      :aria-label="`Copy ${value}`"
-      :title="copied ? 'Copied' : 'Copy to clipboard'"
+      :aria-label="`${uiString('copy', locale)} ${value}`"
+      :title="copied ? uiString('copied', locale) : uiString('copyToClipboard', locale)"
       @click="onCopy"
     >
       <Check v-if="copied" aria-hidden="true" class="code-value__icon" />
@@ -74,6 +79,8 @@ async function onCopy(): Promise<void> {
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
   padding: 4px;
   border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);

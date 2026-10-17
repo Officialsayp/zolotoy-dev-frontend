@@ -1,18 +1,24 @@
 <script setup lang="ts">
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { uiString } from '@/shared/i18n/ui-strings'
+import { computed } from 'vue'
 import ToastRegion from '@/shared/ui/toast-region.vue'
 import AppFooter from './app-footer.vue'
 import AppHeader from './app-header.vue'
 import AppSidebar from './app-sidebar.vue'
+
+const locale = computed(() => useLocaleStore().get())
 </script>
 
 <template>
   <div class="app-shell">
+    <a class="skip-link" href="#demo-main-content">{{ uiString('skipToContent', locale) }}</a>
     <AppSidebar />
 
     <div class="app-shell__main">
       <div class="app-shell__inner">
         <AppHeader />
-        <main class="app-shell__content">
+        <main id="demo-main-content" class="app-shell__content" tabindex="-1">
           <RouterView />
         </main>
         <AppFooter />

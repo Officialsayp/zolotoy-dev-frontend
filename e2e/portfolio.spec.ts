@@ -79,7 +79,7 @@ test.describe('language switching (public)', () => {
     test(`switch ${docPath} EN→RU→EN preserves the semantic document`, async ({ page }) => {
       const ruPath = '/ru' + (docPath === '/' ? '/' : docPath)
       await page.goto(docPath)
-      await page.getByRole('navigation', { name: 'Language' }).getByRole('link', { name: 'RU' }).click()
+      await page.getByRole('navigation', { name: /Language|Язык/ }).getByRole('link', { name: 'RU' }).click()
       await expect(page).toHaveURL(new RegExp(ruPath.replace(/\//g, '\\/') + '$'))
       await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
       await expect(page.getByRole('navigation', { name: 'Портфолио' }).getByRole('link', { name: 'Главная' })).toBeVisible()

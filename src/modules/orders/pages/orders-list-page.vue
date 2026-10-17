@@ -60,7 +60,7 @@ const rows = computed(() => (query.data.value ? query.data.value.items.map((dto)
 const hasNext = computed(() => Boolean(query.data.value?.has_more))
 const listErrorMessage = computed(() => {
   const error = query.error.value as { message?: string } | undefined
-  return error?.message ?? 'Orders could not be loaded.'
+  return error?.message ?? tr({ en: 'Orders could not be loaded.', ru: 'Не удалось загрузить заказы.' }, locale.value)
 })
 
 function nextPage(): void {

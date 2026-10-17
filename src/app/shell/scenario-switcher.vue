@@ -28,7 +28,13 @@ async function onChange(event: Event): Promise<void> {
   // Scenario changes represent a new deterministic mock baseline. Mark active
   // server-state queries stale and refetch them immediately so the UI does not
   // keep showing data from the previous scenario until stale/refetch timers fire.
+  // Keyset pagination cursors are scenario-specific: kept cursors would yield
+  // empty pages against the new baseline. resetQueries (not removeQueries —
+  // force-removing queries subscribed by live observers breaks subsequent
+  // fetches) rewinds cached state to the first page and refetches active
+  // queries; shell/health probes ('system') stay warm.
   await queryClient.invalidateQueries()
+  queryClient.resetQueries({ predicate: (query) => String(query.queryKey[0]) !== 'system' })
 }
 </script>
 

@@ -8,6 +8,7 @@ import LoadingSkeleton from '@/shared/ui/loading-skeleton.vue'
 
 import { analyticsViewModel } from '../models/shortener-domain'
 import type { ShortLinkAnalyticsDto } from '../models/shortener-dto'
+import { intlLocale } from '@/shared/i18n/locale'
 import { useLocaleStore } from '@/shared/i18n/use-locale'
 import { labelFor } from '@/shared/i18n/label-strings'
 import { tr } from '@/portfolio/i18n'
@@ -28,10 +29,15 @@ const labels = computed(() => ({
   unavailableMsg: tr({ en: 'Click analytics could not be loaded for this link.', ru: 'Аналитику кликов для этой ссылки загрузить не удалось.' }, locale.value),
   noClicks: tr({ en: 'No clicks yet', ru: 'Кликов пока нет' }, locale.value),
   noClicksMsg: tr({ en: 'This link has not recorded any redirects.', ru: 'Эта ссылка ещё не зафиксировала переходов.' }, locale.value),
-  totalClicks: tr({ en: 'total clicks', ru: 'всего переходов' }, locale.value),
+  totalClicksEn: tr({ en: 'total clicks', ru: '' }, locale.value),
   byDay: tr({ en: 'Clicks by day', ru: 'Переходы по дням' }, locale.value),
   byReferrer: tr({ en: 'Top referrers', ru: 'Источники переходов' }, locale.value),
   byDevice: tr({ en: 'Devices', ru: 'Устройства' }, locale.value),
+  dateCol: tr({ en: 'Date', ru: 'Дата' }, locale.value),
+  clicksCol: tr({ en: 'Clicks', ru: 'Переходы' }, locale.value),
+  referrerCol: tr({ en: 'Referrer', ru: 'Источник' }, locale.value),
+  shareCol: tr({ en: 'Share', ru: 'Доля' }, locale.value),
+  deviceCol: tr({ en: 'Device', ru: 'Устройство' }, locale.value),
 }))
 
 const props = defineProps<{
@@ -68,6 +74,17 @@ function chartDefs(vmValue: ReturnType<typeof analyticsViewModel>): ChartDefs {
   return { w, h, padX, x, y, points }
 }
 
+// RU plural rules for the click-count phrase (1 переход, 2-4 перехода, 5+ переходов).
+const totalClicksPhrase = computed(() => {
+  if (locale.value !== 'ru') return labels.value.totalClicksEn
+  const n = vm.value?.totalClicks ?? 0
+  const m10 = n % 10
+  const m100 = n % 100
+  if (m10 === 1 && m100 !== 11) return 'всего переход'
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return 'всего перехода'
+  return 'всего переходов'
+})
+
 // Memoized so the SVG attributes share one derivation instead of re-deriving
 // the geometry for every bound attribute on each render.
 const chart = computed<ChartDefs | null>(() => (vm.value ? chartDefs(vm.value) : null))
@@ -93,8 +110,8 @@ const chart = computed<ChartDefs | null>(() => (vm.value ? chartDefs(vm.value) :
 
     <template v-else-if="vm">
       <p class="shortener-analytics__total">
-        <span class="shortener-analytics__total-value">{{ vm.totalClicks.toLocaleString() }}</span>
-        {{ labels.totalClicks }}
+        <span class="shortener-analytics__total-value">{{ vm.totalClicks.toLocaleString(intlLocale(locale)) }}</span>
+        {{ totalClicksPhrase }}
       </p>
 
       <!-- Clicks by day: SVG polyline + accessible table share `vm.byDay`. -->
@@ -126,8 +143,8 @@ const chart = computed<ChartDefs | null>(() => (vm.value ? chartDefs(vm.value) :
           <caption class="shortener-analytics__sr-only">{{ labels.byDay }}</caption>
           <thead>
             <tr>
-              <th scope="col">Date</th>
-              <th scope="col">Clicks</th>
+              <th scope="col">{{ labels.dateCol }}</th>
+              <th scope="col">{{ labels.clicksCol }}</th>
             </tr>
           </thead>
           <tbody>
@@ -158,9 +175,9 @@ const chart = computed<ChartDefs | null>(() => (vm.value ? chartDefs(vm.value) :
           <caption class="shortener-analytics__sr-only">{{ labels.byReferrer }}</caption>
           <thead>
             <tr>
-              <th scope="col">Referrer</th>
-              <th scope="col">Clicks</th>
-              <th scope="col">Share</th>
+              <th scope="col">{{ labels.referrerCol }}</th>
+              <th scope="col">{{ labels.clicksCol }}</th>
+              <th scope="col">{{ labels.shareCol }}</th>
             </tr>
           </thead>
           <tbody>
@@ -192,9 +209,9 @@ const chart = computed<ChartDefs | null>(() => (vm.value ? chartDefs(vm.value) :
           <caption class="shortener-analytics__sr-only">{{ labels.byDevice }}</caption>
           <thead>
             <tr>
-              <th scope="col">Device</th>
-              <th scope="col">Clicks</th>
-              <th scope="col">Share</th>
+              <th scope="col">{{ labels.deviceCol }}</th>
+              <th scope="col">{{ labels.clicksCol }}</th>
+              <th scope="col">{{ labels.shareCol }}</th>
             </tr>
           </thead>
           <tbody>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { uiString } from '@/shared/i18n/ui-strings'
 import { tr } from '@/portfolio/i18n'
 import { CheckCircle2, Info, AlertTriangle, X, XCircle } from 'lucide-vue-next'
 
@@ -34,7 +35,7 @@ const regionLabel = computed(() => tr({ en: 'Notifications', ru: 'Уведомл
         <button
           type="button"
           class="toast__close"
-          :aria-label="`Dismiss notification: ${toast.message}`"
+          :aria-label="`${uiString('dismissNotification', locale)}: ${toast.message}`"
           @click="store.dismiss(toast.id)"
         >
           <X aria-hidden="true" />
@@ -127,6 +128,8 @@ const regionLabel = computed(() => tr({ en: 'Notifications', ru: 'Уведомл
   color: var(--c-text-subtle);
   cursor: pointer;
   border-radius: var(--radius-sm);
+  min-width: 24px;
+  min-height: 24px;
   padding: 2px;
 }
 

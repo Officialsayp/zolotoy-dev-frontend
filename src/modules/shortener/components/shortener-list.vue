@@ -22,18 +22,26 @@ const locale = computed(() => localeStore.get())
 const labels = computed(() => ({
   details: tr({ en: 'Details', ru: 'Подробнее' }, locale.value),
   mockTitle: tr({ en: 'Mock mode: open the original target directly', ru: 'Mock-режим: открываем исходный адрес напрямую' }, locale.value),
+  columns: {
+    short: tr({ en: 'Short URL', ru: 'Короткая ссылка' }, locale.value),
+    original: tr({ en: 'Original URL', ru: 'Исходный адрес' }, locale.value),
+    status: tr({ en: 'Status', ru: 'Статус' }, locale.value),
+    expires: tr({ en: 'Expires', ru: 'Истекает' }, locale.value),
+    created: tr({ en: 'Created', ru: 'Создана' }, locale.value),
+    actions: tr({ en: 'Actions', ru: 'Действия' }, locale.value),
+  },
 }))
 </script>
 
 <template>
   <div class="shortener-list" data-testid="shortener-list">
     <div class="shortener-list__head" aria-hidden="true">
-      <span>Short URL</span>
-      <span>Original URL</span>
-      <span>Status</span>
-      <span>Expires</span>
-      <span>Created</span>
-      <span class="shortener-list__head-actions">Actions</span>
+      <span>{{ labels.columns.short }}</span>
+      <span>{{ labels.columns.original }}</span>
+      <span>{{ labels.columns.status }}</span>
+      <span>{{ labels.columns.expires }}</span>
+      <span>{{ labels.columns.created }}</span>
+      <span class="shortener-list__head-actions">{{ labels.columns.actions }}</span>
     </div>
 
     <div
@@ -42,32 +50,32 @@ const labels = computed(() => ({
       class="shortener-list__row"
       :data-testid="`link-row-${link.code}`"
     >
-      <div class="shortener-list__cell shortener-list__cell--short" data-label="Short URL">
+      <div class="shortener-list__cell shortener-list__cell--short" :data-label="labels.columns.short">
         <CodeValue v-if="link.short_url" :value="link.short_url" />
         <code v-else class="shortener-list__plain">{{ link.code }}</code>
       </div>
 
       <div
         class="shortener-list__cell shortener-list__cell--url"
-        data-label="Original URL"
+        :data-label="labels.columns.original"
         :title="link.url"
       >
         <span class="shortener-list__truncate">{{ truncateUrl(link.url) }}</span>
       </div>
 
-      <div class="shortener-list__cell" data-label="Status">
+      <div class="shortener-list__cell" :data-label="labels.columns.status">
         <ShortenerStatusBadge :status="link.status" :expires-at="link.expires_at" />
       </div>
 
-      <div class="shortener-list__cell shortener-list__cell--muted" data-label="Expires">
+      <div class="shortener-list__cell shortener-list__cell--muted" :data-label="labels.columns.expires">
         {{ formatDateTime(link.expires_at) }}
       </div>
 
-      <div class="shortener-list__cell shortener-list__cell--muted" data-label="Created">
+      <div class="shortener-list__cell shortener-list__cell--muted" :data-label="labels.columns.created">
         {{ formatDateTime(link.created_at) }}
       </div>
 
-      <div class="shortener-list__cell shortener-list__cell--actions shortener-list__actions" data-label="Actions">
+      <div class="shortener-list__cell shortener-list__cell--actions shortener-list__actions" :data-label="labels.columns.actions">
         <RouterLink :to="`/shortener/${link.id}`" class="shortener-list__link">{{ labels.details }}</RouterLink>
         <a
           v-if="link.short_url && !app.isMock"

@@ -31,6 +31,7 @@ const labels = computed(() => ({
   address: tr({ en: 'Delivery address', ru: 'Адрес доставки' }, locale.value),
   comment: tr({ en: 'Buyer comment', ru: 'Комментарий покупателя' }, locale.value),
   version: tr({ en: 'Aggregate version', ru: 'Версия агрегата' }, locale.value),
+  caption: tr({ en: 'Orders, newest first (keyset pagination)', ru: 'Заказы, сначала новые (keyset-пагинация)' }, locale.value),
 }))
 </script>
 
@@ -38,7 +39,7 @@ const labels = computed(() => ({
   <CardPanel class="order-list" padding="none">
     <div class="order-list__scroll">
       <table class="order-list__table">
-        <caption class="order-list__caption">Orders, newest first (keyset pagination)</caption>
+        <caption class="order-list__caption">{{ labels.caption }}</caption>
         <thead>
           <tr>
             <th scope="col">{{ labels.order }}</th>
