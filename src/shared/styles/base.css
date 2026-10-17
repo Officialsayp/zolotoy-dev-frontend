@@ -4,6 +4,16 @@
   color-scheme: light dark;
 }
 
+/* Force a chosen theme: native controls must follow the data-theme override
+   instead of the OS preference (scrollbars, form controls, autofill UI). */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
 *,
 *::before,
 *::after {

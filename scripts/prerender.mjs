@@ -272,6 +272,11 @@ function buildHead(routeId, locale, canonicalPath, alternates) {
       : caseStudyJsonLd(routeId, locale, url)
 
   const parts = [
+    // Pre-paint theme restore (must match THEME_STORAGE_KEY in
+    // src/shared/theme/theme-preference.ts): explicit light/dark preferences
+    // are applied before the first paint so a saved choice survives reloads
+    // without a flash; `system` keeps the CSS prefers-color-scheme behavior.
+    `<script>try{var t=localStorage.getItem('zolotoy.dev:theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>`,
     `<meta charset="UTF-8" />`,
     `<meta name="viewport" content="width=device-width, initial-scale=1.0" />`,
     `<title>${title}</title>`,
@@ -393,6 +398,7 @@ async function main() {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>try{var t=localStorage.getItem('zolotoy.dev:theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
     <title>404 — Page not found · zolotoy.dev</title>
     <meta name="robots" content="noindex" />
     <link rel="icon" href="/favicon.ico?v=20260914" sizes="16x16 32x32 48x48" />
@@ -416,6 +422,7 @@ async function main() {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>try{var t=localStorage.getItem('zolotoy.dev:theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
     <title>404 — Страница не найдена · zolotoy.dev</title>
     <meta name="robots" content="noindex" />
     <link rel="icon" href="/favicon.ico?v=20260914" sizes="16x16 32x32 48x48" />
