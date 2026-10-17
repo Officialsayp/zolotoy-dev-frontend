@@ -91,4 +91,28 @@ describe('session teardown', () => {
     expect(store.lastReason).toBe('none')
     expect(client().getQueryData(['auth', 'me'])).toBeUndefined()
   })
+
+  it('transient refresh failures (network/timeout/server/rate-limit) keep the session', () => {
+    seedQuery()
+    const store = useSessionStore()
+    store.applyAuthenticated({ id: 'u1', email: 'u@z.dev', status: 'active', roles: ['user'] }, 'access-1')
+
+    for (const kind of ['network', 'timeout', 'server', 'rate-limit'] as const) {
+      handleAuthFailure({ kind, message: `transient ${kind}` })
+      expect(store.status, kind).toBe('authenticated')
+      expect(store.lastReason, kind).toBe('none')
+    }
+    // Cache stays intact — the user is not logged out.
+    expect(client().getQueryData(['auth', 'me'])).toBeTruthy()
+    expect(client().getQueryData(['orders', 'detail', 'o1'])).toBeTruthy()
+  })
+
+  it('authentication verdicts still tear down after a transient pass-through', () => {
+    const store = useSessionStore()
+    store.applyAuthenticated({ id: 'u1', email: 'u@z.dev', status: 'active', roles: ['user'] }, 'access-1')
+    handleAuthFailure({ kind: 'network', message: 'blip' })
+    handleAuthFailure({ kind: 'authentication', status: 401, code: 'AUTH_UNAUTHORIZED', message: 'x' })
+    expect(store.status).toBe('anonymous')
+    expect(store.lastReason).toBe('expired')
+  })
 })

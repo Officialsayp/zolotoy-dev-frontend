@@ -63,6 +63,16 @@ async function bootstrap(): Promise<void> {
   app.use(pinia)
   app.use(VueQueryPlugin, { queryClient })
 
+  // Global safety nets (no UI, structured logs only): uncaught render/lifecycle
+  // errors and unhandled promise rejections must not vanish silently in
+  // production. The default Vue behavior (console.error) still applies.
+  app.config.errorHandler = (err, _instance, info) => {
+    console.error(`[zolotoy] unhandled Vue error (${info}):`, err)
+  }
+  window.addEventListener('unhandledrejection', (event) => {
+    console.error('[zolotoy] unhandled promise rejection:', event.reason)
+  })
+
   useAppStore(pinia).initialize(config.apiMode, config.deployEnv)
   useThemeStore(pinia).initialize()
 
