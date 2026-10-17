@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
 
+# Least privilege: checkout only needs read access to contents; the Node cache
+# and artifact upload use the runner's runtime token, not the GitHub token.
+permissions:
+  contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest
