@@ -37,4 +37,27 @@ describe('edge worker routing helpers', () => {
     expect(canonicalizePublic('/services/order/index.html')).toBe('/services/order/')
     expect(canonicalizePublic('/nope/index.html')).toBeNull()
   })
+
+  it('redirects bare /demo to /demo/ preserving query (MSW scope canonicalization)', async () => {
+    const workerModule = await import('./worker')
+    const shell = new Response('<html>demo shell</html>', { status: 200 })
+    const env: { ASSETS: { fetch: (url: Request | URL) => Promise<Response> } } = {
+      ASSETS: { fetch: () => Promise.resolve(shell.clone()) },
+    }
+
+    const redirect = await workerModule.default.fetch(
+      new Request('https://zolotoy.dev/demo?lang=ru'),
+      env as never,
+    )
+    expect(redirect.status).toBe(308)
+    expect(redirect.headers.get('Location')).toBe('https://zolotoy.dev/demo/?lang=ru')
+
+    // The canonical form still serves the shell.
+    const served = await workerModule.default.fetch(
+      new Request('https://zolotoy.dev/demo/'),
+      env as never,
+    )
+    expect(served.status).toBe(200)
+    expect(await served.text()).toContain('demo shell')
+  })
 })

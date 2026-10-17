@@ -120,6 +120,14 @@ export const useSessionStore = defineStore('session', () => {
   let bootstrapPromise: Promise<SessionStatus> | null = null
 
   /**
+   * The initial navigation guard waits for bootstrap before rendering any
+   * route, so the refresh call must fail fast: a stalled network must never
+   * hold the whole SPA on a blank screen for the full request timeout. Mid-
+   * session refreshes keep the default client timeout.
+   */
+  const BOOTSTRAP_REFRESH_TIMEOUT_MS = 5_000
+
+  /**
    * Cookie-based bootstrap: unknown -> refresh -> memory access token -> GET /me
    * -> authenticated. No valid refresh session -> anonymous (not a fatal error).
    * An infrastructure/server failure sets `bootstrapError` so it is
@@ -131,7 +139,7 @@ export const useSessionStore = defineStore('session', () => {
 
     let token: { access_token: string }
     try {
-      token = await authBound.refresh()
+      token = await authBound.refresh({ timeoutMs: BOOTSTRAP_REFRESH_TIMEOUT_MS })
     } catch (error) {
       handleBootstrapFailure(error)
       return status.value

@@ -25,14 +25,14 @@ function escapeHtml(value: string): string {
 }
 
 /** Full-screen fatal state for bootstrap/config errors (display priority rule). */
-function renderFatal(error: unknown): void {
+function renderFatal(error: unknown, title = 'Configuration error'): void {
   const message = error instanceof Error ? error.message : String(error)
-  document.title = 'Configuration error · zolotoy.dev'
+  document.title = `${title} · zolotoy.dev`
   const root = document.getElementById('app')
   if (!root) return
   root.innerHTML = `
     <div style="max-width:520px;margin:10vh auto;padding:24px;font-family:system-ui;color:#e45858;">
-      <h1 style="font-size:20px;margin:0 0 8px;">Configuration error</h1>
+      <h1 style="font-size:20px;margin:0 0 8px;">${escapeHtml(title)}</h1>
       <p style="font-size:14px;color:#8a93a1;margin:0;">${escapeHtml(message)}</p>
       <p style="font-size:13px;color:#8a93a1;margin-top:16px;">
         Check your Vite environment variables against <code>env.example</code> and restart.
@@ -78,8 +78,22 @@ async function bootstrap(): Promise<void> {
   // guard trigger bootstrap before MSW is ready. Dynamic import keeps MSW and
   // the service mock handlers out of the production entry bundle.
   if (config.apiMode === 'mock') {
-    const { startMockWorker } = await import('@/mocks/browser')
-    await startMockWorker()
+    try {
+      const { startMockWorker } = await import('@/mocks/browser')
+      await startMockWorker()
+    } catch (error) {
+      // Without the mock network layer every API call would leak to the real
+      // backend origins — fail fast with a clear recovery hint instead of an
+      // unexplained blank screen or silent live fallback.
+      renderFatal(
+        new Error(
+          'Mock network layer failed to start. Reload the page to retry. '
+          + (error instanceof Error ? error.message : String(error)),
+        ),
+        'Startup error',
+      )
+      return
+    }
   }
 
   const session = useSessionStore(pinia)
