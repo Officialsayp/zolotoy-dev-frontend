@@ -53,7 +53,12 @@ test('switching a service scenario keeps the session until the next auth call', 
   await expect(page).toHaveURL(/\/demo\/orders/)
 
   // The next auth call meets the rebuilt store: 401 -> refresh 401 -> teardown.
-  await page.getByRole('link', { name: 'Auth' }).click()
+  // The sidebar 'Auth' item is the no-API overview page (session-store data
+  // only), so it never fires the call — the Profile page is what actually does
+  // (its me query was rewound to pending by the switch). Relying on the
+  // overview was race-dependent: the pass depended on the profile-phase me
+  // fetch landing after the switch.
+  await page.getByRole('banner').getByRole('link', { name: 'Profile' }).click()
   await page.waitForURL(/\/demo\/auth\/login/)
   await expect(page.getByText(EXPIRED_BANNER)).toBeVisible()
 })
