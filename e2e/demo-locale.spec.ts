@@ -45,6 +45,40 @@ test('switching locale updates rendered text in place (no reload)', async ({ pag
   await expect(page.getByRole('heading', { name: 'Orders', level: 1 })).toBeVisible()
 })
 
+test('full EN -> RU -> EN chain: texts, active indicator, URL, html lang, persisted preference', async ({
+  page,
+}) => {
+  // Regression for the pre-existing production defect: texts stayed stale until
+  // a full reload because the locale store was not reactive (fixed by PR #10).
+  const nav = page.getByRole('navigation', { name: /Language|Язык/ })
+  await page.goto('/demo/orders?x=1#fragment')
+
+  // EN baseline: EN is the active indicator, English texts rendered.
+  await expect(nav.getByRole('link', { name: 'EN' })).toHaveAttribute('aria-current', 'true')
+  await expect(page.getByRole('heading', { name: 'Orders', level: 1 })).toBeVisible()
+
+  // EN -> RU: texts, indicator, URL params, hash and html lang — in place.
+  await nav.getByRole('link', { name: 'RU' }).click()
+  await expect(page).toHaveURL(/\/demo\/orders\?x=1&lang=ru#fragment$/)
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
+  await expect(page.getByRole('heading', { name: 'Заказы', level: 1 })).toBeVisible()
+  await expect(nav.getByRole('link', { name: 'RU' })).toHaveAttribute('aria-current', 'true')
+  await expect(nav.getByRole('link', { name: 'EN' })).not.toHaveAttribute('aria-current', 'true')
+
+  // RU -> EN: everything reverts; the persisted preference followed the chain.
+  await nav.getByRole('link', { name: 'EN' }).click()
+  await expect(page).toHaveURL(/\/demo\/orders\?x=1&lang=en#fragment$/)
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+  await expect(page.getByRole('heading', { name: 'Orders', level: 1 })).toBeVisible()
+  await expect(nav.getByRole('link', { name: 'EN' })).toHaveAttribute('aria-current', 'true')
+  await expect(nav.getByRole('link', { name: 'RU' })).not.toHaveAttribute('aria-current', 'true')
+
+  // The preference persisted through the chain survives a full reload.
+  await page.reload()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+  await expect(page.getByRole('heading', { name: 'Orders', level: 1 })).toBeVisible()
+})
+
 test('invalid ?lang= value falls back to the persisted preference', async ({ page }) => {
   await page.goto('/demo/?lang=ru')
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
