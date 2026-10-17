@@ -4,6 +4,7 @@
     "vitest.config.*",
     "playwright.config.*",
     "scripts/vite-site-plugin.ts",
+    "scripts/vite-site-plugin.spec.ts",
     "src/shared/routing/site-routes.ts",
     "src/shared/i18n/locale.ts",
     "e2e/**/*.ts"
