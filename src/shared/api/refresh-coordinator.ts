@@ -37,8 +37,9 @@ export interface RefreshCoordinator {
  * A refresh that failed because the service was unreachable (network blip,
  * 5xx, timeout, backpressure) does not prove the session is invalid: tearing
  * down on it would log users out on transient errors. 429 keeps its existing
- * policy — it is never auto-retried, only surfaced (Retry-After is honored by
- * the transport mapping, not by retry loops).
+ * policy — it is classified 'rate-limit' and never auto-retried; the server's
+ * Retry-After header is not consumed by any retry loop, the error simply
+ * surfaces to the caller (manual retry is the user's decision).
  */
 export const TRANSIENT_REFRESH_KINDS: ReadonlySet<AppError['kind']> = new Set([
   'network',
