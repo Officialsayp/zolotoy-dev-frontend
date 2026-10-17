@@ -32,6 +32,19 @@ test('switching locale preserves the route, other params and hash', async ({ pag
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
 })
 
+test('switching locale updates rendered text in place (no reload)', async ({ page }) => {
+  await page.goto('/demo/orders')
+  await expect(page.getByRole('heading', { name: 'Orders', level: 1 })).toBeVisible()
+
+  await page.getByRole('navigation', { name: 'Language' }).getByRole('link', { name: 'RU' }).click()
+  // Same route component instance: the localized text must change reactively.
+  await expect(page.getByRole('heading', { name: 'Заказы', level: 1 })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Заказы' }).first()).toBeVisible()
+
+  await page.getByRole('navigation', { name: 'Language' }).getByRole('link', { name: 'EN' }).click()
+  await expect(page.getByRole('heading', { name: 'Orders', level: 1 })).toBeVisible()
+})
+
 test('invalid ?lang= value falls back to the persisted preference', async ({ page }) => {
   await page.goto('/demo/?lang=ru')
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru')

@@ -5,7 +5,13 @@
  * preference → English. Switching keeps the current route, other query
  * params and the hash intact. The store is intentionally independent from
  * the theme store; each changes only its own state.
+ *
+ * The current locale is a Vue `ref`: components derive localized UI from
+ * `store.get()` inside computeds, so an in-place switch (router binding with
+ * the same route component) must be reactive to re-render the text without a
+ * reload.
  */
+import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { Router } from 'vue-router'
 
@@ -35,28 +41,28 @@ function persistLocale(locale: Locale): void {
 }
 
 export const useLocaleStore = defineStore('locale', () => {
-  let current: Locale = DEFAULT_LOCALE
+  const current = ref<Locale>(DEFAULT_LOCALE)
 
   function get(): Locale {
-    return current
+    return current.value
   }
 
   function initialize(initial: Locale = readStoredLocale()): void {
-    current = isLocale(initial) ? initial : DEFAULT_LOCALE
-    persistLocale(current)
+    current.value = isLocale(initial) ? initial : DEFAULT_LOCALE
+    persistLocale(current.value)
     syncDocumentLang()
   }
 
   function set(next: Locale): void {
     if (!isLocale(next)) return
-    current = next
-    persistLocale(next)
+    current.value = next
+    persistLocale(current.value)
     syncDocumentLang()
   }
 
   function syncDocumentLang(): void {
     if (typeof document !== 'undefined') {
-      document.documentElement.lang = current
+      document.documentElement.lang = current.value
     }
   }
 
