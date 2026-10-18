@@ -168,6 +168,7 @@ async function buildCases() {
     '/notifications/events/abc/extra', '/shortener/a/extra', '/ARCHITECTURE/',
     '/assets/missing-file.js', '/missing.js', '/mockServiceWorker.js',
     '/favicon.svg/', '/architecture.html/', '/no-such/index/', '/services/index/',
+    '/missing.xml', '/sitemap.xml/',
   ]) notFound(path)
   for (const path of ['/ru/no-such', '/ru/assets/missing.js', '/ru/missing.js']) notFound(path, 'ru')
 
