@@ -68,7 +68,8 @@ def main():
             assert "text/html" in headers.get("content-type", "")
             assert (b'<html lang="ru"' if path.startswith("/ru/") else b'<html lang="en"') in body
             assert b'name="robots" content="index,follow"' in body, f"{path}: public document is not indexable"
-            assert b'https://zolotoy.dev' in body, f"{path}: production canonical missing"
+            canonicals = re.findall(rb'<link\b[^>]*\brel="canonical"[^>]*\bhref="([^"]+)"[^>]*>', body)
+            assert canonicals == [f"https://{HOST}{path}".encode()], f"{path}: incorrect production canonical"
             if path == "/":
                 home = body
         for path in ("/demo/", "/demo/orders/", "/demo/orders/new", "/demo/auth/login",
