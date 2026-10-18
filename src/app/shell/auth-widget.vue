@@ -20,7 +20,7 @@ const locale = computed(() => props.locale ?? localeStore.get())
 
 const label = computed(() => {
   if (session.status === 'authenticated')
-    return uiString('signInLink', locale.value) === 'Войти' ? 'Вы вошли' : 'Signed in'
+    return locale.value === 'ru' ? 'Вы вошли' : 'Signed in'
   if (session.status === 'anonymous')
     return locale.value === 'ru' ? 'Гость' : 'Guest'
   return locale.value === 'ru' ? 'Проверка сессии…' : 'Checking session…'
@@ -69,6 +69,13 @@ async function logout(): Promise<void> {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  min-width: 0;
+}
+
+/* Long emails must wrap inside the fixed header instead of pushing it wide. */
+.auth-widget__status > span:first-of-type {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .auth-widget :deep(svg) {

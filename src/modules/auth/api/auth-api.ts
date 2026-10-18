@@ -57,13 +57,14 @@ export const authApi = {
     })
   },
 
-  refresh(): Promise<TokenResponseDto> {
+  refresh(options: { timeoutMs?: number } = {}): Promise<TokenResponseDto> {
     return request({
       path: '/auth/refresh',
       method: 'POST',
       credentials: 'include',
       skipAuthRetry: true,
       skipAccessToken: true,
+      timeoutMs: options.timeoutMs,
     })
   },
 

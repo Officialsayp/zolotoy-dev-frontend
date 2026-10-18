@@ -284,8 +284,11 @@ export function createShortenerRouter(): ShortenerStoreAPI {
       store.runtimeMinutes += 1
       const now = at(store.runtimeMinutes)
       const code = request.custom_alias ?? codeForSeq(seq)
+      // Runtime ids live in a dedicated hex range: the seeded fixture ids are
+      // …0001–…0005, and a colliding id would silently overwrite baseline
+      // links in store.links on create (found by the scenario-pagination e2e).
       const created: ShortLinkDto = {
-        id: `70000000-0000-4000-8000-${seq.toString(16).padStart(12, '0')}`,
+        id: `70000000-0000-4000-8000-${(0xfffff0 + seq).toString(16).padStart(12, '0')}`,
         code,
         short_url: shortUrl(code),
         url: request.url,

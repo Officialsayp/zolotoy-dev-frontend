@@ -65,6 +65,25 @@ function stripTags(html) {
   return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')
 }
 
+/**
+ * Extract the visible text of one markup fragment. This is a build-check
+ * heuristic, NOT HTML sanitization — the input is our own prerendered output
+ * and the result is never rendered. Tag-like spans (`<` + non-`>` + `>`) are
+ * removed repeatedly until a fixed point, so a single pass can never leave
+ * residue on nested or malformed markup ('<<b>x</b>>' -> '<x>'):
+ * every non-final iteration strictly shortens the string (each match consumes
+ * at least '<' + one char + '>'), so the loop terminates in at most
+ * length/3 iterations.
+ */
+function extractText(markup) {
+  let text = markup
+  for (;;) {
+    const next = text.replace(/<[^>]+>/g, '')
+    if (next === text) return text.trim()
+    text = next
+  }
+}
+
 function pageHasText(html, text) {
   return stripTags(html).includes(text)
 }
@@ -93,10 +112,16 @@ function checkPage(route, locale) {
   const bodyStart = html.indexOf('<div id="app">')
   const body = bodyStart >= 0 ? html.slice(bodyStart) : html
   const h1s = [...body.matchAll(/<h1[^>]*>([\s\S]*?)<\/h1>/g)].map((m) =>
-    m[1].replace(/<[^>]+>/g, '').trim(),
+    extractText(m[1]),
   )
   check(h1s.length === 1, `${urlPath}: exactly one H1 (found ${h1s.length})`)
   check(h1s.length > 0 && h1s[0].length > 3, `${urlPath}: H1 is meaningful`)
+  // Real headings never carry raw angle brackets (text is HTML-escaped), so
+  // any residue after tag extraction means a malformed H1 in our own output.
+  check(
+    h1s.every((t) => !/[<>]/.test(t)),
+    `${urlPath}: H1 text has no raw markup residue`,
+  )
 
   // Unique title/description across ALL 12 documents.
   const title = html.match(/<title>([^<]*)<\/title>/)?.[1]

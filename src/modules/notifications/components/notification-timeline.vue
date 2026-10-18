@@ -21,6 +21,12 @@ withDefaults(
 const localeStore = useLocaleStore()
 const locale = computed(() => localeStore.get())
 
+const t = computed(() => ({
+  producer: tr({ en: 'Producer', ru: 'Продюсер' }, locale.value),
+  orderAggregate: tr({ en: 'Order / aggregate', ru: 'Заказ / агрегат' }, locale.value),
+  correlation: tr({ en: 'Correlation', ru: 'Корреляция' }, locale.value),
+}))
+
 const labels = computed(() => ({
   eventOrigin: tr({ en: 'Event origin', ru: 'Источник события' }, locale.value),
   eventType: tr({ en: 'Event type', ru: 'Тип события' }, locale.value),
@@ -60,15 +66,15 @@ const labels = computed(() => ({
         </div>
         <template v-if="event">
           <div v-if="event.producer" class="notification-timeline__row">
-            <span class="notification-timeline__label">Producer</span>
+            <span class="notification-timeline__label">{{ t.producer }}</span>
             <code class="notification-timeline__mono">{{ event.producer }}</code>
           </div>
           <div v-if="event.aggregate_id" class="notification-timeline__row">
-            <span class="notification-timeline__label">Order / aggregate</span>
+            <span class="notification-timeline__label">{{ t.orderAggregate }}</span>
             <CodeValue :value="event.aggregate_id" />
           </div>
           <div v-if="event.correlation_id" class="notification-timeline__row">
-            <span class="notification-timeline__label">Correlation</span>
+            <span class="notification-timeline__label">{{ t.correlation }}</span>
             <CodeValue :value="event.correlation_id" />
           </div>
         </template>

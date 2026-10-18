@@ -84,7 +84,7 @@ const confirmOpen = ref(false)
           locale,
         )
       "
-      confirm-label="Delete"
+      :confirm-label="locale === 'ru' ? 'Удалить' : 'Delete'"
       variant="danger"
       :busy="deleteBusy"
       @confirm="confirmOpen = false; emit('delete')"

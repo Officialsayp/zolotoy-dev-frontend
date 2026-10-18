@@ -55,7 +55,7 @@ const healthTone = computed(() => {
         target="_blank"
         rel="noopener noreferrer"
         class="service-card__link"
-        title="OpenAPI specification"
+        :title="locale === 'ru' ? 'Спецификация OpenAPI' : 'OpenAPI specification'"
       >
         <BookOpen aria-hidden="true" /> OpenAPI
       </a>

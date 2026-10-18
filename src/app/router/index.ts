@@ -65,6 +65,9 @@ const routes: RouteRecordRaw[] = [
         path: 'auth/admin',
         name: ROUTE_NAMES.authAdmin,
         component: () => import('@/modules/auth/pages/auth-admin-page.vue'),
+        // requiredRole is declarative documentation, not a guard input: the
+        // page renders the backend 403 "Access denied" UX in place for non-
+        // admins (e2e/auth.spec.ts) — backend RBAC stays authoritative.
         meta: { titleKey: 'titleAdminDemo', requiresAuth: true, requiredRole: 'admin' },
       },
       {

@@ -70,6 +70,19 @@ export const UI_STRINGS = {
   empty: { en: 'Nothing here yet', ru: 'Пока ничего нет' },
   errorState: { en: 'Something went wrong', ru: 'Что-то пошло не так' },
   retry: { en: 'Retry', ru: 'Повторить' },
+
+  // Forms
+  requiredField: { en: 'required', ru: 'обязательно' },
+
+  // Dialogs
+  confirm: { en: 'Confirm', ru: 'Подтвердить' },
+  cancel: { en: 'Cancel', ru: 'Отмена' },
+
+  // Clipboard / toasts
+  copy: { en: 'Copy', ru: 'Копировать' },
+  copied: { en: 'Copied', ru: 'Скопировано' },
+  copyToClipboard: { en: 'Copy to clipboard', ru: 'Копировать в буфер обмена' },
+  dismissNotification: { en: 'Dismiss notification', ru: 'Скрыть уведомление' },
 } as const satisfies Record<string, S>
 
 export type UiStringKey = keyof typeof UI_STRINGS

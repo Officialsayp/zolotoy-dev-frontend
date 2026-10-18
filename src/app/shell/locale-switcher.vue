@@ -7,6 +7,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { uiString } from '@/shared/i18n/ui-strings'
 import type { Locale } from '@/shared/i18n/locale'
 
 const route = useRoute()
@@ -29,7 +30,7 @@ async function switchTo(target: Locale): Promise<void> {
 </script>
 
 <template>
-  <nav class="locale-switcher" :aria-label="'Language'">
+  <nav class="locale-switcher" :aria-label="uiString('languageLabel', current)">
     <a
       :href="hrefFor('en')"
       :class="['locale-switcher__item', { 'locale-switcher__item--active': current === 'en' }]"

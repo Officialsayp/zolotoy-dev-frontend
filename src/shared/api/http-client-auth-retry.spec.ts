@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { createHttpClient } from './http-client'
+import { createHttpClient, type HttpClient } from './http-client'
 import { createRefreshCoordinator } from './refresh-coordinator'
 
 /**
@@ -101,6 +101,71 @@ describe('http-client 401 refresh coordination', () => {
     expect(onFailure).not.toHaveBeenCalled()
   })
 
+
+  it('a transient refresh failure surfaces the refresh error, not the stale 401', async () => {
+    // Full path through the real wiring shape: protected call → 401 → refresh
+    // POST dies with a network failure → the caller must receive the retryable
+    // refresh error (session is kept), never the original authentication 401.
+    const clientRef: { client?: HttpClient } = {}
+    const coordinator = createRefreshCoordinator<string>({
+      refresh: () =>
+        clientRef.client!.request<string>({
+          path: '/auth/refresh',
+          method: 'POST',
+          credentials: 'include',
+          skipAuthRetry: true,
+          skipAccessToken: true,
+        }),
+    })
+    const client = createHttpClient({
+      baseUrl: 'https://x.test/api/v1',
+      getAccessToken: async () => 'expired-access',
+      coordinator,
+    })
+    clientRef.client = client
+
+    const fetchMock = vi.fn(async (url: URL | RequestInfo) => {
+      if (String(url).endsWith('/auth/refresh')) {
+        throw new TypeError('Failed to fetch') // transport-level network failure
+      }
+      return json(401, { error: { code: 'AUTH_UNAUTHORIZED', message: 'expired' } })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(client.request({ path: '/me' })).rejects.toMatchObject({ kind: 'network' })
+    expect(fetchMock).toHaveBeenCalledTimes(2) // 401 + failed refresh
+  })
+
+  it('an auth-verdict refresh failure still surfaces the original 401', async () => {
+    const clientRef: { client?: HttpClient } = {}
+    const coordinator = createRefreshCoordinator<string>({
+      refresh: () =>
+        clientRef.client!.request<string>({
+          path: '/auth/refresh',
+          method: 'POST',
+          credentials: 'include',
+          skipAuthRetry: true,
+          skipAccessToken: true,
+        }),
+    })
+    const client = createHttpClient({
+      baseUrl: 'https://x.test/api/v1',
+      getAccessToken: async () => 'expired-access',
+      coordinator,
+    })
+    clientRef.client = client
+
+    // The refresh endpoint itself rejects the session (401) — an auth verdict:
+    // the caller keeps receiving the original authentication error.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(401, { error: { code: 'AUTH_UNAUTHORIZED', message: 'x' } })),
+    )
+
+    await expect(client.request({ path: '/me' })).rejects.toMatchObject({
+      kind: 'authentication',
+    })
+  })
 
   it('cookie-only auth requests never attach a stale Bearer token', async () => {
     const refresh = vi.fn(async () => 'unused')

@@ -13,9 +13,11 @@
  *
  * Responsibilities here (document GET/HEAD only):
  *  1. 308-redirect legacy namespaces to /demo/... preserving query;
- *  2. serve the demo shell for recognized demo route patterns;
- *  3. return genuine 404 for unknown demo route patterns;
- *  4. never serve HTML for missing assets.
+ *  2. canonicalize bare /demo (and /demo/index.html) to /demo/ so demo
+ *     documents always live inside the /demo/ MSW worker scope;
+ *  3. serve the demo shell for recognized demo route patterns;
+ *  4. return genuine 404 for unknown demo route patterns;
+ *  5. never serve HTML for missing assets.
  */
 
 export interface Env {
@@ -144,7 +146,14 @@ export default {
 
     // 2. Demo namespace.
     if (pathname === '/demo' || pathname.startsWith('/demo/')) {
-      const internal = pathname === '/demo' ? '/' : pathname.slice('/demo'.length)
+      // Bare /demo canonicalizes to /demo/: the demo document must always be
+      // served from inside the /demo/ namespace so the MSW worker scope
+      // (/demo/) covers the document and mock interception is guaranteed.
+      if (pathname === '/demo') {
+        return Response.redirect(new URL('/demo/' + url.search, url.origin), 308)
+      }
+
+      const internal = pathname.slice('/demo'.length)
 
       // /demo/index.html alias → canonical /demo/.
       if (pathname === '/demo/index.html') {

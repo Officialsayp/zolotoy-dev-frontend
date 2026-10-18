@@ -233,4 +233,19 @@ describe('scenario switching / stale-store guard', () => {
     api = createShortenerRouter()
     expect(api.get(LINK_ACTIVE).status).toBe('active')
   })
+
+  it('create never overwrites seeded baseline links (runtime ids use a dedicated range)', () => {
+    // Regression: runtime ids …0001–…000N collided with the seeded fixture ids
+    // and silently replaced baseline links on create.
+    setScenario('default')
+    resetShortenerMockState()
+    api = createShortenerRouter()
+    for (let i = 0; i < 5; i += 1) {
+      api.create({ url: `https://example.com/regression-${i}` })
+    }
+    const list = api.list({ limit: 20 })
+    expect(list.items.length).toBe(9)
+    expect(list.has_more).toBe(false)
+    expect(api.get(LINK_ACTIVE).code).toBe('Ab3xP9qK')
+  })
 })

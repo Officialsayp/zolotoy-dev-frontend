@@ -1,4 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { uiString } from '@/shared/i18n/ui-strings'
+
+const locale = computed(() => useLocaleStore().get())
+
 withDefaults(
   defineProps<{
     label?: string
@@ -22,7 +29,10 @@ withDefaults(
   <div class="form-field" :class="{ 'form-field--invalid': Boolean(error) }">
     <label v-if="label" class="form-field__label" :for="controlFor">
       {{ label }}
-      <span v-if="required" class="form-field__required" aria-hidden="true">*</span>
+      <template v-if="required">
+        <span class="form-field__required" aria-hidden="true">*</span>
+        <span class="sr-only">{{ uiString('requiredField', locale) }}</span>
+      </template>
     </label>
 
     <slot />

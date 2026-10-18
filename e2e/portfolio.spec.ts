@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 /**
  * Public portfolio pages: content, hydration without console errors, no-JS
@@ -7,6 +7,15 @@ import { expect, test } from '@playwright/test'
  */
 
 const PUBLIC_PAGES = ['/', '/architecture/', '/services/order/', '/services/auth/', '/services/notification/', '/services/url-shortener/']
+
+/**
+ * Exact full-URL comparison with auto-retry: expected URL is built from the
+ * trusted playwright.config.ts baseURL (never from page.url()) via the URL
+ * API, so protocol, host, port, pathname, query and hash must all match.
+ */
+function expectFullUrl(page: Page, path: string, baseURL: string): Promise<void> {
+  return expect(page).toHaveURL(new URL(path, baseURL).href)
+}
 
 for (const path of PUBLIC_PAGES) {
   test(`public page ${path} renders with one H1 and no console errors`, async ({ page }) => {
@@ -76,16 +85,16 @@ test.describe('language switching (public)', () => {
   const PAGES = ['/', '/architecture/', '/services/auth/']
 
   for (const docPath of PAGES) {
-    test(`switch ${docPath} EN→RU→EN preserves the semantic document`, async ({ page }) => {
+    test(`switch ${docPath} EN→RU→EN preserves the semantic document`, async ({ page, baseURL }) => {
       const ruPath = '/ru' + (docPath === '/' ? '/' : docPath)
       await page.goto(docPath)
-      await page.getByRole('navigation', { name: 'Language' }).getByRole('link', { name: 'RU' }).click()
-      await expect(page).toHaveURL(new RegExp(ruPath.replace(/\//g, '\\/') + '$'))
+      await page.getByRole('navigation', { name: /Language|Язык/ }).getByRole('link', { name: 'RU' }).click()
+      await expectFullUrl(page, ruPath, baseURL!)
       await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
       await expect(page.getByRole('navigation', { name: 'Портфолио' }).getByRole('link', { name: 'Главная' })).toBeVisible()
       // Switch back.
       await page.getByRole('navigation', { name: 'Язык' }).getByRole('link', { name: 'EN' }).click()
-      await expect(page).toHaveURL(new RegExp(docPath.replace(/\//g, '\\/') + '$'))
+      await expectFullUrl(page, docPath, baseURL!)
       await expect(page.locator('html')).toHaveAttribute('lang', 'en')
     })
   }

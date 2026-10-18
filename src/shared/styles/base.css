@@ -4,6 +4,16 @@
   color-scheme: light dark;
 }
 
+/* Force a chosen theme: native controls must follow the data-theme override
+   instead of the OS preference (scrollbars, form controls, autofill UI). */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
 *,
 *::before,
 *::after {
@@ -69,6 +79,23 @@ pre,
 kbd {
   font-family: var(--font-mono);
   font-size: 0.92em;
+}
+
+/* Accessible skip link (demo shell; portfolio ships its own). */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--c-surface);
+  color: var(--c-accent);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  z-index: 100;
+}
+
+.skip-link:focus {
+  left: var(--space-3);
+  top: var(--space-3);
 }
 
 /* Consistent focus visibility across the shared UI */

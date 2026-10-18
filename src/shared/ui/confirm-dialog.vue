@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref, useId, watch } from 'vue'
+import { computed, onMounted, ref, useId, watch } from 'vue'
+
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { uiString } from '@/shared/i18n/ui-strings'
 
 import AppButton from './app-button.vue'
 
@@ -15,12 +18,16 @@ const props = withDefaults(
   }>(),
   {
     message: '',
-    confirmLabel: 'Confirm',
-    cancelLabel: 'Cancel',
+    confirmLabel: undefined,
+    cancelLabel: undefined,
     variant: 'primary',
     busy: false,
   },
 )
+
+const locale = computed(() => useLocaleStore().get())
+const resolvedConfirm = computed(() => props.confirmLabel ?? uiString('confirm', locale.value))
+const resolvedCancel = computed(() => props.cancelLabel ?? uiString('cancel', locale.value))
 
 const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
@@ -91,14 +98,14 @@ function onConfirm(): void {
     </div>
     <div class="confirm-dialog__actions">
       <AppButton ref="cancelEl" variant="ghost" :disabled="busy" @click="onCancel">
-        {{ cancelLabel }}
+        {{ resolvedCancel }}
       </AppButton>
       <AppButton
         :variant="variant === 'danger' ? 'danger' : 'primary'"
         :loading="busy"
         @click="onConfirm"
       >
-        {{ confirmLabel }}
+        {{ resolvedConfirm }}
       </AppButton>
     </div>
   </dialog>

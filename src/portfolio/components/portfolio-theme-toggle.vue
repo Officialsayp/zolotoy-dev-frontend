@@ -25,7 +25,12 @@ const props = defineProps<{
 const locale = computed(() => props.locale ?? 'en')
 
 const preference = ref<ThemePreference>(props.initialPreference ?? 'system')
-const resolved = ref<'light' | 'dark'>(resolveTheme(preference.value))
+// Deterministic first render for hydration: the server always resolves
+// `system` as light (no matchMedia on the server), so the client's initial
+// render must do the same. The real resolved value is applied in onMounted.
+const resolved = ref<'light' | 'dark'>(
+  preference.value === 'system' ? 'light' : preference.value,
+)
 
 const themeLabels = computed(() => ({
   system: tr({ en: 'System', ru: 'системная' }, locale.value),
@@ -67,6 +72,10 @@ function cycle(): void {
 onMounted(() => {
   preference.value = readStoredThemePreference()
   resolved.value = resolveTheme(preference.value)
+  // Re-apply the stored preference: a pre-paint inline script already set
+  // data-theme for explicit light/dark choices; this is idempotent and keeps
+  // the DOM in sync when the script is absent (e.g. dev rendering).
+  applyThemePreference(preference.value)
 })
 </script>
 

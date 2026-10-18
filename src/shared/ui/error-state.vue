@@ -1,20 +1,28 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { AlertTriangle } from 'lucide-vue-next'
+
+import { useLocaleStore } from '@/shared/i18n/use-locale'
+import { uiString } from '@/shared/i18n/ui-strings'
 
 import AppButton from './app-button.vue'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     title?: string
     message?: string
     onRetry?: () => void
   }>(),
   {
-    title: 'Something went wrong',
+    title: undefined,
     message: '',
     onRetry: undefined,
   },
 )
+
+const locale = computed(() => useLocaleStore().get())
+const title = computed(() => props.title ?? uiString('errorState', locale.value))
+const retryLabel = computed(() => uiString('retry', locale.value))
 </script>
 
 <template>
@@ -24,7 +32,7 @@ withDefaults(
     <p v-if="message" class="error-state__message">{{ message }}</p>
     <div v-if="$slots.default || onRetry" class="error-state__actions">
       <slot>
-        <AppButton variant="secondary" size="sm" @click="onRetry?.()">Retry</AppButton>
+        <AppButton variant="secondary" size="sm" @click="onRetry?.()">{{ retryLabel }}</AppButton>
       </slot>
     </div>
   </div>
