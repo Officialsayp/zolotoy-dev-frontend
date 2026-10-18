@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 /**
  * Public portfolio pages: content, hydration without console errors, no-JS
@@ -7,6 +7,11 @@ import { expect, test } from '@playwright/test'
  */
 
 const PUBLIC_PAGES = ['/', '/architecture/', '/services/order/', '/services/auth/', '/services/notification/', '/services/url-shortener/']
+
+/** Exact pathname comparison (with auto-retry): no regex construction. */
+function expectPathname(page: Page, path: string): Promise<void> {
+  return expect.poll(() => new URL(page.url()).pathname).toBe(path)
+}
 
 for (const path of PUBLIC_PAGES) {
   test(`public page ${path} renders with one H1 and no console errors`, async ({ page }) => {
@@ -80,12 +85,12 @@ test.describe('language switching (public)', () => {
       const ruPath = '/ru' + (docPath === '/' ? '/' : docPath)
       await page.goto(docPath)
       await page.getByRole('navigation', { name: /Language|Язык/ }).getByRole('link', { name: 'RU' }).click()
-      await expect(page).toHaveURL(new RegExp(ruPath.replace(/\//g, '\\/') + '$'))
+      await expectPathname(page, ruPath)
       await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
       await expect(page.getByRole('navigation', { name: 'Портфолио' }).getByRole('link', { name: 'Главная' })).toBeVisible()
       // Switch back.
       await page.getByRole('navigation', { name: 'Язык' }).getByRole('link', { name: 'EN' }).click()
-      await expect(page).toHaveURL(new RegExp(docPath.replace(/\//g, '\\/') + '$'))
+      await expectPathname(page, docPath)
       await expect(page.locator('html')).toHaveAttribute('lang', 'en')
     })
   }
