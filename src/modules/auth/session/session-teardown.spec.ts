@@ -1,4 +1,4 @@
-import { beforeEach, afterEach, describe, expect, it } from 'vitest'
+import { beforeAll, beforeEach, afterEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient } from '@tanstack/vue-query'
 
@@ -32,6 +32,18 @@ function seedQuery(): void {
 beforeEach(() => {
   setActivePinia(createPinia())
   setAppQueryClient(new QueryClient({ defaultOptions: { queries: { retry: false } } }))
+})
+
+beforeAll(async () => {
+  // teardown() navigates with `void router.push('/auth/login')`, whose lazy
+  // route components (app-shell.vue + auth-login-page.vue and their import
+  // closures) resolve asynchronously. Under vitest 5 an import that settles
+  // after the jsdom environment is torn down is reported as an unhandled
+  // EnvironmentTeardownError. Warming the module graph up front (same
+  // registry the router uses) makes every navigation in these tests resolve
+  // from cache instead of dangling past teardown.
+  await import('@/app/shell/app-shell.vue')
+  await import('@/modules/auth/pages/auth-login-page.vue')
 })
 
 afterEach(() => {

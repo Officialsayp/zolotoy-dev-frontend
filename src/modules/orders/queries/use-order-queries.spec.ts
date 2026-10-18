@@ -26,6 +26,11 @@ import {
   useOrdersListQuery,
 } from './use-order-queries'
 
+/** `.at(n)` needs the ES2022 lib, which the app tsconfig does not include. */
+function keyTail(key: readonly unknown[], fromEnd: number): unknown {
+  return key[key.length - fromEnd]
+}
+
 describe('Order query composable reactivity', () => {
   beforeEach(() => {
     queryMocks.useQuery.mockClear()
@@ -41,10 +46,10 @@ describe('Order query composable reactivity', () => {
       queryFn: () => Promise<unknown>
     }
 
-    expect(options.queryKey.value.at(-2)).toBeNull()
+    expect(keyTail(options.queryKey.value, 2)).toBeNull()
 
     input.value = { cursor: 'cursor-2', limit: 5 }
-    expect(options.queryKey.value.at(-2)).toBe('cursor-2')
+    expect(keyTail(options.queryKey.value, 2)).toBe('cursor-2')
 
     queryMocks.listOrders.mockResolvedValue({ items: [], has_more: false, next_cursor: null })
     await options.queryFn()
@@ -69,8 +74,8 @@ describe('Order query composable reactivity', () => {
 
     orderId.value = 'order-2'
 
-    expect(detail.queryKey.value.at(-1)).toBe('order-2')
-    expect(history.queryKey.value.at(-1)).toBe('order-2')
+    expect(keyTail(detail.queryKey.value, 1)).toBe('order-2')
+    expect(keyTail(history.queryKey.value, 1)).toBe('order-2')
 
     queryMocks.getOrder.mockResolvedValue({})
     queryMocks.getOrderHistory.mockResolvedValue([])
