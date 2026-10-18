@@ -432,5 +432,28 @@ if pathlib.Path(sys.argv[0]).name == 'ssh':
         self.assertEqual(list((self.root / "runner").iterdir()), [])
 
 
+class RemoteEntrypoint(unittest.TestCase):
+    def test_file_and_stdin_execution_reach_argument_validation(self):
+        source = (SCRIPTS / "remote.sh").read_text()
+        for transport, command, data in (
+            ("file", ["bash", str(SCRIPTS / "remote.sh")], None),
+            ("ssh-stdin", ["bash", "-s", "--"], source),
+        ):
+            with self.subTest(transport=transport):
+                result = subprocess.run(command, input=data, capture_output=True, text=True, timeout=5)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn("Usage: remote.sh", result.stderr)
+                self.assertNotIn("unbound variable", result.stderr)
+
+    def test_stdin_execution_preserves_remote_arguments(self):
+        result = subprocess.run(
+            ["bash", "-s", "--", "prepare", "invalid-release", "origin.zolotoy.dev"],
+            input=(SCRIPTS / "remote.sh").read_text(), capture_output=True, text=True, timeout=5,
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Invalid release id", result.stderr)
+        self.assertNotIn("unbound variable", result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()
