@@ -131,6 +131,8 @@ https://origin.zolotoy.dev {
 			}
 		}
 		handle @static {
+			# Pin the Worker MIME: Linux's MIME registry otherwise selects text/xml.
+			header /sitemap.xml Content-Type "application/xml"
 			file_server {
 				disable_canonical_uris
 			}

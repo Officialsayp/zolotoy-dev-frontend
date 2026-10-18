@@ -1,0 +1,50 @@
+name: Verify Selectel routing
+
+on:
+  pull_request:
+    paths:
+      - 'deploy/caddy/**'
+      - 'scripts/**'
+      - 'src/edge/**'
+      - 'src/shared/routing/**'
+      - 'public/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'wrangler.jsonc'
+      - '.github/workflows/verify-selectel-routing.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  routing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VITE_API_MODE: mock
+      VITE_DEPLOY_ENV: selectel-staging
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - name: Build mock, type-check, prerender, and site checks
+        run: npm run build
+      - name: Install verified Caddy test binary
+        run: bash scripts/install-caddy.sh
+      - name: Compare Worker and Linux Caddy responses
+        run: npm run check:selectel
+      - name: Verify TLS and deployment smoke on local Caddy
+        run: npm run check:selectel:tls
+      - name: Upload routing failure report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selectel-routing-failure-${{ github.run_id }}
+          path: test-results/selectel-routing.json
+          if-no-files-found: ignore
+          retention-days: 7

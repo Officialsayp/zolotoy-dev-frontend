@@ -78,6 +78,13 @@ remain on the serving origin. Caddy omits `Content-Type` on 304 whereas
 Cloudflare repeats it; this is an allowed metadata difference for a response
 without a representation. MIME equality is checked for the other statuses.
 
+The existing sitemap explicitly uses `Content-Type: application/xml`, matching
+the Worker on both macOS and Linux. Linux's MIME registry otherwise selects
+`text/xml`; this was caught by the first deployment verification before upload.
+Missing XML files and `/sitemap.xml/` still receive the HTML 404 response.
+The separate `Verify Selectel routing` pull-request workflow runs the HTTP/TLS
+checks on Linux for routing-related changes, before a deployment is attempted.
+
 `/_health` is an intentional staging addition: GET/HEAD 200, `ok`,
 `Cache-Control: no-store`. The staging HTTP listener issues 308 to the exact
 HTTPS staging host while preserving path/query. These fixtures do not test
