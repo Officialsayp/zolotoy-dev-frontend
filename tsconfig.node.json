@@ -3,6 +3,8 @@
     "vite.config.*",
     "vitest.config.*",
     "playwright.config.*",
+    "playwright.selectel.config.ts",
+    "playwright.staging-worker.config.ts",
     "scripts/vite-site-plugin.ts",
     "scripts/vite-site-plugin.spec.ts",
     "src/shared/routing/site-routes.ts",

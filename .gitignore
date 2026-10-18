@@ -27,3 +27,6 @@ node_modules/.tmp/
 
 # Wrangler local state
 .wrangler/
+
+# Pinned local staging test binary (never deployed).
+.tools/

@@ -190,6 +190,16 @@ A Cloudflare failure while restoring build/dependency cache **before**
 than evidence of a source-code build failure. Clearing the Cloudflare build cache
 and retrying has resolved that failure mode in this project.
 
+## Selectel staging preparation
+
+The separate manual workflow `.github/workflows/deploy-selectel-staging.yml`
+verifies and publishes a mock build only to `origin.zolotoy.dev`, from `main`.
+See [the staging runbook](docs/deployment/SELECTEL_STAGING.md) and
+[the Worker/Caddy routing contract](docs/deployment/SELECTEL_ROUTING.md).
+The reviewed Caddy configuration requires a separately approved administrator
+installation/reload before the first deployment. Preparing these files does
+not publish a release or change production DNS.
+
 ## Language (i18n)
 
 The site is fully bilingual (English/Russian). English is the default and
