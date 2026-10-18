@@ -210,6 +210,8 @@ and the demo shell. Demo locale: explicit `?lang=ru|en` wins over the
 persisted preference (`zolotoy.locale`), which falls back to English —
 switching preserves the current route, other query parameters and the hash.
 `<html lang>` always follows the active locale.
+Links from the portfolio to the demo explicitly pass the current page language
+(`?lang=en` or `?lang=ru`), overriding an older saved demo preference.
 
 ## Demo scenarios (mock mode)
 

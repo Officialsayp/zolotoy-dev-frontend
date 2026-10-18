@@ -8,6 +8,11 @@ import type { LText } from '@/content/types'
 
 export type PortfolioLocale = 'en' | 'ru'
 
+/** Public-page language takes precedence over a remembered demo preference. */
+export function demoHref(locale: PortfolioLocale, path = '/demo/'): string {
+  return `${path}?lang=${locale}`
+}
+
 export function tr(value: LText | Localized, locale: PortfolioLocale): string {
   return value[locale]
 }

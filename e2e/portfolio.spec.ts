@@ -46,6 +46,27 @@ test('public navigation works without JavaScript', async ({ browser }) => {
   await context.close()
 })
 
+test('every public demo entry carries its page language without JavaScript', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false })
+  try {
+    const page = await context.newPage()
+    for (const locale of ['en', 'ru'] as const) {
+      for (const path of [...PUBLIC_PAGES, '/missing-locale-check']) {
+        await page.goto((locale === 'ru' ? '/ru' : '') + path)
+        const links = page.locator('a[href^="/demo/"]')
+        const count = await links.count()
+        expect(count, `${locale} ${path}: a demo entry must exist`).toBeGreaterThan(0)
+        for (const link of await links.all()) {
+          const href = await link.getAttribute('href')
+          expect(new URL(href!, baseURL!).searchParams.get('lang'), `${locale} ${path}: ${href}`).toBe(locale)
+        }
+      }
+    }
+  } finally {
+    await context.close()
+  }
+})
+
 test('theme toggle keeps working on public pages in both locales', async ({ page }) => {
   await page.goto('/')
   const toggle = page.getByRole('button', { name: /Theme:/ })

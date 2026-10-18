@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import type { ServiceCase } from '@/content/types'
 import { serviceDemoUrl } from '@/content/service-registry'
-import { tr } from '@/portfolio/i18n'
+import { demoHref, tr } from '@/portfolio/i18n'
 
 const props = defineProps<{ service: ServiceCase; locale?: 'en' | 'ru' }>()
 
@@ -38,8 +38,8 @@ const copy = computed(() => ({
       <strong>{{ copy.backendRuntime }}:</strong> {{ tr(service.runtimeLabel, locale) }}
     </p>
     <div class="portfolio-card__actions">
-      <a class="is-primary" :href="serviceDemoUrl(service.id)">{{ copy.open }}</a>
-      <a href="/demo/">{{ copy.overview }}</a>
+      <a class="is-primary" :href="demoHref(locale, serviceDemoUrl(service.id))">{{ copy.open }}</a>
+      <a :href="demoHref(locale)">{{ copy.overview }}</a>
     </div>
   </aside>
 </template>

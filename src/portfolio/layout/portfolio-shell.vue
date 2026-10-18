@@ -8,7 +8,7 @@
 import { computed } from 'vue'
 import { serviceCaseStudyUrl } from '@/content/service-registry'
 import { AUTHOR_SITE_URL, publicPathFor } from '@/shared/routing/site-routes'
-import { tr } from '@/portfolio/i18n'
+import { demoHref, tr } from '@/portfolio/i18n'
 import PortfolioLocaleSwitcher from '@/portfolio/components/portfolio-locale-switcher.vue'
 import PortfolioThemeToggle from '@/portfolio/components/portfolio-theme-toggle.vue'
 
@@ -87,7 +87,7 @@ function serviceCurrent(id: 'order' | 'auth' | 'notification' | 'shortener'): bo
           >
             {{ tr(service.label, locale) }}
           </a>
-          <a :href="locale === 'ru' ? '/demo/?lang=ru' : '/demo/'">{{ nav.demo }}</a>
+          <a :href="demoHref(locale)">{{ nav.demo }}</a>
           <a :href="AUTHOR_SITE_URL" rel="noopener noreferrer">{{ nav.author }}</a>
         </nav>
 

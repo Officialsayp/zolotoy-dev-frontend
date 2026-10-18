@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import type { ServiceCase } from '@/content/types'
 import { serviceDemoUrl } from '@/content/service-registry'
-import { tr } from '@/portfolio/i18n'
+import { demoHref, tr } from '@/portfolio/i18n'
 
 const props = defineProps<{ service: ServiceCase; locale?: 'en' | 'ru' }>()
 
@@ -12,7 +12,7 @@ const labels = computed(() => ({
   spec: tr({ en: 'Specification', ru: 'Спецификация' }, locale.value),
   source: tr({ en: 'Source (backend)', ru: 'Исходники (бэкенд)' }, locale.value),
   demo: tr({ en: 'Interactive demo', ru: 'Интерактивное демо' }, locale.value),
-  demoUrl: locale.value === 'ru' ? serviceDemoUrl(props.service.id) + '?lang=ru' : serviceDemoUrl(props.service.id),
+  demoUrl: demoHref(locale.value, serviceDemoUrl(props.service.id)),
 }))
 </script>
 

@@ -98,6 +98,24 @@ test('RU demo brand link returns to /ru/', async ({ page }) => {
   await expect(brand).toHaveAttribute('href', '/ru/')
 })
 
+for (const [previous, selected] of [['ru', 'en'], ['en', 'ru']] as const) {
+  test(`portfolio ${selected} overrides the remembered demo ${previous} after returning through the logo`, async ({ page }) => {
+    await page.goto(`/demo/?lang=${previous}`)
+    await expect(page.locator('html')).toHaveAttribute('lang', previous)
+    await page.locator('.app-sidebar__brand').click()
+    await page.getByRole('navigation', { name: /Language|Язык/ })
+      .getByRole('link', { name: selected.toUpperCase(), exact: true }).click()
+    await expect(page.locator('html')).toHaveAttribute('lang', selected)
+    await page.getByRole('navigation', { name: /Portfolio|Портфолио/ })
+      .getByRole('link', { name: selected === 'en' ? 'Demo' : 'Демо', exact: true }).click()
+    await expect(page.locator('html')).toHaveAttribute('lang', selected)
+    await expect(page.getByRole('heading', { name: selected === 'en' ? 'Overview' : 'Обзор', exact: true })).toBeVisible()
+    await expect(page).toHaveURL(new RegExp(`/demo/\\?lang=${selected}$`))
+    await page.reload()
+    await expect(page.locator('html')).toHaveAttribute('lang', selected)
+  })
+}
+
 test('RU demo keeps noindex policy', async ({ page }) => {
   await page.goto('/demo/?lang=ru')
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex,follow')

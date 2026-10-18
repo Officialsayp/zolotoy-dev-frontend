@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { SITE_CONTENT } from '@/content/site'
-import { tr } from '@/portfolio/i18n'
+import { demoHref, tr } from '@/portfolio/i18n'
 
 const props = defineProps<{ locale?: 'en' | 'ru' }>()
 const locale = computed(() => props.locale ?? 'en')
@@ -25,7 +25,7 @@ const ctas = computed(() => ({
         href="https://github.com/Officialsayp/zolotoy-dev-backend"
         rel="noopener noreferrer"
       >{{ ctas.source }}</a>
-      <a class="portfolio-btn portfolio-btn--secondary" :href="locale === 'ru' ? '/demo/?lang=ru' : '/demo/'">{{ ctas.demo }}</a>
+      <a class="portfolio-btn portfolio-btn--secondary" :href="demoHref(locale)">{{ ctas.demo }}</a>
     </div>
   </section>
 </template>

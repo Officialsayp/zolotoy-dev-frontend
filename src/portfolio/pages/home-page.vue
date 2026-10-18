@@ -11,7 +11,7 @@ import CurrentFocus from '@/portfolio/components/current-focus.vue'
 import ServiceGrid from '@/portfolio/components/service-grid.vue'
 import RoadmapTimeline from '@/portfolio/components/roadmap-timeline.vue'
 import { SITE_CONTENT } from '@/content/site'
-import { tr } from '@/portfolio/i18n'
+import { demoHref, tr } from '@/portfolio/i18n'
 
 const props = defineProps<{ locale?: 'en' | 'ru' }>()
 const locale = computed(() => props.locale ?? 'en')
@@ -104,7 +104,7 @@ const copy = computed(() => ({
       <li>
         <a href="https://github.com/Officialsayp/zolotoy-dev-backend" rel="noopener noreferrer">{{ copy.backendRepo }}</a> — {{ copy.backendTruth }}
       </li>
-      <li><a :href="locale === 'ru' ? '/demo/?lang=ru' : '/demo/'">{{ copy.interactiveDemo }}</a> — {{ copy.demoNote }}</li>
+      <li><a :href="demoHref(locale)">{{ copy.interactiveDemo }}</a> — {{ copy.demoNote }}</li>
       <li>
         <a href="https://maxzolotoy.com" rel="noopener noreferrer">maxzolotoy.com</a> — {{ copy.authorSite }}
       </li>

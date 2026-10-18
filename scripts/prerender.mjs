@@ -411,7 +411,7 @@ async function main() {
       <main style="max-width:640px;margin:12vh auto;padding:0 16px;font-family:system-ui,sans-serif;">
         <h1>404 — Page not found</h1>
         <p>This address does not match a public document or demo route.</p>
-        <p><a href="/">Portfolio home</a> · <a href="/demo/">Open the demo</a></p>
+        <p><a href="/">Portfolio home</a> · <a href="/demo/?lang=en">Open the demo</a></p>
       </main>
     </div>
   </body>

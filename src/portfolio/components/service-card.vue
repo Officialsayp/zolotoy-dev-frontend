@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import type { ServiceCase } from '@/content/types'
 import { serviceCaseStudyUrl, serviceDemoUrl } from '@/content/service-registry'
-import { tr } from '@/portfolio/i18n'
+import { demoHref, tr } from '@/portfolio/i18n'
 import ServiceStatus from './service-status.vue'
 
 const props = defineProps<{ service: ServiceCase; locale?: 'en' | 'ru' }>()
@@ -10,7 +10,7 @@ const props = defineProps<{ service: ServiceCase; locale?: 'en' | 'ru' }>()
 const locale = computed(() => props.locale ?? 'en')
 
 const caseUrl = computed(() => serviceCaseStudyUrl(props.service.id))
-const demoUrl = computed(() => serviceDemoUrl(props.service.id))
+const demoUrl = computed(() => demoHref(locale.value, serviceDemoUrl(props.service.id)))
 const hasDemo = computed(() => props.service.demoUrl !== undefined)
 
 const copy = computed(() => ({

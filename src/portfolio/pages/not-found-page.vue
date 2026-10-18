@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Static noindex 404 document (also served with HTTP 404 by the Worker). */
-import { tr } from '@/portfolio/i18n'
+import { demoHref, tr } from '@/portfolio/i18n'
 
 defineProps<{ locale?: 'en' | 'ru' }>()
 </script>
@@ -19,7 +19,7 @@ defineProps<{ locale?: 'en' | 'ru' }>()
     </p>
     <div class="portfolio-hero__ctas">
       <a class="portfolio-btn portfolio-btn--primary" href="/">{{ tr({ en: 'Portfolio home', ru: 'Главная портфолио' }, locale ?? 'en') }}</a>
-      <a class="portfolio-btn portfolio-btn--secondary" href="/demo/">{{ tr({ en: 'Open the demo', ru: 'Открыть демо' }, locale ?? 'en') }}</a>
+      <a class="portfolio-btn portfolio-btn--secondary" :href="demoHref(locale ?? 'en')">{{ tr({ en: 'Open the demo', ru: 'Открыть демо' }, locale ?? 'en') }}</a>
     </div>
   </section>
 </template>
