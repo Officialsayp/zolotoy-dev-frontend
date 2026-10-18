@@ -12,10 +12,10 @@ trap 'rm -rf "$temp_dir"' EXIT
 curl --fail --silent --show-error --location --retry 3 \
   "https://github.com/caddyserver/caddy/releases/download/v2.11.4/caddy_2.11.4_${platform}.tar.gz" \
   --output "$temp_dir/caddy.tar.gz"
-if command -v sha256sum >/dev/null; then
-  printf '%s  %s\n' "$checksum" "$temp_dir/caddy.tar.gz" | sha256sum --check --status
+if [[ "$platform" == linux_* ]]; then
+  printf '%s  %s\n' "$checksum" "$temp_dir/caddy.tar.gz" | sha256sum -c -
 else
-  printf '%s  %s\n' "$checksum" "$temp_dir/caddy.tar.gz" | shasum -a 256 --check --status
+  printf '%s  %s\n' "$checksum" "$temp_dir/caddy.tar.gz" | shasum -a 256 -c -
 fi
 tar -xzf "$temp_dir/caddy.tar.gz" -C "$temp_dir" caddy
 mkdir -p .tools/bin
