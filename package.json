@@ -18,6 +18,8 @@
     "preview:selectel": "node scripts/selectel-servers.mjs",
     "check:selectel": "node scripts/check-selectel.mjs",
     "check:selectel:tls": "node scripts/check-selectel-tls.mjs",
+    "check:selectel:production": "node scripts/check-selectel-production.mjs",
+    "test:e2e:selectel:production": "playwright test --config playwright.production-selectel.config.ts",
     "test:e2e:selectel": "playwright test --config playwright.selectel.config.ts",
     "test:e2e:built-worker": "playwright test --config playwright.staging-worker.config.ts",
     "type-check": "vue-tsc --build",

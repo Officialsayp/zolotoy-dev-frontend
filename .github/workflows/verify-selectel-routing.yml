@@ -4,7 +4,10 @@ on:
   pull_request:
     paths:
       - 'deploy/caddy/**'
+      - 'deploy/systemd/**'
       - 'scripts/**'
+      - 'playwright.production-selectel.config.ts'
+      - 'tsconfig.node.json'
       - 'src/edge/**'
       - 'src/shared/routing/**'
       - 'public/**'
@@ -40,11 +43,17 @@ jobs:
         run: npm run check:selectel
       - name: Verify TLS and deployment smoke on local Caddy
         run: npm run check:selectel:tls
+      - name: Compare production routing and indexing with the Worker
+        run: npm run check:selectel:production
+      - name: Verify certificate rotation, rollback and HTTP challenge permissions
+        run: python3 -B -m unittest discover -s scripts/selectel-production -p 'test_*.py' -v
       - name: Upload routing failure report
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: selectel-routing-failure-${{ github.run_id }}
-          path: test-results/selectel-routing.json
+          path: |
+            test-results/selectel-routing.json
+            test-results/selectel-production-routing.json
           if-no-files-found: ignore
           retention-days: 7

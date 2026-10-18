@@ -162,9 +162,10 @@ Update assets only from approved derivatives; do not redraw the master.
 
 ## Cloudflare deployment
 
-Cloudflare is the external build/deployment gate used by the project. Preview and
-production pipelines run the repository build before the corresponding Wrangler
-deploy command.
+The retained Cloudflare integration builds the project before the corresponding
+Wrangler deploy command. Since 2026-10-18, the public `zolotoy.dev` hostname points
+directly to Selectel; the Worker remains available for rollback. These commands
+publish to Cloudflare and do not update the Selectel production release.
 
 For a local/manual verification before deployment:
 
@@ -199,6 +200,13 @@ See [the staging runbook](docs/deployment/SELECTEL_STAGING.md) and
 The reviewed Caddy configuration requires a separately approved administrator
 installation/reload before the first deployment. Preparing these files does
 not publish a release or change production DNS.
+
+## Selectel production
+
+`zolotoy.dev` serves a separate, root-owned production release with public EN/RU
+indexing, the existing mock demo and a dedicated certificate renewal timer.
+The staging workflow cannot promote it. See the
+[production runbook and rollback](docs/deployment/SELECTEL_PRODUCTION.md).
 
 ## Language (i18n)
 
