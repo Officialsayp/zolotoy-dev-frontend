@@ -6,7 +6,7 @@
   "description": "Single frontend SPA for the zolotoy.dev technical developer/admin environment",
   "packageManager": "npm@10.9.2",
   "engines": {
-    "node": ">=20.19.0"
+    "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
   },
   "scripts": {
     "dev": "vite",
@@ -24,8 +24,8 @@
     "test:e2e": "playwright test",
     "msw:init": "msw init public/demo --save",
     "og:generate": "node scripts/generate-og.mjs",
-    "deploy": "npx --yes wrangler@4.102.0 deploy",
-    "deploy:preview": "npx --yes wrangler@4.102.0 versions upload"
+    "deploy": "wrangler deploy",
+    "deploy:preview": "wrangler versions upload"
   },
   "dependencies": {
     "@tanstack/vue-query": "^5.78.0",
@@ -46,16 +46,16 @@
     "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.7.0",
     "eslint": "^9.18.0",
-    "eslint-plugin-vue": "^9.32.0",
+    "eslint-plugin-vue": "^10.11.1",
     "globals": "^15.14.0",
     "jsdom": "^26.0.0",
     "prettier": "^3.4.2",
     "typescript": "~5.7.3",
     "typescript-eslint": "^8.21.0",
     "vite": "^6.0.7",
-    "vitest": "^3.0.4",
+    "vitest": "^5.0.5",
     "vue-tsc": "^2.2.0",
-    "wrangler": "^4.102.0"
+    "wrangler": "^4.151.1"
   },
   "msw": {
     "workerDirectory": [

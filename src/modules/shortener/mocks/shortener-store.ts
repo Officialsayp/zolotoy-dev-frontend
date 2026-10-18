@@ -87,13 +87,14 @@ function codeForSeq(seq: number): string {
 }
 
 function encode64(value: string): string {
-  if (typeof btoa === 'function') return btoa(value)
-  return Buffer.from(value, 'utf-8').toString('base64')
+  // btoa/atob exist in every environment this mock runs in (jsdom, Node >= 16,
+  // browsers); the removed Buffer fallback relied on Node typings that the
+  // browser-facing tsconfig does not include.
+  return btoa(value)
 }
 
 function decode64(value: string): string {
-  if (typeof atob === 'function') return atob(value)
-  return Buffer.from(value, 'base64').toString('utf-8')
+  return atob(value)
 }
 
 export function encodeShortenerCursor(createdAt: string, id: string): string {

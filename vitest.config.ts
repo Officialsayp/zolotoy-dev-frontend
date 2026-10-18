@@ -7,6 +7,7 @@ import vue from '@vitejs/plugin-vue'
 // Matches the Vite aliases so `@` resolves identically across dev/test/build.
 export default defineConfig({
   test: {
+    clearMocks: false, // preserve Vitest 3 mock-call lifecycle after upgrading to Vitest 5
     globals: true,
     css: true,
     restoreMocks: true,

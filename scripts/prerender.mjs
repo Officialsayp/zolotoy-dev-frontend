@@ -14,7 +14,7 @@
  * fields) — single source of truth. Run by `npm run build`; requires no browser.
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { dirname, join, resolve } from 'node:path'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -27,7 +27,10 @@ if (!existsSync(ssrDir)) {
 }
 
 const { renderPublicPage, publicRoutePaths } = await import(
-  new URL('file://' + join(ssrDir, 'entry-server.js').replace(/\\/g, '/'))
+  // pathToFileURL is the canonical Windows-safe file URL; a hand-built
+  // 'file://' + path string breaks on spaces and does not satisfy the
+  // explicit-globals lint policy for scripts.
+  pathToFileURL(join(ssrDir, 'entry-server.js')).href
 )
 
 const SITE = 'https://zolotoy.dev'
