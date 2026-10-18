@@ -8,9 +8,13 @@ import { expect, test, type Page } from '@playwright/test'
 
 const PUBLIC_PAGES = ['/', '/architecture/', '/services/order/', '/services/auth/', '/services/notification/', '/services/url-shortener/']
 
-/** Exact pathname comparison (with auto-retry): no regex construction. */
-function expectPathname(page: Page, path: string): Promise<void> {
-  return expect.poll(() => new URL(page.url()).pathname).toBe(path)
+/**
+ * Exact full-URL comparison with auto-retry: expected URL is built from the
+ * trusted playwright.config.ts baseURL (never from page.url()) via the URL
+ * API, so protocol, host, port, pathname, query and hash must all match.
+ */
+function expectFullUrl(page: Page, path: string, baseURL: string): Promise<void> {
+  return expect(page).toHaveURL(new URL(path, baseURL).href)
 }
 
 for (const path of PUBLIC_PAGES) {
@@ -81,16 +85,16 @@ test.describe('language switching (public)', () => {
   const PAGES = ['/', '/architecture/', '/services/auth/']
 
   for (const docPath of PAGES) {
-    test(`switch ${docPath} EN→RU→EN preserves the semantic document`, async ({ page }) => {
+    test(`switch ${docPath} EN→RU→EN preserves the semantic document`, async ({ page, baseURL }) => {
       const ruPath = '/ru' + (docPath === '/' ? '/' : docPath)
       await page.goto(docPath)
       await page.getByRole('navigation', { name: /Language|Язык/ }).getByRole('link', { name: 'RU' }).click()
-      await expectPathname(page, ruPath)
+      await expectFullUrl(page, ruPath, baseURL!)
       await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
       await expect(page.getByRole('navigation', { name: 'Портфолио' }).getByRole('link', { name: 'Главная' })).toBeVisible()
       // Switch back.
       await page.getByRole('navigation', { name: 'Язык' }).getByRole('link', { name: 'EN' }).click()
-      await expectPathname(page, docPath)
+      await expectFullUrl(page, docPath, baseURL!)
       await expect(page.locator('html')).toHaveAttribute('lang', 'en')
     })
   }
