@@ -45,10 +45,12 @@ test.describe('public documents', () => {
   }
 })
 
-test('demo document responses carry noindex in meta and X-Robots-Tag', async ({ request }) => {
+test('demo document responses carry noindex in meta and X-Robots-Tag', async ({ request }, testInfo) => {
   const response = await request.get('/demo/')
   expect(response.status()).toBe(200)
-  expect(response.headers()['x-robots-tag']).toBe('noindex,follow')
+  expect(response.headers()['x-robots-tag']).toBe(
+    testInfo.config.metadata.staging ? 'noindex,nofollow' : 'noindex,follow',
+  )
   const html = await response.text()
   expect(html).toContain('noindex,follow')
 })
