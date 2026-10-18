@@ -271,6 +271,8 @@ main() {
   esac
 }
 
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+# bash -s (the SSH transport) has no BASH_SOURCE entry. Both direct-file and
+# stdin execution must invoke main; sourcing from transaction tests must not.
+if [[ "${BASH_SOURCE[0]:-$0}" == "$0" ]]; then
   main "$@"
 fi
