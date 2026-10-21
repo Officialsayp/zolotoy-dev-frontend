@@ -20,8 +20,16 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      VITE_API_MODE: mock
+      VITE_DEPLOY_ENV: production
+    outputs:
+      release_id: ${{ steps.package.outputs.release_id }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -44,11 +52,41 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: E2E against the built Worker/assets
-        run: npm run test:e2e -- --project=chromium
+      - name: E2E desktop and mobile against the exact built Worker/assets
+        run: npm run test:e2e:built-worker
+
+      - name: Install verified Caddy test binary
+        run: bash scripts/install-caddy.sh
+
+      - name: Compare Worker and Linux Caddy responses
+        run: npm run check:selectel
+
+      - name: Verify Caddy TLS and release smoke
+        run: npm run check:selectel:tls
+
+      - name: E2E desktop and mobile against the exact built Caddy assets
+        run: npm run test:e2e:selectel
 
       - name: Production transaction safety tests
         run: python3 -B -m unittest discover -s scripts/selectel -p 'test_production*.py' -v
+
+      - name: Package the exact verified production build
+        id: package
+        env:
+          RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python3 scripts/selectel/package-release.py \
+            --dist dist --release "$RELEASE_ID" \
+            --output "$RUNNER_TEMP/zolotoy-dev-production.tar.gz"
+          printf 'release_id=%s\n' "$RELEASE_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Retain the verified production archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: selectel-production-${{ steps.package.outputs.release_id }}
+          path: ${{ runner.temp }}/zolotoy-dev-production.tar.gz
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Upload failure artifacts
         if: failure()
@@ -69,4 +107,6 @@ jobs:
       (github.event_name == 'push' ||
       (github.event_name == 'workflow_dispatch' && inputs.publish_production == true))
     uses: ./.github/workflows/deploy-selectel-production.yml
+    with:
+      release_id: ${{ needs.verify.outputs.release_id }}
     secrets: inherit
