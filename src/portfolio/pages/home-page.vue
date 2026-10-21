@@ -56,7 +56,7 @@ const copy = computed(() => ({
     locale.value,
   ),
   authorSite: tr(
-    { en: 'author identity, résumé and contacts', ru: 'идентичность автора, резюме и контакты' },
+    { en: 'author identity, resume and contacts', ru: 'идентичность автора, резюме и контакты' },
     locale.value,
   ),
 }))
