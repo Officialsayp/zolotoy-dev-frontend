@@ -4,6 +4,13 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      publish_production:
+        description: 'Publish the verified main commit to Selectel production'
+        type: boolean
+        required: true
+        default: false
 
 # Least privilege: checkout only needs read access to contents; the Node cache
 # and artifact upload use the runner's runtime token, not the GitHub token.
@@ -40,6 +47,9 @@ jobs:
       - name: E2E against the built Worker/assets
         run: npm run test:e2e -- --project=chromium
 
+      - name: Production transaction safety tests
+        run: python3 -B -m unittest discover -s scripts/selectel -p 'test_production*.py' -v
+
       - name: Upload failure artifacts
         if: failure()
         uses: actions/upload-artifact@v4
@@ -49,3 +59,14 @@ jobs:
             test-results/
             playwright-report/
           retention-days: 7
+
+  deploy-production:
+    name: Selectel production (after verify)
+    needs: verify
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      vars.SELECTEL_PRODUCTION_DEPLOY_ENABLED == 'true' &&
+      (github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && inputs.publish_production == true))
+    uses: ./.github/workflows/deploy-selectel-production.yml
+    secrets: inherit
