@@ -160,11 +160,22 @@ The locked master SHA-256 is
 `fe0dde1281b8fe1b4a8a44e54365050becd72e2c8ea21acde61e5f28fc12be31`.
 Update assets only from approved derivatives; do not redraw the master.
 
-## Cloudflare deployment
+## Selectel production deployment
 
-Cloudflare is the external build/deployment gate used by the project. Preview and
-production pipelines run the repository build before the corresponding Wrangler
-deploy command.
+The public `zolotoy.dev` site is served by Caddy on Selectel. GitHub Actions
+`verify` checks the exact production build against both Worker and Caddy, then
+publishes its verified archive only from `main` when repository variable
+`SELECTEL_PRODUCTION_DEPLOY_ENABLED=true`. PRs never deploy. The isolated
+`selectel-production` Environment owns the dedicated SSH credentials.
+
+See [the production runbook](docs/deployment/SELECTEL_PRODUCTION.md) for initial
+enablement, release checks, retries and rollback. The pipeline retains old releases
+and restores the previous release if HTTPS validation fails.
+
+## Cloudflare tooling
+
+The existing Wrangler commands remain available for Worker previews and separately
+authorized Cloudflare operations. They do not publish the Selectel production site.
 
 For a local/manual verification before deployment:
 
@@ -179,7 +190,7 @@ Preview upload:
 npm run deploy:preview
 ```
 
-Production deploy:
+Cloudflare Worker deploy:
 
 ```bash
 npm run deploy

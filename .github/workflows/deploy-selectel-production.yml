@@ -1,0 +1,67 @@
+name: Selectel production deployment
+
+on:
+  workflow_call:
+    inputs:
+      release_id:
+        description: Identity of the archive produced by the successful verify job
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    concurrency:
+      group: selectel-production
+      cancel-in-progress: false
+    environment:
+      name: selectel-production
+      url: https://zolotoy.dev
+    steps:
+      - name: Require main and a permitted event
+        env:
+          REF: ${{ github.ref }}
+          EVENT: ${{ github.event_name }}
+          RELEASE_ID: ${{ inputs.release_id }}
+          EXPECTED_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          test "$REF" = refs/heads/main
+          test "$EVENT" = push || test "$EVENT" = workflow_dispatch
+          [[ "$RELEASE_ID" =~ ^${EXPECTED_SHA}-${RUN_ID}-[1-9][0-9]{0,5}$ ]]
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Download the exact archive that passed verification
+        uses: actions/download-artifact@v4
+        with:
+          name: selectel-production-${{ inputs.release_id }}
+          path: ${{ runner.temp }}/selectel-production-artifact
+
+      - name: Reject obsolete main commits
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          remote_head="$(git ls-remote https://github.com/Officialsayp/zolotoy-dev-frontend.git refs/heads/main | cut -f1)"
+          if [ "$remote_head" != "$EXPECTED_SHA" ]; then
+            echo "The main branch has advanced; refusing obsolete deployment" >&2
+            exit 1
+          fi
+
+      - name: Deploy to isolated Selectel production and verify or roll back
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+          VPS_PRODUCTION_HOST: ${{ secrets.VPS_PRODUCTION_HOST }}
+          VPS_PRODUCTION_USER: ${{ secrets.VPS_PRODUCTION_USER }}
+          VPS_PRODUCTION_SSH_KEY: ${{ secrets.VPS_PRODUCTION_SSH_KEY }}
+          VPS_PRODUCTION_KNOWN_HOSTS: ${{ secrets.VPS_PRODUCTION_KNOWN_HOSTS }}
+        run: |
+          bash scripts/selectel/deploy-production.sh \
+            "$RELEASE_ID" "$RUNNER_TEMP/selectel-production-artifact/zolotoy-dev-production.tar.gz"
