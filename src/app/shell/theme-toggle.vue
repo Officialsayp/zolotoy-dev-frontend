@@ -1,25 +1,49 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Moon, Sun } from 'lucide-vue-next'
+import { Monitor, Moon, Sun } from 'lucide-vue-next'
 
-import { useThemeStore, type ThemePreference } from '@/app/stores/theme-store'
+import { useThemeStore } from '@/app/stores/theme-store'
+import { nextThemePreference } from '@/shared/theme/theme-preference'
 import { tr } from '@/portfolio/i18n'
 
 const props = defineProps<{ locale?: 'en' | 'ru' }>()
 
 const theme = useThemeStore()
 const locale = computed(() => props.locale ?? 'en')
+const preference = computed(() => theme.preference)
 
-const isDark = computed(() => theme.resolved === 'dark')
+const label = computed(() => {
+  if (preference.value === 'system') {
+    const resolved = theme.resolved === 'dark' ? 'dark' : 'light'
+    return tr(
+      {
+        en: `Theme: System (${resolved === 'dark' ? 'Dark' : 'Light'})`,
+        ru: `Тема: системная (${resolved === 'dark' ? 'тёмная' : 'светлая'})`,
+      },
+      locale.value,
+    )
+  }
 
-const labels = computed(() => ({
-  toLight: tr({ en: 'Switch to light theme', ru: 'Включить светлую тему' }, locale.value),
-  toDark: tr({ en: 'Switch to dark theme', ru: 'Включить тёмную тему' }, locale.value),
-}))
+  return tr(
+    {
+      en: preference.value === 'light' ? 'Theme: Light' : 'Theme: Dark',
+      ru: preference.value === 'light' ? 'Тема: светлая' : 'Тема: тёмная',
+    },
+    locale.value,
+  )
+})
 
-function toggle(): void {
-  const next: ThemePreference = isDark.value ? 'light' : 'dark'
-  theme.setPreference(next)
+const buttonLabel = computed(() =>
+  `${label.value}. ${tr(
+    { en: 'Activate to switch', ru: 'Нажмите для переключения' },
+    locale.value,
+  )}`,
+)
+
+function cycle(): void {
+  // Identical order to the public theme control; a visitor can always
+  // return to OS-controlled colors after choosing a manual override.
+  theme.setPreference(nextThemePreference(preference.value))
 }
 </script>
 
@@ -27,11 +51,12 @@ function toggle(): void {
   <button
     type="button"
     class="theme-toggle"
-    :aria-label="isDark ? labels.toLight : labels.toDark"
-    :title="isDark ? labels.toLight : labels.toDark"
-    @click="toggle"
+    :aria-label="buttonLabel"
+    :title="label"
+    @click="cycle"
   >
-    <Sun v-if="isDark" aria-hidden="true" />
+    <Monitor v-if="preference === 'system'" aria-hidden="true" />
+    <Sun v-else-if="preference === 'light'" aria-hidden="true" />
     <Moon v-else aria-hidden="true" />
   </button>
 </template>
