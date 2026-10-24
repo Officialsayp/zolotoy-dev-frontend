@@ -31,11 +31,11 @@ describe('locale store', () => {
     expect(store.get()).toBe('en')
   })
 
-  it('initialize persists and syncs document lang', () => {
+  it('initializes a detected locale without treating it as a manual choice', () => {
     const store = useLocaleStore()
     store.initialize('ru')
     expect(store.get()).toBe('ru')
-    expect(localStorage.getItem('zolotoy.locale')).toBe('ru')
+    expect(localStorage.getItem('zolotoy.locale')).toBeNull()
     expect(document.documentElement.lang).toBe('ru')
   })
 })
