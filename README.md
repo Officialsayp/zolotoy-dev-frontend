@@ -213,14 +213,27 @@ not publish a release or change production DNS.
 
 ## Language (i18n)
 
-The site is fully bilingual (English/Russian). English is the default and
-stays at canonical root URLs; the Russian portfolio lives under `/ru/...`
-(12 statically generated documents total, with hreflang alternates). The
-language switcher sits next to the theme control in both the public header
-and the demo shell. Demo locale: explicit `?lang=ru|en` wins over the
-persisted preference (`zolotoy.locale`), which falls back to English —
-switching preserves the current route, other query parameters and the hash.
-`<html lang>` always follows the active locale.
+The site is fully bilingual (English/Russian). English public documents
+retain their canonical root URLs and Russian documents stay under `/ru/...`
+(12 statically generated documents, unchanged hreflang and noindex behavior).
+
+On a first visit without a saved preference, the browser's **primary**
+`navigator.languages` language determines the UI: `ru` or `be` (including
+region variants) selects Russian; everything else selects English. The country
+or IP address is never used. A previously saved `zolotoy.locale` always takes
+priority over browser defaults, including across public ↔ demo navigation and
+new sessions. Clicking EN/RU stores an explicit choice immediately. Incoming
+`?lang=ru|en` demo links select their language only if no manual choice exists;
+other query parameters and hashes remain untouched. Direct `/ru/...` links
+remain Russian when the visitor has no previous preference.
+
+Both portfolio documents and demo pages remember the exact pixel scroll offset
+in **sessionStorage**, per pathname and per browser tab, and restore it after
+reloading the same page. Public EN/RU switches also carry the pixel offset.
+Regular navigation, Back/Forward positions and explicit hash anchors are not
+overridden. If the document becomes shorter, the offset is clamped to the
+reachable maximum. Scrolling is a browser enhancement and does not affect the
+prerendered no-JavaScript documents.
 
 ## Demo scenarios (mock mode)
 
