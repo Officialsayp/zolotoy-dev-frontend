@@ -56,7 +56,7 @@ test('exact pixel offset survives public document reload without anchor sections
   await page.setViewportSize({ width: 390, height: 680 })
   await page.goto('/services/order/')
   const before = await page.evaluate(() => {
-    window.scrollTo(0, 623)
+    window.scrollTo({ top: 623, behavior: 'instant' })
     return window.scrollY
   })
   expect(before).toBeGreaterThan(300)
@@ -71,7 +71,7 @@ test('exact pixel offset survives demo reload; route switches do not inherit it'
   await page.setViewportSize({ width: 390, height: 680 })
   await page.goto('/demo/orders')
   const before = await page.evaluate(() => {
-    window.scrollTo(0, 423)
+    window.scrollTo({ top: 423, behavior: 'instant' })
     return window.scrollY
   })
   expect(before).toBeGreaterThan(180)
@@ -87,7 +87,7 @@ test('exact pixel offset survives demo reload; route switches do not inherit it'
 
 test('normal public navigation does not reuse another page scroll offset', async ({ page }) => {
   await page.goto('/services/order/')
-  await page.evaluate(() => window.scrollTo(0, 510))
+  await page.evaluate(() => window.scrollTo({ top: 510, behavior: 'instant' }))
   await page.goto('/architecture/')
   await expect(page).toHaveURL(/\/architecture\/$/)
   await expect.poll(async () => page.evaluate(() => window.scrollY)).toBeLessThan(40)
