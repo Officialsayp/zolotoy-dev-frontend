@@ -1,0 +1,25 @@
+[Unit]
+Description=Renew and atomically install the zolotoy.dev TLS certificate
+Documentation=https://github.com/go-acme/lego/releases/tag/v5.5.2
+Wants=network-online.target
+After=network-online.target caddy.service
+ConditionPathExists=/var/lib/zolotoy-dev-acme/certificates/zolotoy.dev.json
+ConditionPathIsDirectory=/var/lib/zolotoy-dev-acme/webroot
+ConditionPathExists=/etc/caddy/zolotoy-dev-tls/current/fullchain.pem
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+WorkingDirectory=/var/lib/zolotoy-dev-acme
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/usr/local/libexec/zolotoy-dev/renew-certificate
+TimeoutStartSec=20min
+TimeoutStopSec=120s
+KillMode=control-group
+StandardOutput=journal
+StandardError=journal
+# Do not use StateDirectoryMode=0700: Caddy must traverse the pre-created ACME
+# state root to read webroot/.well-known/acme-challenge. The accounts and
+# certificates subdirectories remain root-only; the webroot is public-readable.

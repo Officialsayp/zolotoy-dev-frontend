@@ -1,6 +1,12 @@
 # zolotoy.dev: unattended Selectel production deployments
 
 Production is hosted directly by Caddy from `/var/www/zolotoy-dev-production/current`.
+
+Certificate renewal on the VPS is a **separate root-owned lego/systemd service**,
+not part of the application release workflow. Read the
+[TLS renewal and recovery runbook](SELECTEL_TLS_RECOVERY.md) before making any
+certificate, Caddy or ACME changes. The archived unit/script copies must be
+compared against installed VPS files before reuse.
 The root-owned baseline observed on 21 Oct 2026 points to
 `releases/prod-20261018T145910Z-8c7625cbd433/site`, containing the old
 English text `résumé`. The corrected commit is `ffaa95f`.
