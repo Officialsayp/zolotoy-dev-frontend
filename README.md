@@ -235,6 +235,21 @@ overridden. If the document becomes shorter, the offset is clamped to the
 reachable maximum. Scrolling is a browser enhancement and does not affect the
 prerendered no-JavaScript documents.
 
+## Theme (appearance)
+
+Both the prerendered portfolio and the interactive demo use the same theme
+preference, stored under `zolotoy.dev:theme`. **System is the default** when
+there is no saved value: it uses CSS `prefers-color-scheme` (light/dark) and
+does **not** write an automatic preference to localStorage. Changes to the
+operating-system appearance automatically update the site in System mode.
+
+The public and demo theme controls use the same manual cycle:
+**System → Light → Dark → System**. Each click persists an explicit
+choice across page navigation, languages, demo routes, reloads and subsequent
+visits. Explicit Light/Dark overrides the operating system; choosing System
+removes the override and resumes following OS appearance. Existing saved
+Light/Dark choices are preserved rather than reset during upgrades.
+
 ## Demo scenarios (mock mode)
 
 In mock mode the demo header shows a **Demo scenario** switcher. Scenarios are
