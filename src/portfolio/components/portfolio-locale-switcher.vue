@@ -8,11 +8,13 @@ import { computed } from 'vue'
 import { counterpartPath } from '@/shared/routing/site-routes'
 import { tr } from '@/portfolio/i18n'
 import { persistLocalePreference } from '@/shared/i18n/locale'
+import { rememberLocaleSwitchScroll } from '@/shared/browser/scroll-restoration'
 
 const props = defineProps<{ locale: 'en' | 'ru'; currentPath: string }>()
 
 function rememberChoice(next: 'en' | 'ru'): void {
   persistLocalePreference(next)
+  rememberLocaleSwitchScroll(next === 'ru' ? ruHref.value : enHref.value)
 }
 
 const enHref = computed(
