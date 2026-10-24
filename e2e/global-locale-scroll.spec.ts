@@ -17,7 +17,7 @@ for (const [browserLanguage, expectedPath] of [
     })
     const page = await context.newPage()
     await page.goto('/')
-    await expect(page).toHaveURL(new RegExp(`/${expectedPath.replace(/\\/g, '\\\\')}$`))
+    await expect(page).toHaveURL(`http://localhost:8787${expectedPath}`)
     await expect(page.locator('html')).toHaveAttribute('lang', expectedPath === '/ru/' ? 'ru' : 'en')
     expect(await page.evaluate(() => localStorage.getItem('zolotoy.locale'))).toBeNull()
     await context.close()
