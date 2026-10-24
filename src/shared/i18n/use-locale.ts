@@ -1,8 +1,9 @@
 /**
  * Demo SPA locale state: a narrow Pinia store + router binding.
  *
- * Resolution order (see the i18n spec): explicit `?lang=` query → persisted
- * preference → English. Switching keeps the current route, other query
+ * Resolution order: persisted explicit preference → valid entry `?lang=`
+ * (only when no preference) → browser's primary language → English.
+ * Switching keeps the current route, other query
  * params and the hash intact. The store is intentionally independent from
  * the theme store; each changes only its own state.
  *
@@ -17,28 +18,12 @@ import type { Router } from 'vue-router'
 
 import {
   DEFAULT_LOCALE,
-  LOCALE_STORAGE_KEY,
+  browserPreferredLocale,
+  readPersistedLocale,
+  persistLocalePreference,
   isLocale,
   type Locale,
 } from './locale'
-
-function readStoredLocale(): Locale {
-  try {
-    const value = localStorage.getItem(LOCALE_STORAGE_KEY)
-    if (isLocale(value)) return value
-  } catch {
-    // storage unavailable; fall through to default
-  }
-  return DEFAULT_LOCALE
-}
-
-function persistLocale(locale: Locale): void {
-  try {
-    localStorage.setItem(LOCALE_STORAGE_KEY, locale)
-  } catch {
-    // non-fatal
-  }
-}
 
 export const useLocaleStore = defineStore('locale', () => {
   const current = ref<Locale>(DEFAULT_LOCALE)
@@ -47,16 +32,16 @@ export const useLocaleStore = defineStore('locale', () => {
     return current.value
   }
 
-  function initialize(initial: Locale = readStoredLocale()): void {
+  function initialize(initial: Locale = readPersistedLocale() ?? browserPreferredLocale()): void {
     current.value = isLocale(initial) ? initial : DEFAULT_LOCALE
-    persistLocale(current.value)
+    // Automatic detection is not a manual preference. Persist only in set().
     syncDocumentLang()
   }
 
   function set(next: Locale): void {
     if (!isLocale(next)) return
     current.value = next
-    persistLocale(current.value)
+    persistLocalePreference(current.value)
     syncDocumentLang()
   }
 
@@ -70,9 +55,9 @@ export const useLocaleStore = defineStore('locale', () => {
 })
 
 /**
- * Router binding: apply ?lang= on every navigation. An explicit valid lang
- * param wins; otherwise the persisted preference stays. Returns the afterEach
- * sync so document.lang always matches the active locale.
+ * Router binding: a query can supply an initial language only before the user
+ * has a saved choice. A stale ?lang= on a history entry cannot reverse a later
+ * manual choice. The switcher writes the preference directly before navigation.
  */
 export function bindLocaleToRouter(
   setLocale: (next: Locale) => void,
@@ -81,7 +66,7 @@ export function bindLocaleToRouter(
 ): void {
   router.beforeEach((to) => {
     const fromQuery = localeFromQuery(to.query.lang)
-    if (fromQuery !== null && fromQuery !== getLocale()) {
+    if (fromQuery !== null && readPersistedLocale() === null && fromQuery !== getLocale()) {
       setLocale(fromQuery)
     }
     return true
