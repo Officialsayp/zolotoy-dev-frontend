@@ -9,6 +9,8 @@ import { createQueryClient, setAppQueryClient } from '@/app/providers/query-clie
 import { useAppStore } from '@/app/stores/app-store'
 import { useThemeStore } from '@/app/stores/theme-store'
 import { useLocaleStore, bindLocaleToRouter, localeFromQuery } from '@/shared/i18n/use-locale'
+import { browserPreferredLocale, readPersistedLocale } from '@/shared/i18n/locale'
+import { preparePageScrollRestoration } from '@/shared/browser/scroll-restoration'
 import { useSessionStore } from '@/modules/auth/store/session-store'
 import { loadAppConfig } from '@/shared/config/app-config'
 import { getRuntimeEnv } from '@/shared/config/runtime-env'
@@ -41,6 +43,7 @@ function renderFatal(error: unknown, title = 'Configuration error'): void {
 }
 
 async function bootstrap(): Promise<void> {
+  const restoreScroll = preparePageScrollRestoration('demo')
   let config
   try {
     config = loadAppConfig(getRuntimeEnv())
@@ -76,12 +79,14 @@ async function bootstrap(): Promise<void> {
   useAppStore(pinia).initialize(config.apiMode, config.deployEnv)
   useThemeStore(pinia).initialize()
 
-  // Locale: explicit ?lang= wins over the persisted preference (invalid or
-  // absent values fall through to the stored preference / EN). <html lang>
-  // is synced here and re-synced after the router starts.
+  // A visitor's last manual choice wins over query links and browser defaults.
+  // A valid ?lang= is only authoritative if there is no prior saved choice.
   const localeStore = useLocaleStore(pinia)
   const initialQuery = new URLSearchParams(window.location.search)
-  localeStore.initialize(localeFromQuery(initialQuery.get('lang')) ?? undefined)
+  const savedLocale = readPersistedLocale()
+  const queryLocale = localeFromQuery(initialQuery.get('lang'))
+  localeStore.initialize(savedLocale ?? queryLocale ?? browserPreferredLocale())
+  if (savedLocale === null && queryLocale !== null) localeStore.set(queryLocale)
 
   // Mock mode must intercept the network before auth bootstrap can issue the
   // cookie refresh request. Starting the router earlier would let its initial
@@ -115,13 +120,13 @@ async function bootstrap(): Promise<void> {
   // Vue Router starts the initial navigation during `app.use(router)`, therefore
   // guards must already be registered at that point.
   installAppGuards(router)
-  // Locale follows ?lang= on every navigation; the persisted preference is the
-  // fallback when the param is absent.
+  // Locale follows the explicit preference; a URL query cannot override it.
   bindLocaleToRouter((next) => localeStore.set(next), () => localeStore.get(), router)
   app.use(router)
 
   localeStore.syncDocumentLang()
   app.mount('#app')
+  restoreScroll()
 }
 
 void bootstrap()
