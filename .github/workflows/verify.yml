@@ -70,6 +70,11 @@ jobs:
       - name: Production transaction safety tests
         run: python3 -B -m unittest discover -s scripts/selectel -p 'test_production*.py' -v
 
+      # Local fixtures only. Preserve TLS recovery logic without contacting
+      # Let's Encrypt, restarting Caddy or accessing production secrets.
+      - name: TLS renewal recovery regression tests
+        run: python3 -B -m unittest discover -s scripts/selectel-production -p 'test_*.py' -v
+
       - name: Package the exact verified production build
         id: package
         env:
