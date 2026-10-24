@@ -25,18 +25,18 @@ describe('demo theme toggle', () => {
     const wrapper = mount(ThemeToggle, { props: { locale: 'ru' } })
     expect(wrapper.attributes('title')).toContain('Тема: системная')
 
-    await wrapper.get('button').trigger('click')
+    await wrapper.trigger('click')
     expect(useThemeStore().preference).toBe('light')
     expect(wrapper.attributes('title')).toBe('Тема: светлая')
     expect(document.documentElement.dataset.theme).toBe('light')
     expect(localStorage.getItem('zolotoy.dev:theme')).toBe('light')
 
-    await wrapper.get('button').trigger('click')
+    await wrapper.trigger('click')
     expect(useThemeStore().preference).toBe('dark')
     expect(wrapper.attributes('title')).toBe('Тема: тёмная')
     expect(document.documentElement.dataset.theme).toBe('dark')
 
-    await wrapper.get('button').trigger('click')
+    await wrapper.trigger('click')
     expect(useThemeStore().preference).toBe('system')
     expect(wrapper.attributes('title')).toContain('Тема: системная')
     expect(localStorage.getItem('zolotoy.dev:theme')).toBe('system')
