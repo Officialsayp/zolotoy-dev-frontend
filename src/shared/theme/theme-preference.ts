@@ -17,6 +17,13 @@ export const THEME_STORAGE_KEY = 'zolotoy.dev:theme'
 
 const VALID_PREFERENCES: readonly ThemePreference[] = ['system', 'light', 'dark']
 
+/** One shared cycle for portfolio and demo: System → Light → Dark → System. */
+export function nextThemePreference(current: ThemePreference): ThemePreference {
+  if (current === 'system') return 'light'
+  if (current === 'light') return 'dark'
+  return 'system'
+}
+
 export function readStoredThemePreference(): ThemePreference {
   try {
     const value = localStorage.getItem(THEME_STORAGE_KEY)
