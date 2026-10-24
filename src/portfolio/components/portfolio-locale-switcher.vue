@@ -7,8 +7,13 @@
 import { computed } from 'vue'
 import { counterpartPath } from '@/shared/routing/site-routes'
 import { tr } from '@/portfolio/i18n'
+import { persistLocalePreference } from '@/shared/i18n/locale'
 
 const props = defineProps<{ locale: 'en' | 'ru'; currentPath: string }>()
+
+function rememberChoice(next: 'en' | 'ru'): void {
+  persistLocalePreference(next)
+}
 
 const enHref = computed(
   () => (props.locale === 'en' ? props.currentPath : counterpartPath(props.currentPath, 'en') ?? '/'),
@@ -33,6 +38,7 @@ const title = computed(() => tr({ en: 'Language', ru: 'Язык' }, props.locale
       :class="['locale-switcher__item', { 'locale-switcher__item--active': locale === 'en' }]"
       :aria-current="locale === 'en' ? 'true' : undefined"
       hreflang="en"
+      @click="rememberChoice('en')"
     >EN</a>
     <span class="locale-switcher__sep" aria-hidden="true">|</span>
     <a
@@ -40,6 +46,7 @@ const title = computed(() => tr({ en: 'Language', ru: 'Язык' }, props.locale
       :class="['locale-switcher__item', { 'locale-switcher__item--active': locale === 'ru' }]"
       :aria-current="locale === 'ru' ? 'true' : undefined"
       hreflang="ru"
+      @click="rememberChoice('ru')"
     >RU</a>
   </nav>
 </template>
