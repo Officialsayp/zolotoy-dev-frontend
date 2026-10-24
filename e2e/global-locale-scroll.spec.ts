@@ -70,6 +70,13 @@ test('exact pixel offset survives public document reload without anchor sections
 test('exact pixel offset survives demo reload; route switches do not inherit it', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 680 })
   await page.goto('/demo/orders')
+  // Mock bootstrap and the route component are async. A scroll before the
+  // Orders UI mounts would trivially be zero (no document height yet).
+  await expect(page.getByRole('heading', { name: 'Orders', level: 1 })).toBeVisible()
+  await expect.poll(async () => page.evaluate(() =>
+    document.documentElement.scrollHeight - window.innerHeight), {
+    timeout: 10_000,
+  }).toBeGreaterThan(450)
   const before = await page.evaluate(() => {
     window.scrollTo({ top: 423, behavior: 'instant' })
     return window.scrollY
