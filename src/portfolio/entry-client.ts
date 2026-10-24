@@ -6,6 +6,7 @@
 import { createPublicApp } from './app'
 import { resolvePublicPathForLocale, publicPathFor } from '@/shared/routing/site-routes'
 import { browserPreferredLocale, readPersistedLocale } from '@/shared/i18n/locale'
+import { preparePageScrollRestoration } from '@/shared/browser/scroll-restoration'
 import { retireLegacyMockWorker } from '@/shared/browser/retire-legacy-mock-worker'
 
 import './styles/portfolio.css'
@@ -22,8 +23,10 @@ const counterpart = page ? publicPathFor(page.id, preferred) : null
 if (counterpart && counterpart !== window.location.pathname) {
   window.location.replace(counterpart + window.location.search + window.location.hash)
 } else if (container) {
+  const restoreScroll = preparePageScrollRestoration('public')
   const mounted = createPublicApp(window.location.pathname)
   if (mounted) mounted.app.mount(container)
+  restoreScroll()
   // No hydration case: the prerendered document is already complete.
 }
 
