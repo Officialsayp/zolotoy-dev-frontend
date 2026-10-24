@@ -10,14 +10,14 @@ for (const [browserLanguage, expectedPath] of [
   ['en-US', '/'],
   ['sr-RS', '/'],
 ] as const) {
-  test(`first visit uses browser language ${browserLanguage}`, async ({ browser }) => {
+  test(`first visit uses browser language ${browserLanguage}`, async ({ browser, baseURL }) => {
     const context = await browser.newContext({
-      baseURL: 'http://localhost:8787',
+      baseURL,
       locale: browserLanguage,
     })
     const page = await context.newPage()
     await page.goto('/')
-    await expect(page).toHaveURL(`http://localhost:8787${expectedPath}`)
+    await expect(page).toHaveURL(new URL(expectedPath, baseURL).href)
     await expect(page.locator('html')).toHaveAttribute('lang', expectedPath === '/ru/' ? 'ru' : 'en')
     expect(await page.evaluate(() => localStorage.getItem('zolotoy.locale'))).toBeNull()
     await context.close()
