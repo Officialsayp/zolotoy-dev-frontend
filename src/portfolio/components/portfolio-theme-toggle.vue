@@ -6,12 +6,13 @@
  * synchronized on mount. Labels are localized with the fixed EN semantics
  * (Theme: Dark / Light / System (Dark|Light)); resolved shown only for system.
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import {
   applyThemePreference,
   persistThemePreference,
   readStoredThemePreference,
   resolveTheme,
+  nextThemePreference,
   type ThemePreference,
 } from '@/shared/theme/theme-preference'
 import { tr } from '@/portfolio/i18n'
@@ -61,12 +62,18 @@ const label = computed(() => {
 })
 
 function cycle(): void {
-  const order: ThemePreference[] = ['system', 'light', 'dark']
-  const next = order[(order.indexOf(preference.value) + 1) % order.length]!
+  const next = nextThemePreference(preference.value)
   preference.value = next
   persistThemePreference(next)
   applyThemePreference(next)
   resolved.value = resolveTheme(next)
+}
+
+// The palette already reacts via CSS to prefers-color-scheme; also update
+// the visible System (Light/Dark) label without forcing a page reload.
+let systemSchemeQuery: MediaQueryList | undefined
+function syncSystemLabel(): void {
+  if (preference.value === 'system') resolved.value = resolveTheme('system')
 }
 
 onMounted(() => {
@@ -76,6 +83,12 @@ onMounted(() => {
   // data-theme for explicit light/dark choices; this is idempotent and keeps
   // the DOM in sync when the script is absent (e.g. dev rendering).
   applyThemePreference(preference.value)
+  systemSchemeQuery = window.matchMedia?.('(prefers-color-scheme: dark)')
+  systemSchemeQuery?.addEventListener?.('change', syncSystemLabel)
+})
+
+onUnmounted(() => {
+  systemSchemeQuery?.removeEventListener?.('change', syncSystemLabel)
 })
 </script>
 
