@@ -124,6 +124,9 @@ export function preparePageScrollRestoration(mode: 'public' | 'demo'): () => voi
     for (const event of ['wheel', 'touchstart', 'pointerdown', 'keydown', 'hashchange'] as const) {
       window.addEventListener(event, finish, { once: true })
     }
+    // Leaving a page during the bounded restore must not strand its history
+    // entry in manual scroll mode; native Back/Forward stays authoritative.
+    window.addEventListener('pagehide', finish, { once: true })
     // Re-evaluate after hydration, image load and late content expansion.
     if (typeof ResizeObserver !== 'undefined') {
       observer = new ResizeObserver(() => requestAnimationFrame(attempt))
