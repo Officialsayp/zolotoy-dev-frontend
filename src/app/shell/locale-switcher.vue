@@ -25,6 +25,9 @@ async function switchTo(target: Locale): Promise<void> {
   if (target === current.value) return
   // Push updates the ?lang= param; the router binding applies the locale
   // without leaving the current route. Other params and the hash survive.
+  // Update the shared preference synchronously so the UI changes immediately
+  // and navigation to public pages can never revert to the browser language.
+  localeStore.set(target)
   await router.push({ query: { ...route.query, lang: target }, hash: route.hash })
 }
 </script>
