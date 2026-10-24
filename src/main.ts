@@ -10,6 +10,7 @@ import { useAppStore } from '@/app/stores/app-store'
 import { useThemeStore } from '@/app/stores/theme-store'
 import { useLocaleStore, bindLocaleToRouter, localeFromQuery } from '@/shared/i18n/use-locale'
 import { browserPreferredLocale, readPersistedLocale } from '@/shared/i18n/locale'
+import { preparePageScrollRestoration } from '@/shared/browser/scroll-restoration'
 import { useSessionStore } from '@/modules/auth/store/session-store'
 import { loadAppConfig } from '@/shared/config/app-config'
 import { getRuntimeEnv } from '@/shared/config/runtime-env'
@@ -42,6 +43,7 @@ function renderFatal(error: unknown, title = 'Configuration error'): void {
 }
 
 async function bootstrap(): Promise<void> {
+  const restoreScroll = preparePageScrollRestoration('demo')
   let config
   try {
     config = loadAppConfig(getRuntimeEnv())
@@ -124,6 +126,7 @@ async function bootstrap(): Promise<void> {
 
   localeStore.syncDocumentLang()
   app.mount('#app')
+  restoreScroll()
 }
 
 void bootstrap()
