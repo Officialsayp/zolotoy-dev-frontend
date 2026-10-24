@@ -116,7 +116,12 @@ export const router = createRouter({
   // resolve to browser URLs under /demo/.
   history: createWebHistory('/demo/'),
   routes,
-  scrollBehavior() {
-    return { top: 0 }
+  scrollBehavior(to, from, savedPosition) {
+    // Vue Router owns Back/Forward restoration; query-only language switches
+    // must not jump to the top or override the saved pixel position.
+    if (savedPosition) return savedPosition
+    if (to.path === from.path) return false
+    if (to.hash) return { el: to.hash, behavior: 'auto' }
+    return { left: 0, top: 0 }
   },
 })
