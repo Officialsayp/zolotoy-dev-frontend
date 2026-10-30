@@ -57,10 +57,11 @@ ssh_options=(
 )
 destination="$VPS_USER@$VPS_HOST"
 archive_hash=$(sha256sum "$archive" | cut -d ' ' -f 1)
-config_hash=$(sha256sum "$repo_root/deploy/caddy/zolotoy-dev.caddy" | cut -d ' ' -f 1)
+config_hash=$(sha256sum "$repo_root/deploy/nginx/zolotoy-routes.conf" | cut -d ' ' -f 1)
+router_hash=$(sha256sum "$repo_root/deploy/nginx/zolotoy-routes.js" | cut -d ' ' -f 1)
 
 # All interpolated remote arguments have strict validation above. The server
 # independently revalidates them and takes a lock before touching current.
 ssh "${ssh_options[@]}" "$destination" "bash -s -- prepare $release_id $VPS_ORIGIN_HOST" < "$script_dir/remote.sh"
 scp "${ssh_options[@]}" "$archive" "$destination:/var/www/zolotoy-dev/releases/.incoming-$release_id/release.tar.gz"
-ssh "${ssh_options[@]}" "$destination" "bash -s -- apply $release_id $VPS_ORIGIN_HOST $archive_hash $config_hash" < "$script_dir/remote.sh"
+ssh "${ssh_options[@]}" "$destination" "bash -s -- apply $release_id $VPS_ORIGIN_HOST $archive_hash $config_hash $router_hash" < "$script_dir/remote.sh"

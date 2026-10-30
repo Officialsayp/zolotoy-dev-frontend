@@ -1,6 +1,11 @@
 # zolotoy.dev: unattended Selectel production deployments
 
-Production is hosted directly by Caddy from `/var/www/zolotoy-dev-production/current`.
+> Caddy/lego installation and TLS recovery details in this historical runbook
+> predate the Nginx migration. Use [NGINX.md](NGINX.md) and the current
+> infrastructure migration report for hosting/TLS operations. The release root,
+> exact-artifact deployment, and application rollback protocol remain applicable.
+
+The production release root is `/var/www/zolotoy-dev-production/current`.
 
 Certificate renewal on the VPS is a **separate root-owned lego/systemd service**,
 not part of the application release workflow. Read the

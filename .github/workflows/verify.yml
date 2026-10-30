@@ -18,6 +18,9 @@ permissions:
   contents: read
 
 jobs:
+  nginx-profile:
+    uses: ./.github/workflows/verify-nginx.yml
+
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -107,7 +110,7 @@ jobs:
 
   deploy-production:
     name: Selectel production (after verify)
-    needs: verify
+    needs: [verify, nginx-profile]
     if: >-
       github.ref == 'refs/heads/main' &&
       vars.SELECTEL_PRODUCTION_DEPLOY_ENABLED == 'true' &&

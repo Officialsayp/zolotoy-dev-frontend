@@ -32,6 +32,7 @@ product architecture is documented in
 
 ## Project docs
 
+- Nginx hosting and deployment checks: [`docs/deployment/NGINX.md`](docs/deployment/NGINX.md)
 - Portfolio/demo architecture: [`docs/frontend/PORTFOLIO_ARCHITECTURE.md`](docs/frontend/PORTFOLIO_ARCHITECTURE.md)
 - Backend specs: [`docs/backend-specs/`](docs/backend-specs/)
 - Frontend architecture (historical master plan): [`docs/frontend/MASTER_FRONTEND_PLAN.md`](docs/frontend/MASTER_FRONTEND_PLAN.md)
@@ -162,9 +163,10 @@ Update assets only from approved derivatives; do not redraw the master.
 
 ## Selectel production deployment
 
-The public `zolotoy.dev` site is served by Caddy on Selectel. GitHub Actions
-`verify` checks the exact production build against both Worker and Caddy, then
-publishes its verified archive only from `main` when repository variable
+The Nginx hosting profile for `zolotoy.dev` on Selectel is documented in
+[NGINX.md](docs/deployment/NGINX.md). GitHub Actions `verify` keeps Worker/Caddy
+reference checks and also requires the Nginx profile validation job before it
+publishes the verified archive, only from `main` when repository variable
 `SELECTEL_PRODUCTION_DEPLOY_ENABLED=true`. PRs never deploy. The isolated
 `selectel-production` Environment owns the dedicated SSH credentials.
 
@@ -207,8 +209,8 @@ The separate manual workflow `.github/workflows/deploy-selectel-staging.yml`
 verifies and publishes a mock build only to `origin.zolotoy.dev`, from `main`.
 See [the staging runbook](docs/deployment/SELECTEL_STAGING.md) and
 [the Worker/Caddy routing contract](docs/deployment/SELECTEL_ROUTING.md).
-The reviewed Caddy configuration requires a separately approved administrator
-installation/reload before the first deployment. Preparing these files does
+The reviewed Nginx conf/JS files require administrator installation/reload and
+must match the two checksums sent by the staging deploy script. Preparing these files does
 not publish a release or change production DNS.
 
 ## Language (i18n)

@@ -1,3 +1,5 @@
+> The Caddy installation sections below are historical. For the Nginx profile and current deployment preflight, use [NGINX.md](NGINX.md).
+
 # Selectel staging deployment
 
 This runbook prepares `origin.zolotoy.dev` only. It does not migrate production
@@ -244,7 +246,8 @@ verified Mac SSH key/known-hosts file, run only after approving rollback:
 ```bash
 read -r -p 'Retained release ID to restore: ' release_id
 [[ "$release_id" =~ ^[0-9a-f]{40}-[1-9][0-9]{0,19}-[1-9][0-9]{0,5}$ ]]
-config_hash=$(shasum -a 256 deploy/caddy/zolotoy-dev.caddy | cut -d ' ' -f 1)
+config_hash=$(shasum -a 256 deploy/nginx/zolotoy-routes.conf | cut -d ' ' -f 1)
+router_hash=$(shasum -a 256 deploy/nginx/zolotoy-routes.js | cut -d ' ' -f 1)
 ssh -i "$HOME/.ssh/zolotoydev_selectel_actions_ed25519" \
   -o BatchMode=yes -o IdentitiesOnly=yes -o IdentityAgent=none \
   -o StrictHostKeyChecking=yes -o HostKeyAlgorithms=ssh-ed25519 \
@@ -252,7 +255,7 @@ ssh -i "$HOME/.ssh/zolotoydev_selectel_actions_ed25519" \
   -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no \
   -o ServerAliveInterval=15 -o ServerAliveCountMax=2 \
   zolotoydeploy@135.106.186.27 \
-  "bash -s -- rollback $release_id origin.zolotoy.dev $config_hash" \
+  "bash -s -- rollback $release_id origin.zolotoy.dev $config_hash $router_hash" \
   < scripts/selectel/remote.sh
 ```
 
