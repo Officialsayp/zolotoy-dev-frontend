@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, URL } from 'node:url'
 
 import { renderProductionConfig } from '../generate-selectel-production.mjs'
 import { BASELINE_SHA256, renderAutomaticHttpsCandidate } from './render-caddy-automatic-https.mjs'
