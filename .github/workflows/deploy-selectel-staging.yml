@@ -24,6 +24,9 @@ env:
   VITE_DEPLOY_ENV: selectel-staging
 
 jobs:
+  nginx-profile:
+    uses: ./.github/workflows/verify-nginx.yml
+
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -104,7 +107,7 @@ jobs:
           retention-days: 7
 
   deploy:
-    needs: verify
+    needs: [verify, nginx-profile]
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15

@@ -5,7 +5,9 @@ set -Eeuo pipefail
 umask 022
 
 RELEASES_ROOT=/var/www/zolotoy-dev/releases
-CADDY_CONFIG=/etc/caddy/zolotoy-dev.caddy
+NGINX_CONFIG=/etc/nginx/zolotoy-routes.conf
+NGINX_ROUTER=/etc/nginx/zolotoy-routes.js
+CONFIG_OWNER_UID=0
 ORIGIN_HOST=origin.zolotoy.dev
 DEPLOY_USER=zolotoydeploy
 release_id=
@@ -29,14 +31,30 @@ check_environment() {
   command -v flock >/dev/null || fail 'flock is required'
   command -v curl >/dev/null || fail 'curl is required'
   command -v sha256sum >/dev/null || fail 'sha256sum is required'
-  command -v caddy >/dev/null || fail 'caddy is required for the version preflight'
-  [[ "$(caddy version)" == v2.11.4\ * ]] || fail 'Caddy must match the locally tested version 2.11.4'
+  command -v nginx >/dev/null || fail 'nginx is required for the version preflight'
+  [[ "$(nginx -v 2>&1)" == nginx\ version:\ nginx/* ]] || fail 'Cannot identify the installed Nginx binary'
+  # Syntax/TLS configuration validation belongs to the administrator: nginx -t
+  # would require access to private TLS keys unavailable to this deploy user.
+  systemctl is-active --quiet nginx || fail 'The Nginx service must be active'
 }
 
 check_config() {
-  [[ "$1" =~ ^[0-9a-f]{64}$ ]] || fail 'Invalid Caddy configuration checksum'
-  [[ -f "$CADDY_CONFIG" && ! -L "$CADDY_CONFIG" ]] || fail 'Expected installed Caddy site file is absent'
-  [[ "$(sha256sum "$CADDY_CONFIG" | cut -d ' ' -f 1)" == "$1" ]] || fail 'Installed Caddy site differs from the reviewed staging config; administrator installation/reload is required'
+  [[ "$1" =~ ^[0-9a-f]{64}$ && "$2" =~ ^[0-9a-f]{64}$ ]] || fail 'Invalid Nginx configuration checksum'
+  python3 - "$NGINX_CONFIG" "$NGINX_ROUTER" "$CONFIG_OWNER_UID" "$1" "$2" <<'PY'
+import hashlib
+from pathlib import Path
+import stat
+import sys
+owner = int(sys.argv[3])
+for name, expected in zip(sys.argv[1:3], sys.argv[4:6]):
+    path = Path(name)
+    for target, kind in ((path.parent, stat.S_ISDIR), (path, stat.S_ISREG)):
+        metadata = target.lstat()
+        if not kind(metadata.st_mode) or metadata.st_uid != owner or metadata.st_mode & 0o022:
+            raise SystemExit('Unsafe Nginx routing file or parent directory')
+    if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+        raise SystemExit('Installed Nginx routing differs from the reviewed profile; administrator installation/reload is required')
+PY
 }
 
 read_current() {
@@ -91,7 +109,7 @@ os.unlink(sys.argv[1])
 PY
       [[ $? == 0 ]] || status=1
     fi
-    # A failed first install restores Caddy's deliberate 503 missing-root state.
+    # A failed first install restores the deliberate 503 missing-root state.
     # Existing release files and the failed candidate are retained for inspection.
     if [[ -n "$previous_release" ]]; then
       python3 "$RELEASES_ROOT/.metadata-$previous_release/smoke.py" --host "$ORIGIN_HOST" --release "$previous_release" --resolve 127.0.0.1 --identity-only || {
@@ -238,7 +256,7 @@ activate_release() {
 }
 
 main() {
-  [[ $# -ge 3 ]] || fail 'Usage: remote.sh prepare ID HOST | apply ID HOST ARCHIVE_SHA256 CONFIG_SHA256 | rollback ID HOST CONFIG_SHA256'
+  [[ $# -ge 3 ]] || fail 'Usage: remote.sh prepare ID HOST | apply ID HOST ARCHIVE_SHA256 CONFIG_SHA256 ROUTER_SHA256 | rollback ID HOST CONFIG_SHA256 ROUTER_SHA256'
   local operation=$1
   release_id=$2
   validate_release_id "$release_id"
@@ -257,12 +275,12 @@ main() {
       exec 9>"$RELEASES_ROOT/.deploy.lock"
       flock -n 9 || fail 'Another staging deployment is in progress'
       if [[ "$operation" == apply ]]; then
-        [[ $# == 5 ]] || fail 'Unexpected apply arguments'
-        check_config "$5"
+        [[ $# == 6 ]] || fail 'Unexpected apply arguments'
+        check_config "$5" "$6"
         unpack_release "$4"
       else
-        [[ $# == 4 ]] || fail 'Unexpected rollback arguments'
-        check_config "$4"
+        [[ $# == 5 ]] || fail 'Unexpected rollback arguments'
+        check_config "$4" "$5"
       fi
       verify_stored_release
       activate_release

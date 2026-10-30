@@ -1,0 +1,32 @@
+name: Verify Nginx deployment profile
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  nginx:
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install distribution Nginx and routing modules
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          printf '#!/bin/sh\nexit 101\n' > /usr/sbin/policy-rc.d
+          chmod 755 /usr/sbin/policy-rc.d
+          apt-get update
+          apt-get install -y --no-install-recommends nginx libnginx-mod-http-js libnginx-mod-http-headers-more-filter python3 openssh-client
+      - name: Validate Nginx and njs configuration without starting a service
+        run: bash scripts/check-nginx.sh
+      - name: Validate shell entry points
+        run: bash -n scripts/selectel/remote.sh scripts/selectel/deploy.sh scripts/check-nginx.sh
+      - name: Release and rollback transactions
+        run: python3 -B -m unittest discover -s scripts/selectel -p 'test_*.py' -v

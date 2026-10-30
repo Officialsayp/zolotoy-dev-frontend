@@ -35,6 +35,20 @@ export default defineConfigWithVueTs(
     },
   },
 
+  {
+    name: 'app/nginx-njs',
+    files: ['deploy/nginx/**/*.js'],
+    languageOptions: {
+      globals: {
+        Buffer: 'readonly',
+      },
+    },
+    rules: {
+      // njs 0.9.4 requires a catch binding; optional catch syntax is unsupported.
+      '@typescript-eslint/no-unused-vars': ['error', { caughtErrorsIgnorePattern: '^_' }],
+    },
+  },
+
   js.configs.recommended,
   pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,

@@ -1,6 +1,6 @@
 """Exercise the real deploy transaction against local files and a fake HTTP origin.
 
-No SSH connection, Caddy reload, or remote write is performed. The shell script is
+No SSH connection, web-server reload, or remote write is performed. The shell script is
 sourced with fixture paths; production's direct entry point uses fixed paths.
 """
 
@@ -119,9 +119,12 @@ class Transactions(unittest.TestCase):
         self.root = Path(self.temporary.name)
         self.releases = self.root / "releases"
         self.releases.mkdir()
-        self.config = self.root / "reviewed.caddy"
+        self.config = self.root / "reviewed.conf"
         self.config.write_text("fixture config\n")
         self.config_hash = hashlib.sha256(self.config.read_bytes()).hexdigest()
+        self.router = self.root / "reviewed.js"
+        self.router.write_text("fixture router\n")
+        self.router_hash = hashlib.sha256(self.router.read_bytes()).hexdigest()
         self.dist = self.root / "dist"
         self.dist.mkdir()
         for name in packager.REQUIRED_FILES | {"assets/app-123.js", ".vite/manifest.json"}:
@@ -138,12 +141,15 @@ class Transactions(unittest.TestCase):
         # Exercise an actual OS advisory lock even on macOS without GNU flock.
         self.write_executable(binary / "flock", "import fcntl,sys\ntry:\n fcntl.flock(int(sys.argv[-1]), fcntl.LOCK_EX | fcntl.LOCK_NB)\nexcept BlockingIOError:\n sys.exit(1)\n")
         self.write_executable(binary / "sha256sum", "import hashlib,pathlib,sys\np=pathlib.Path(sys.argv[1])\nprint(hashlib.sha256(p.read_bytes()).hexdigest() + '  ' + str(p))\n")
-        self.write_executable(binary / "caddy", "print('v2.11.4 fixture')\n")
+        self.write_executable(binary / "nginx", "import sys\nassert sys.argv[1:] == ['-v']\nprint('nginx version: nginx/1.28.0')\n")
+        self.write_executable(binary / "systemctl", "import os,sys\nassert sys.argv[1:] == ['is-active', '--quiet', 'nginx']\nsys.exit(1 if os.environ.get('NGINX_INACTIVE') else 0)\n")
         self.driver = self.root / "driver.sh"
         self.driver.write_text(
             f"source {shlex.quote(str(SCRIPTS / 'remote.sh'))}\n"
             f"RELEASES_ROOT={shlex.quote(str(self.releases))}\n"
-            f"CADDY_CONFIG={shlex.quote(str(self.config))}\n"
+            f"NGINX_CONFIG={shlex.quote(str(self.config))}\n"
+            f"NGINX_ROUTER={shlex.quote(str(self.router))}\n"
+            f"CONFIG_OWNER_UID={os.getuid()}\n"
             'DEPLOY_USER=$(id -un)\n'
             'main "$@"\n'
         )
@@ -170,7 +176,7 @@ class Transactions(unittest.TestCase):
         return bundle
 
     def apply_args(self, release_id, bundle):
-        return ["apply", release_id, "origin.zolotoy.dev", hashlib.sha256(bundle.read_bytes()).hexdigest(), self.config_hash]
+        return ["apply", release_id, "origin.zolotoy.dev", hashlib.sha256(bundle.read_bytes()).hexdigest(), self.config_hash, self.router_hash]
 
     def publish(self, release_id, *, env=None):
         bundle = self.prepare(release_id)
@@ -218,11 +224,11 @@ class Transactions(unittest.TestCase):
     def test_manual_rollback_checks_stored_hashes_and_smoke(self):
         self.assertEqual(self.publish(OLD).returncode, 0)
         self.assertEqual(self.publish(NEW).returncode, 0)
-        result = self.run_remote("rollback", OLD, "origin.zolotoy.dev", self.config_hash)
+        result = self.run_remote("rollback", OLD, "origin.zolotoy.dev", self.config_hash, self.router_hash)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assert_active(OLD)
         (self.releases / NEW / "index.html").write_text("tampered")
-        result = self.run_remote("rollback", NEW, "origin.zolotoy.dev", self.config_hash)
+        result = self.run_remote("rollback", NEW, "origin.zolotoy.dev", self.config_hash, self.router_hash)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("integrity mismatch", result.stderr)
         self.assert_active(OLD)
@@ -235,6 +241,33 @@ class Transactions(unittest.TestCase):
         self.assertIn("differs from the reviewed", result.stderr)
         self.assertFalse((self.releases / OLD).exists())
         self.assertFalse((self.releases / "current").is_symlink())
+
+    def test_wrong_router_stops_before_unpack(self):
+        bundle = self.prepare(OLD)
+        self.router.write_text("unreviewed routing change")
+        result = self.run_remote(*self.apply_args(OLD, bundle))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("differs from the reviewed", result.stderr)
+        self.assertFalse((self.releases / OLD).exists())
+
+    def test_writable_or_symlinked_routing_file_is_rejected(self):
+        bundle = self.prepare(OLD)
+        self.router.chmod(0o666)
+        result = self.run_remote(*self.apply_args(OLD, bundle))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Unsafe Nginx", result.stderr)
+        self.router.unlink()
+        self.router.symlink_to(self.config)
+        result = self.run_remote(*self.apply_args(OLD, bundle))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Unsafe Nginx", result.stderr)
+        self.assertFalse((self.releases / OLD).exists())
+
+    def test_inactive_nginx_stops_before_upload_preparation(self):
+        result = self.run_remote("prepare", OLD, "origin.zolotoy.dev", env={**self.env, "NGINX_INACTIVE": "1"})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Nginx service must be active", result.stderr)
+        self.assertFalse((self.releases / (".incoming-" + OLD)).exists())
 
     def test_bad_archive_checksum_stops_before_unpack(self):
         bundle = self.prepare(OLD)
