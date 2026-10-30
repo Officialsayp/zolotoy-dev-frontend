@@ -1,0 +1,177 @@
+# MIGRATION CANDIDATE ONLY; NOT ACTIVE. Never import before approved TLS cutover.
+# Generated offline by scripts/selectel-production/render-caddy-automatic-https.mjs.
+# Staging routing source SHA-256: 208798df007e280031d3f4842374bf262fd776eecb9c164cee1ccef449ca5523
+# Production only: zolotoy.dev, isolated from the staging deployment user.
+# Keep the literal route order: the Worker runs before assets only in the
+# demo/legacy namespaces. Do not replace this with an unrestricted SPA fallback.
+http://zolotoy.dev {
+	@operational path /_health /_release
+	header @operational {
+		X-Robots-Tag "noindex"
+		Cache-Control "no-store"
+	}
+	# Caddy Automatic HTTPS handles HTTP-01; retain the explicit 308 redirect.
+	handle {
+		redir https://zolotoy.dev{uri} 308
+	}
+}
+
+https://zolotoy.dev {
+	root * /var/www/zolotoy-dev-production/current
+
+	# Preserve raw ID encoding and query strings, including repeated parameters.
+	# path/path_regexp match decoded paths and cannot express Worker semantics.
+	map {http.request.orig_uri} {zd_path} {zd_query} {
+		~^([^?]*)(\?.*)?$ ${1} ${2}
+	}
+	map {zd_path} {zd_legacy} {
+		~^/(orders|auth|notifications|shortener)/?$ /demo/${1}/
+		~^/(orders|auth|notifications|shortener)(/.*?)/?$ /demo/${1}${2}
+		default ""
+	}
+	map {path} {zd_document} {
+		/ /index.html
+		/architecture/ /architecture/index.html
+		/services/order/ /services/order/index.html
+		/services/auth/ /services/auth/index.html
+		/services/notification/ /services/notification/index.html
+		/services/url-shortener/ /services/url-shortener/index.html
+		/ru/ /ru/index.html
+		/ru/architecture/ /ru/architecture/index.html
+		/ru/services/order/ /ru/services/order/index.html
+		/ru/services/auth/ /ru/services/auth/index.html
+		/ru/services/notification/ /ru/services/notification/index.html
+		/ru/services/url-shortener/ /ru/services/url-shortener/index.html
+		/404 /404.html
+		/ru/404 /ru/404.html
+		default ""
+	}
+	# Cloudflare ASSETS auto-trailing-slash aliases use 307, not Worker 308.
+	map {path} {zd_alias} {
+		~^/(index|index\.html)$ /
+		~^/(ru|(?:ru/)?architecture|(?:ru/)?services/(?:order|auth|notification|url-shortener))(?:\.html|/index(?:\.html)?)?$ /${1}/
+		/demo.html /demo/
+		~^/((?:ru/)?404)(?:\.html|/|/index(?:\.html)?)$ /${1}
+		~^/(ru|(?:ru/)?architecture|(?:ru/)?services/(?:order|auth|notification|url-shortener))/index/$ /${1}/index
+		/index/ /index
+		default ""
+	}
+
+	@worker_method expression `{zd_path}.matches('^/(demo|orders|auth|notifications|shortener)(/|$)') && !({method} in ['GET', 'HEAD'])`
+	@unsupported not method GET HEAD
+	@health expression `{zd_path} == '/_health'`
+	@unpublished not file /index.html
+	@release expression `{zd_path} == '/_release'`
+	@operational expression `{zd_path} in ['/_health', '/_release']`
+	@legacy expression `{zd_path}.matches('^/(orders|shortener)(/+[^/]+)?/*$') || {zd_path}.matches('^/auth(/+(login|register|profile|sessions|admin))?/*$') || {zd_path}.matches('^/notifications(/+[^/]+|/+events/+[^/]+)?/*$')`
+	@demo_alias expression `{zd_path} in ['/demo', '/demo/index.html']`
+	@demo expression `{zd_path}.matches('^/demo/+$') || {zd_path}.matches('^/demo/+(orders|shortener)(/+[^/]+)?/*$') || {zd_path}.matches('^/demo/+auth(/+(login|register|profile|sessions|admin))?/*$') || {zd_path}.matches('^/demo/+notifications(/+[^/]+|/+events/+[^/]+)?/*$')`
+	@demo_namespace expression `{zd_path}.startsWith('/demo/')`
+	@demo_index path_regexp ^/demo/+(index/?|index\.html)$
+	@alias expression `{zd_alias} != ''`
+	@document expression `{zd_document} != ''`
+	@cacheable expression `!header({'Authorization': '*'}) && !header({'Range': '*'})`
+	@ru path /ru /ru/*
+	@normalized expression `{http.request.orig_uri} != {uri}`
+	@static {
+		expression `!{path}.endsWith('/')`
+		file {path}
+	}
+
+	route {
+		# Operational URLs stay uncached and unindexed, including method errors.
+		header @operational X-Robots-Tag "noindex"
+		header @operational Cache-Control "no-store"
+		respond @worker_method "Method not allowed" 405
+		respond @unsupported 405
+		handle @health {
+			header Cache-Control "no-store"
+			respond "ok" 200
+		}
+		handle @unpublished {
+			header X-Robots-Tag "noindex"
+			header Cache-Control "no-store"
+			respond "Frontend deployment pending" 503
+		}
+		handle @release {
+			header Cache-Control "no-store"
+			rewrite * /release-id.txt
+			file_server {
+				disable_canonical_uris
+			}
+		}
+		redir @legacy {scheme}://{http.request.hostport}{zd_legacy}{zd_query} 308
+		redir @demo_alias {scheme}://{http.request.hostport}/demo/{zd_query} 308
+		handle @demo {
+			header X-Robots-Tag "noindex,follow"
+			# The Worker fetches the shell by URL, dropping request conditionals.
+			request_header -Range
+			request_header -If-None-Match
+			request_header -If-Modified-Since
+			header Cache-Control "public, max-age=0, must-revalidate"
+			rewrite * /demo/index.html
+			file_server {
+				disable_canonical_uris
+			}
+		}
+		handle @demo_namespace {
+			request_header -Range
+			request_header -If-None-Match
+			request_header -If-Modified-Since
+			route {
+				# ASSETS binding disables HTML redirects here; /demo/index is real.
+				rewrite @demo_index /demo/index.html
+				handle @static {
+					header Cache-Control "public, max-age=0, must-revalidate"
+					file_server {
+						disable_canonical_uris
+					}
+				}
+				header X-Robots-Tag "noindex"
+				respond "Not found" 404
+			}
+		}
+		# Native assets decode paths and collapse repeated slashes. This is
+		# deliberately after the raw-path Worker namespace matching above.
+		rewrite * {path}
+		uri path_regexp /{2,} /
+		redir @alias {zd_alias}{zd_query} 307
+		redir @normalized {uri} 307
+		header @cacheable Cache-Control "public, max-age=0, must-revalidate"
+		# ASSETS ignores Range rather than returning a partial document.
+		request_header -Range
+		handle @document {
+			rewrite * {zd_document}
+			file_server {
+				disable_canonical_uris
+			}
+		}
+		handle @static {
+			# Pin the Worker MIME: Linux's MIME registry otherwise selects text/xml.
+			header /sitemap.xml Content-Type "application/xml"
+			file_server {
+				disable_canonical_uris
+			}
+		}
+		handle @ru {
+			rewrite * /ru/404.html
+			file_server {
+				status 404
+				disable_canonical_uris
+			}
+		}
+		handle {
+			rewrite * /404.html
+			file_server {
+				status 404
+				disable_canonical_uris
+			}
+		}
+	}
+
+	handle_errors {
+		header X-Robots-Tag "noindex"
+		header Cache-Control "no-store"
+		respond "Production asset unavailable" {err.status_code}
+	}
+}
