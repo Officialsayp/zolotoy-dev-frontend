@@ -49,6 +49,13 @@ jobs:
       - name: Build (type-check + static generation + site checks)
         run: npm run build
 
+      # Read-only Caddyfile regression: no ACME orders, VPS access or reload.
+      - name: Verify tracked production TLS baseline and offline migration candidate
+        run: |
+          node scripts/generate-selectel-production.mjs --check
+          node scripts/selectel-production/render-caddy-automatic-https.mjs --check
+          node --test scripts/selectel-production/test-automatic-https.mjs
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
@@ -57,6 +64,9 @@ jobs:
 
       - name: Install verified Caddy test binary
         run: bash scripts/install-caddy.sh
+
+      - name: Parse Automatic HTTPS candidate without provisioning certificates
+        run: .tools/bin/caddy adapt --config deploy/caddy/zolotoy-dev-production.automatic-https.caddy --adapter caddyfile > /dev/null
 
       - name: Compare Worker and Linux Caddy responses
         run: npm run check:selectel
