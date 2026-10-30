@@ -5,7 +5,7 @@ import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, URL } from 'node:url'
 
 const projectRoot = fileURLToPath(new URL('../../', import.meta.url))
 const baselinePath = resolve(projectRoot, 'deploy/caddy/zolotoy-dev-production.caddy')
