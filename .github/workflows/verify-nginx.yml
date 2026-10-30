@@ -23,7 +23,7 @@ jobs:
           printf '#!/bin/sh\nexit 101\n' > /usr/sbin/policy-rc.d
           chmod 755 /usr/sbin/policy-rc.d
           apt-get update
-          apt-get install -y --no-install-recommends nginx libnginx-mod-http-js libnginx-mod-http-headers-more-filter python3
+          apt-get install -y --no-install-recommends nginx libnginx-mod-http-js libnginx-mod-http-headers-more-filter python3 openssh-client
       - name: Validate Nginx and njs configuration without starting a service
         run: bash scripts/check-nginx.sh
       - name: Validate shell entry points
