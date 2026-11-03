@@ -5,7 +5,7 @@
  * navigation) — there is no second Vue Router here. The language switcher
  * navigates to the equivalent document in the other locale.
  */
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { serviceCaseStudyUrl } from '@/content/service-registry'
 import { AUTHOR_SITE_URL, publicPathFor } from '@/shared/routing/site-routes'
 import { tr } from '@/portfolio/i18n'
@@ -50,22 +50,93 @@ const footer = computed(() => ({
 
 const isRu = computed(() => locale.value === 'ru')
 
-// The public header scrolls away normally. A compact, fixed brand appears
-// only after it has left the viewport; SSR and no-JS navigation stay intact.
+// One visible glyph moves between the header logo and the fixed icon dock.
+// Keep the original SVG for SSR/no-JS; after hydration its dimensions remain
+// as the source coordinate while the fixed SVG takes over visually.
 const headerElement = ref<HTMLElement | null>(null)
-const floatingBrandVisible = ref(false)
-let headerObserver: IntersectionObserver | undefined
+const sourceGlyph = ref<SVGSVGElement | null>(null)
+const floatingGlyph = ref<HTMLAnchorElement | null>(null)
+const motionMounted = ref(false)
+const motionReady = ref(false)
+const logoDocked = ref(false)
 
-onMounted(() => {
-  if (!headerElement.value || typeof IntersectionObserver === 'undefined') return
-  headerObserver = new IntersectionObserver(([entry]) => {
-    floatingBrandVisible.value = !entry.isIntersecting
+const MORPH_SCROLL_DISTANCE = 160
+let originOffsetX = 0
+let originOffsetY = 0
+let frame = 0
+let needsMeasure = false
+let reduceMotion: MediaQueryList | undefined
+
+function measureLogo(): void {
+  const source = sourceGlyph.value
+  const dock = floatingGlyph.value
+  if (!source || !dock) return
+
+  // Measure the final fixed dock without the previous frame's translation.
+  dock.style.transform = 'none'
+  const from = source.getBoundingClientRect()
+  const to = dock.getBoundingClientRect()
+  originOffsetX = from.left + from.width / 2 - (to.left + to.width / 2)
+  originOffsetY = from.top + window.scrollY + from.height / 2 - (to.top + to.height / 2)
+}
+
+function updateLogo(): void {
+  const dock = floatingGlyph.value
+  if (!dock) return
+  const fraction = Math.min(1, Math.max(0, window.scrollY) / MORPH_SCROLL_DISTANCE)
+  // A direct jump respects reduced-motion; normal scrolling drives the morph.
+  const progress = reduceMotion?.matches ? (fraction >= 1 ? 1 : 0) :
+    fraction * fraction * (3 - 2 * fraction)
+
+  dock.style.transform = `translate3d(${(1 - progress) * originOffsetX}px, ${(1 - progress) * originOffsetY}px, 0)`
+  dock.style.setProperty('--float-progress', String(progress))
+  const shouldDock = fraction >= 1
+  if (logoDocked.value !== shouldDock) logoDocked.value = shouldDock
+}
+
+function schedulePosition(): void {
+  if (frame) return
+  frame = window.requestAnimationFrame(() => {
+    frame = 0
+    if (needsMeasure) {
+      needsMeasure = false
+      measureLogo()
+    }
+    updateLogo()
   })
-  headerObserver.observe(headerElement.value)
+}
+
+function scheduleMeasure(): void {
+  needsMeasure = true
+  schedulePosition()
+}
+
+function returnToNavigation(): void {
+  headerElement.value?.focus({ preventScroll: true })
+  window.scrollTo({ top: 0, behavior: reduceMotion?.matches ? 'instant' : 'smooth' })
+}
+
+onMounted(async () => {
+  // The overlay is client-only, so prerendered markup and hydration match.
+  motionMounted.value = true
+  await nextTick()
+  if (!sourceGlyph.value || !floatingGlyph.value) return
+  reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+  measureLogo()
+  updateLogo()
+  motionReady.value = true
+  window.addEventListener('scroll', schedulePosition, { passive: true })
+  window.addEventListener('resize', scheduleMeasure, { passive: true })
+  window.visualViewport?.addEventListener('resize', scheduleMeasure)
+  reduceMotion.addEventListener('change', schedulePosition)
 })
 
 onUnmounted(() => {
-  headerObserver?.disconnect()
+  if (frame) window.cancelAnimationFrame(frame)
+  window.removeEventListener('scroll', schedulePosition)
+  window.removeEventListener('resize', scheduleMeasure)
+  window.visualViewport?.removeEventListener('resize', scheduleMeasure)
+  reduceMotion?.removeEventListener('change', schedulePosition)
 })
 
 function serviceHref(id: 'order' | 'auth' | 'notification' | 'shortener'): string {
@@ -83,21 +154,30 @@ function serviceCurrent(id: 'order' | 'auth' | 'notification' | 'shortener'): bo
     <a class="portfolio__skip-link" href="#main-content">{{ nav.skip }}</a>
 
     <a
-      v-if="floatingBrandVisible"
+      v-if="motionMounted"
+      ref="floatingGlyph"
       class="portfolio__floating-brand"
+      :class="{ 'portfolio__floating-brand--ready': motionReady, 'portfolio__floating-brand--docked': logoDocked }"
       href="#portfolio-header"
+      :tabindex="logoDocked ? 0 : -1"
+      :aria-hidden="!logoDocked"
       :aria-label="tr({ en: 'Back to portfolio navigation', ru: 'Вернуться к навигации портфолио' }, locale)"
+      @click.prevent="returnToNavigation"
     >
       <svg viewBox="0 0 1024 1024" aria-hidden="true">
-        <use href="#portfolio-brand-glyph" />
+        <path fill="currentColor" d="m 672.4,130.42 c 56.76329,-6.38169 114.93893,23.3205 143.66,72.55 24.7532,44.51243 43.11022,92.2969 61.33,139.79 40.47809,111.57482 74.44289,227.08462 83.39,345.84 3.99187,44.64405 -4.00131,91.90701 -30.17,129.25 -34.22823,51.15534 -96.88829,80.43706 -158.08,76.16 -65.28191,-0.20566 -122.44364,-36.95943 -172.66,-75.06 -29.80113,-21.1118 -55.76914,-47.83868 -88.02,-65.27 -37.1943,-17.42617 -81.28549,-5.84133 -112.39,18.66 -47.69117,31.39849 -92.05098,67.43326 -138.03,101.11 -42.44103,27.81416 -101.51738,26.57093 -141.77,-4.74 -46.576445,-33.45195 -68.670533,-101.8275 -40,-153.73 23.21529,-41.55088 62.88534,-72.59629 108.24,-86.75 113.13424,-43.47682 226.71305,-85.88549 339.51,-130.18 14.82036,-6.43752 8.66067,-30.49279 -7.52,-28.35 -129.83943,-0.30295 -259.73631,0.55616 -389.54,-0.43 -36.193632,-1.7293 -66.727809,-33.24856 -68.06,-69.29 -1.106386,-32.02682 21.500955,-57.48376 34.11,-85.22 21.96273,-39.71643 41.91012,-80.65977 66.1,-119.08 32.5121,-48.07805 94.7686,-72.14669 151.45,-60.86 47.15984,8.26016 85.2391,43.82881 104.98,86.33 11.06377,24.16746 25.30898,52.15623 54.26,57.34 32.44615,7.58399 61.05887,-17.52199 74.14,-45.03 16.12049,-32.13564 35.32251,-64.94553 67.48,-83.37 17.54732,-10.66503 37.14009,-17.50491 57.59,-19.67 z" />
       </svg>
-      <span>zolotoy.dev</span>
     </a>
 
     <header id="portfolio-header" ref="headerElement" class="portfolio__header" tabindex="-1">
       <div class="portfolio__header-inner">
-        <a class="portfolio__brand" :href="publicPathFor('home', locale)" :aria-label="nav.brandAria">
-          <svg viewBox="0 0 1024 1024" aria-hidden="true">
+        <a
+          class="portfolio__brand"
+          :class="{ 'portfolio__brand--motion-ready': motionReady }"
+          :href="publicPathFor('home', locale)"
+          :aria-label="nav.brandAria"
+        >
+          <svg ref="sourceGlyph" viewBox="0 0 1024 1024" aria-hidden="true">
             <path
               id="portfolio-brand-glyph"
               fill="currentColor"

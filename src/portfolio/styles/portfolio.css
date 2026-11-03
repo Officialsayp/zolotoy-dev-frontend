@@ -63,29 +63,51 @@
   color: var(--c-accent);
 }
 
-/* Keep the full navigation in normal flow; show only the brand after it
-   scrolls out, so a large mobile header never covers page content. */
+/* A single visual mark follows the scroll position. Preserve the normal
+   header logo and link for SSR, no-JS and layout measurements. */
+.portfolio__brand--motion-ready svg {
+  opacity: 0;
+}
+
 .portfolio__floating-brand {
+  --float-progress: 0;
   position: fixed;
   z-index: 90;
   top: calc(env(safe-area-inset-top, 0px) + var(--space-3));
   left: calc(env(safe-area-inset-left, 0px) + var(--space-3));
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 44px;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--c-border);
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
   border-radius: var(--radius-lg);
+  color: var(--c-accent);
+  text-decoration: none;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.portfolio__floating-brand--ready {
+  opacity: 1;
+}
+
+.portfolio__floating-brand--docked {
+  pointer-events: auto;
+}
+
+.portfolio__floating-brand::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--c-border);
+  border-radius: inherit;
   background: var(--c-surface);
   box-shadow: var(--shadow-md);
-  color: var(--c-text);
-  font-size: var(--text-lg);
-  font-weight: 700;
-  text-decoration: none;
+  opacity: var(--float-progress);
 }
 
 .portfolio__floating-brand svg {
+  position: relative;
   width: 24px;
   height: 24px;
   color: var(--c-accent);
@@ -93,7 +115,7 @@
 }
 
 .portfolio__floating-brand:hover {
-  color: var(--c-text);
+  color: var(--c-accent);
   text-decoration: none;
 }
 
