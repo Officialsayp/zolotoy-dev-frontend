@@ -63,12 +63,8 @@
   color: var(--c-accent);
 }
 
-/* A single visual mark follows the scroll position. Preserve the normal
-   header logo and link for SSR, no-JS and layout measurements. */
-.portfolio__brand--motion-ready svg {
-  opacity: 0;
-}
-
+/* The header icon is real in both SSR and at rest; the client-only
+   floating copy temporarily takes visual ownership during movement. */
 .portfolio__floating-brand {
   --float-progress: 0;
   position: fixed;
@@ -85,10 +81,6 @@
   opacity: 0;
   pointer-events: none;
   will-change: transform;
-}
-
-.portfolio__floating-brand--ready {
-  opacity: 1;
 }
 
 .portfolio__floating-brand--docked {
