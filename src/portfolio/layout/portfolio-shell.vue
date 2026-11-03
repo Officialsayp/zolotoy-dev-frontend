@@ -11,6 +11,7 @@ import { AUTHOR_SITE_URL, publicPathFor } from '@/shared/routing/site-routes'
 import { tr } from '@/portfolio/i18n'
 import PortfolioLocaleSwitcher from '@/portfolio/components/portfolio-locale-switcher.vue'
 import PortfolioThemeToggle from '@/portfolio/components/portfolio-theme-toggle.vue'
+import { attachPortfolioLogoMotion } from '@/portfolio/logo-motion'
 
 const props = defineProps<{
   /** Canonical path of the current document ('/', '/architecture/', ...). */
@@ -50,113 +51,38 @@ const footer = computed(() => ({
 
 const isRu = computed(() => locale.value === 'ru')
 
-// One visible glyph moves between the header logo and the fixed icon dock.
-// Keep the original SVG for SSR/no-JS; after hydration its dimensions remain
-// as the source coordinate while the fixed SVG takes over visually.
+// Keep the original header SVG visible in SSR/no-JS mode. On the client,
+// the flying icon takes visual ownership only while moving or docked.
 const headerElement = ref<HTMLElement | null>(null)
 const sourceGlyph = ref<SVGSVGElement | null>(null)
 const floatingGlyph = ref<HTMLAnchorElement | null>(null)
 const motionMounted = ref(false)
-const motionReady = ref(false)
 const logoDocked = ref(false)
-
-// The bottom edge of the *actual* header is the docking threshold. On the
-// way back up, the return flight begins at exactly that same threshold.
-let headerBottom = 1
-let originOffsetX = 0
-let originOffsetY = 0
-let frame = 0
-let needsMeasure = false
-let reduceMotion: MediaQueryList | undefined
-let headerResizeObserver: ResizeObserver | undefined
-
-function measureLogo(): void {
-  const source = sourceGlyph.value
-  const dock = floatingGlyph.value
-  const header = headerElement.value
-  if (!source || !dock || !header) return
-
-  // FLIP: find the exact screen position of the header icon and the fixed
-  // dock. Read the untransformed dock during this single measurement frame.
-  // No geometry reads are performed on ordinary scroll frames.
-  dock.style.transform = 'none'
-  const from = source.getBoundingClientRect()
-  const to = dock.getBoundingClientRect()
-  const edge = header.getBoundingClientRect().bottom
-
-  originOffsetX = from.left + from.width / 2 - (to.left + to.width / 2)
-  originOffsetY = from.top + window.scrollY + from.height / 2 - (to.top + to.height / 2)
-  headerBottom = Math.max(1, edge + window.scrollY)
-}
-
-function updateLogo(): void {
-  const dock = floatingGlyph.value
-  if (!dock) return
-
-  const y = Math.max(0, window.scrollY)
-  // At the instant the header's bottom edge touches the viewport top,
-  // progress is exactly 1. Reverse scrolling retraces the same continuous
-  // path; no visibility toggle or time-based transition can create a gap.
-  const fraction = Math.min(1, y / headerBottom)
-  const progress = reduceMotion?.matches
-    ? (y > 0 ? 1 : 0)
-    : fraction * fraction * (3 - 2 * fraction)
-
-  dock.style.transform = `translate3d(${(1 - progress) * originOffsetX}px, ${(1 - progress) * originOffsetY}px, 0)`
-  dock.style.setProperty('--float-progress', String(progress))
-
-  const shouldDock = reduceMotion?.matches ? y > 0 : y >= headerBottom
-  if (logoDocked.value !== shouldDock) logoDocked.value = shouldDock
-}
-
-function schedulePosition(): void {
-  if (frame) return
-  frame = window.requestAnimationFrame(() => {
-    frame = 0
-    if (needsMeasure) {
-      needsMeasure = false
-      measureLogo()
-    }
-    updateLogo()
-  })
-}
-
-function scheduleMeasure(): void {
-  needsMeasure = true
-  schedulePosition()
-}
+let detachMotion: (() => void) | undefined
 
 function returnToNavigation(): void {
   headerElement.value?.focus({ preventScroll: true })
-  window.scrollTo({ top: 0, behavior: reduceMotion?.matches ? 'instant' : 'smooth' })
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  window.scrollTo({ top: 0, behavior: reduceMotion ? 'instant' : 'smooth' })
 }
 
 onMounted(async () => {
-  // The overlay is client-only, so prerendered markup and hydration match.
+  // The floating icon is client-only, keeping the prerendered markup and
+  // the hydration input identical. The original SVG remains a usable link.
   motionMounted.value = true
   await nextTick()
   if (!sourceGlyph.value || !floatingGlyph.value) return
-  reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
-  measureLogo()
-  updateLogo()
-  motionReady.value = true
-  window.addEventListener('scroll', schedulePosition, { passive: true })
-  window.addEventListener('resize', scheduleMeasure, { passive: true })
-  window.visualViewport?.addEventListener('resize', scheduleMeasure)
-  reduceMotion.addEventListener('change', schedulePosition)
-  if (typeof ResizeObserver !== 'undefined' && headerElement.value) {
-    headerResizeObserver = new ResizeObserver(scheduleMeasure)
-    headerResizeObserver.observe(headerElement.value)
-  }
+  detachMotion = attachPortfolioLogoMotion({
+    source: sourceGlyph.value,
+    floating: floatingGlyph.value,
+    onDockedChange(docked) {
+      logoDocked.value = docked
+    },
+  })
 })
 
 onUnmounted(() => {
-  if (frame) window.cancelAnimationFrame(frame)
-  window.removeEventListener('scroll', schedulePosition)
-  window.removeEventListener('resize', scheduleMeasure)
-  window.visualViewport?.removeEventListener('resize', scheduleMeasure)
-  reduceMotion?.removeEventListener('change', schedulePosition)
-  headerResizeObserver?.disconnect()
+  detachMotion?.()
 })
 
 function serviceHref(id: 'order' | 'auth' | 'notification' | 'shortener'): string {
@@ -177,7 +103,7 @@ function serviceCurrent(id: 'order' | 'auth' | 'notification' | 'shortener'): bo
       v-if="motionMounted"
       ref="floatingGlyph"
       class="portfolio__floating-brand"
-      :class="{ 'portfolio__floating-brand--ready': motionReady, 'portfolio__floating-brand--docked': logoDocked }"
+      :class="{ 'portfolio__floating-brand--docked': logoDocked }"
       href="#portfolio-header"
       :tabindex="logoDocked ? 0 : -1"
       :aria-hidden="!logoDocked"
@@ -193,7 +119,6 @@ function serviceCurrent(id: 'order' | 'auth' | 'notification' | 'shortener'): bo
       <div class="portfolio__header-inner">
         <a
           class="portfolio__brand"
-          :class="{ 'portfolio__brand--motion-ready': motionReady }"
           :href="publicPathFor('home', locale)"
           :aria-label="nav.brandAria"
         >
