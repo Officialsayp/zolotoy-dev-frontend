@@ -91,19 +91,55 @@ test('mobile public header is centered and floating brand returns to navigation'
       expect(Math.abs(box!.x + box!.width / 2 - 195), `${path}: centered element`).toBeLessThan(2)
     }
     await expect(nav).toHaveCSS('justify-content', 'center')
-    await expect(floatingBrand).toHaveCount(0)
+    await expect(floatingBrand).toHaveCount(1)
+    await expect(floatingBrand).toHaveAttribute('aria-hidden', 'true')
+    await expect(floatingBrand.locator('svg')).toBeVisible()
+    expect((await floatingBrand.textContent())?.trim()).toBe('')
+
+    // On hydration the overlay icon occupies the original header icon position.
+    const sourceIcon = brand.locator('svg')
+    await expect(brand).toHaveClass(/portfolio__brand--motion-ready/)
+    await expect.poll(async () => {
+      const source = await sourceIcon.boundingBox()
+      const floating = await floatingBrand.locator('svg').boundingBox()
+      return Math.abs((source!.x + source!.width / 2) - (floating!.x + floating!.width / 2))
+    }).toBeLessThan(2)
+
+    const origin = (await floatingBrand.boundingBox())!
+    await page.evaluate(() => window.scrollTo({ top: 80, behavior: 'instant' }))
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(70)
+    await expect.poll(async () => (await floatingBrand.boundingBox())!.x).toBeLessThan(origin.x - 10)
+    const midpoint = (await floatingBrand.boundingBox())!
+    await expect(floatingBrand).toHaveAttribute('aria-hidden', 'true')
 
     await page.evaluate(() => window.scrollTo({ top: 900, behavior: 'instant' }))
-    await expect(floatingBrand).toBeVisible()
-    const initialY = (await floatingBrand.boundingBox())!.y
+    await expect(floatingBrand).toHaveAttribute('aria-hidden', 'false')
+    const docked = (await floatingBrand.boundingBox())!
+    expect(docked.x).toBeLessThan(midpoint.x - 10)
+    const initialY = docked.y
     await page.evaluate(() => window.scrollBy({ top: 200, behavior: 'instant' }))
     await expect.poll(async () => (await floatingBrand.boundingBox())!.y).toBeCloseTo(initialY, 0)
 
     await floatingBrand.click()
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(3)
+    await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 10_000 }).toBeLessThan(3)
+    await expect(floatingBrand).toHaveAttribute('aria-hidden', 'true')
     await expect(nav).toBeVisible()
-    await expect(floatingBrand).toHaveCount(0)
+    await expect.poll(async () => (await floatingBrand.boundingBox())!.x).toBeCloseTo(origin.x, 0)
   }
+})
+
+test('floating glyph respects reduced motion and restores the header', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.setViewportSize({ width: 390, height: 700 })
+  await page.goto('/ru/services/order/')
+
+  const glyph = page.locator('.portfolio__floating-brand')
+  await expect(glyph).toHaveAttribute('aria-hidden', 'true')
+  await page.evaluate(() => window.scrollTo({ top: 500, behavior: 'instant' }))
+  await expect(glyph).toHaveAttribute('aria-hidden', 'false')
+  await glyph.click()
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(3)
+  await expect(glyph).toHaveAttribute('aria-hidden', 'true')
 })
 
 test('case-study TOC links scroll to rendered sections', async ({ page }) => {
