@@ -60,37 +60,52 @@ const motionMounted = ref(false)
 const motionReady = ref(false)
 const logoDocked = ref(false)
 
-const MORPH_SCROLL_DISTANCE = 160
+// The bottom edge of the *actual* header is the docking threshold. On the
+// way back up, the return flight begins at exactly that same threshold.
+let headerBottom = 1
 let originOffsetX = 0
 let originOffsetY = 0
 let frame = 0
 let needsMeasure = false
 let reduceMotion: MediaQueryList | undefined
+let headerResizeObserver: ResizeObserver | undefined
 
 function measureLogo(): void {
   const source = sourceGlyph.value
   const dock = floatingGlyph.value
-  if (!source || !dock) return
+  const header = headerElement.value
+  if (!source || !dock || !header) return
 
-  // Measure the final fixed dock without the previous frame's translation.
+  // FLIP: find the exact screen position of the header icon and the fixed
+  // dock. Read the untransformed dock during this single measurement frame.
+  // No geometry reads are performed on ordinary scroll frames.
   dock.style.transform = 'none'
   const from = source.getBoundingClientRect()
   const to = dock.getBoundingClientRect()
+  const edge = header.getBoundingClientRect().bottom
+
   originOffsetX = from.left + from.width / 2 - (to.left + to.width / 2)
   originOffsetY = from.top + window.scrollY + from.height / 2 - (to.top + to.height / 2)
+  headerBottom = Math.max(1, edge + window.scrollY)
 }
 
 function updateLogo(): void {
   const dock = floatingGlyph.value
   if (!dock) return
-  const fraction = Math.min(1, Math.max(0, window.scrollY) / MORPH_SCROLL_DISTANCE)
-  // A direct jump respects reduced-motion; normal scrolling drives the morph.
-  const progress = reduceMotion?.matches ? (fraction >= 1 ? 1 : 0) :
-    fraction * fraction * (3 - 2 * fraction)
+
+  const y = Math.max(0, window.scrollY)
+  // At the instant the header's bottom edge touches the viewport top,
+  // progress is exactly 1. Reverse scrolling retraces the same continuous
+  // path; no visibility toggle or time-based transition can create a gap.
+  const fraction = Math.min(1, y / headerBottom)
+  const progress = reduceMotion?.matches
+    ? (y > 0 ? 1 : 0)
+    : fraction * fraction * (3 - 2 * fraction)
 
   dock.style.transform = `translate3d(${(1 - progress) * originOffsetX}px, ${(1 - progress) * originOffsetY}px, 0)`
   dock.style.setProperty('--float-progress', String(progress))
-  const shouldDock = fraction >= 1
+
+  const shouldDock = reduceMotion?.matches ? y > 0 : y >= headerBottom
   if (logoDocked.value !== shouldDock) logoDocked.value = shouldDock
 }
 
@@ -129,6 +144,10 @@ onMounted(async () => {
   window.addEventListener('resize', scheduleMeasure, { passive: true })
   window.visualViewport?.addEventListener('resize', scheduleMeasure)
   reduceMotion.addEventListener('change', schedulePosition)
+  if (typeof ResizeObserver !== 'undefined' && headerElement.value) {
+    headerResizeObserver = new ResizeObserver(scheduleMeasure)
+    headerResizeObserver.observe(headerElement.value)
+  }
 })
 
 onUnmounted(() => {
@@ -137,6 +156,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', scheduleMeasure)
   window.visualViewport?.removeEventListener('resize', scheduleMeasure)
   reduceMotion?.removeEventListener('change', schedulePosition)
+  headerResizeObserver?.disconnect()
 })
 
 function serviceHref(id: 'order' | 'auth' | 'notification' | 'shortener'): string {

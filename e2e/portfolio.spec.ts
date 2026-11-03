@@ -128,6 +128,75 @@ test('mobile public header is centered and floating brand returns to navigation'
   }
 })
 
+test('floating icon starts returning exactly at the header edge without disappearing', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 700 })
+
+  for (const path of ['/', '/ru/', '/ru/services/order/']) {
+    await page.goto(path)
+    const header = page.locator('#portfolio-header')
+    const floating = page.locator('.portfolio__floating-brand')
+    const icon = floating.locator('svg')
+
+    await expect(floating).toHaveClass(/portfolio__floating-brand--ready/)
+    const headerBottom = await header.evaluate((element) =>
+      element.getBoundingClientRect().bottom + window.scrollY)
+    expect(headerBottom).toBeGreaterThan(80)
+    const start = (await floating.boundingBox())!
+
+    const scrollTo = async (position: number): Promise<void> => {
+      await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), position)
+      await expect.poll(async () => {
+        const x = await floating.evaluate((element) => Number.parseFloat(element.style.getPropertyValue('--float-progress')))
+        const p = Math.min(1, Math.max(0, position) / headerBottom)
+        return Math.abs(x - p * p * (3 - 2 * p))
+      }).toBeLessThan(0.015)
+    }
+
+    await scrollTo(headerBottom + 90)
+    const dock = (await floating.boundingBox())!
+    await expect(floating).toHaveAttribute('aria-hidden', 'false')
+
+    // Immediately after crossing the real bottom edge while going UP,
+    // the icon departs from the top-left dock (not at a hard-coded 160 px).
+    await scrollTo(headerBottom - 24)
+    const moving = (await floating.boundingBox())!
+    expect(moving.x).toBeGreaterThan(dock.x + 1)
+    expect(moving.x).toBeLessThan(start.x)
+    await expect(floating).toHaveAttribute('aria-hidden', 'true')
+
+    // One and the same icon remains drawn on the screen at every position.
+    for (const scrollPosition of [
+      headerBottom * 0.75, headerBottom * 0.5, headerBottom * 0.25, 0,
+      headerBottom * 0.25, headerBottom * 0.5, headerBottom, headerBottom + 80,
+    ]) {
+      await scrollTo(scrollPosition)
+      const state = await icon.evaluate((el) => {
+        const box = el.getBoundingClientRect()
+        return {
+          opacity: getComputedStyle(el.parentElement!).opacity,
+          top: box.top,
+          bottom: box.bottom,
+          left: box.left,
+          right: box.right,
+          width: box.width,
+        }
+      })
+      expect(state.opacity, `${path}: visibility at ${scrollPosition}`).toBe('1')
+      expect(state.width).toBeGreaterThanOrEqual(24)
+      expect(state.bottom).toBeGreaterThan(0)
+      expect(state.top).toBeLessThan(700)
+      expect(state.right).toBeGreaterThan(0)
+      expect(state.left).toBeLessThan(390)
+    }
+
+    await floating.click()
+    await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 10_000 }).toBeLessThan(3)
+    await expect.poll(async () => (await floating.boundingBox())!.x).toBeCloseTo(start.x, 0)
+    await expect(floating).toHaveAttribute('aria-hidden', 'true')
+    await expect(header.locator('.portfolio__nav')).toBeVisible()
+  }
+})
+
 test('floating glyph respects reduced motion and restores the header', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.setViewportSize({ width: 390, height: 700 })
