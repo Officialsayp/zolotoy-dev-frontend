@@ -73,6 +73,39 @@ test('portfolio pages have no horizontal overflow at narrow widths', async ({ pa
   }
 })
 
+test('mobile public header is centered and floating brand returns to navigation', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 700 })
+
+  for (const path of ['/', '/ru/']) {
+    await page.goto(path)
+    const header = page.locator('#portfolio-header')
+    const brand = header.locator('.portfolio__brand')
+    const nav = header.locator('.portfolio__nav')
+    const controls = header.locator('.portfolio__controls')
+    const floatingBrand = page.locator('.portfolio__floating-brand')
+
+    // The brand, nav rows, and language/theme controls share the viewport center.
+    for (const element of [brand, nav, controls]) {
+      const box = await element.boundingBox()
+      expect(box, `${path}: header element is visible`).not.toBeNull()
+      expect(Math.abs(box!.x + box!.width / 2 - 195), `${path}: centered element`).toBeLessThan(2)
+    }
+    await expect(nav).toHaveCSS('justify-content', 'center')
+    await expect(floatingBrand).toHaveCount(0)
+
+    await page.evaluate(() => window.scrollTo({ top: 900, behavior: 'instant' }))
+    await expect(floatingBrand).toBeVisible()
+    const initialY = (await floatingBrand.boundingBox())!.y
+    await page.evaluate(() => window.scrollBy({ top: 200, behavior: 'instant' }))
+    await expect.poll(async () => (await floatingBrand.boundingBox())!.y).toBeCloseTo(initialY, 0)
+
+    await floatingBrand.click()
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(3)
+    await expect(nav).toBeVisible()
+    await expect(floatingBrand).toHaveCount(0)
+  }
+})
+
 test('case-study TOC links scroll to rendered sections', async ({ page }) => {
   await page.goto('/services/order/')
   const toc = page.getByRole('navigation', { name: 'Case study sections' })
