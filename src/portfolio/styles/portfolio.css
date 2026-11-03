@@ -63,6 +63,40 @@
   color: var(--c-accent);
 }
 
+/* Keep the full navigation in normal flow; show only the brand after it
+   scrolls out, so a large mobile header never covers page content. */
+.portfolio__floating-brand {
+  position: fixed;
+  z-index: 90;
+  top: calc(env(safe-area-inset-top, 0px) + var(--space-3));
+  left: calc(env(safe-area-inset-left, 0px) + var(--space-3));
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-md);
+  color: var(--c-text);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.portfolio__floating-brand svg {
+  width: 24px;
+  height: 24px;
+  color: var(--c-accent);
+  flex: none;
+}
+
+.portfolio__floating-brand:hover {
+  color: var(--c-text);
+  text-decoration: none;
+}
+
 .portfolio__nav {
   display: flex;
   align-items: center;
@@ -587,10 +621,16 @@
 @media (max-width: 479.98px) {
   .portfolio__header-inner {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
   }
 
   .portfolio__nav {
     width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .portfolio__controls {
+    justify-content: center;
   }
 }
