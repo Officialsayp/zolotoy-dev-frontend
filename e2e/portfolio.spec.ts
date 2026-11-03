@@ -177,6 +177,99 @@ test('floating logo supports keyboard return and reduced motion', async ({ page 
   await expect(floating).toHaveAttribute('aria-hidden', 'true')
 })
 
+test('rapid fling and scrollend leave the floating logo at the fixed dock', async ({ page }) => {
+  await page.setViewportSize({ width: 393, height: 720 })
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+
+  for (const path of ['/', '/ru/']) {
+    await page.goto(path)
+    const source = page.locator('.portfolio__brand svg')
+    const floating = page.locator('.portfolio__floating-brand')
+    await expect(floating).toHaveCount(1)
+
+    // A real flick generates multiple fast scroll updates *after* touchend.
+    // Emulate coalesced momentum updates, then deliver the authoritative end.
+    for (const y of [80, 240, 610, 1200, 890, 1400]) {
+      await page.evaluate((top) => window.scrollTo({ top, behavior: 'instant' }), y)
+    }
+    await page.evaluate(() => document.dispatchEvent(new Event('scrollend')))
+    await expect(floating).toHaveAttribute('aria-hidden', 'false', { timeout: 3000 })
+    await expect(source).toHaveCSS('opacity', '0')
+    await expect(floating).toHaveCSS('opacity', '1')
+    await expect(floating).toHaveCSS('transform', 'none')
+    const docked = (await floating.boundingBox())!
+
+    // No stale translate3d() should survive an idle spell or a scrollend.
+    await page.waitForTimeout(250)
+    const settled = (await floating.boundingBox())!
+    expect(Math.abs(settled.x - docked.x)).toBeLessThan(1)
+    expect(Math.abs(settled.y - docked.y)).toBeLessThan(1)
+
+    for (const y of [1150, 600, 290, 130, 270, 0]) {
+      await page.evaluate((top) => window.scrollTo({ top, behavior: 'instant' }), y)
+    }
+    await page.evaluate(() => document.dispatchEvent(new Event('scrollend')))
+    await expect(source).toHaveCSS('opacity', '1', { timeout: 3000 })
+    await expect(floating).toHaveCSS('opacity', '0')
+    await expect(floating).toHaveAttribute('aria-hidden', 'true')
+  }
+})
+
+test('Safari-style out-of-range scrollY cannot poison the cached logo position', async ({ page }) => {
+  await page.setViewportSize({ width: 393, height: 720 })
+  await page.goto('/ru/')
+  const source = page.locator('.portfolio__brand svg')
+  const floating = page.locator('.portfolio__floating-brand')
+
+  // Simulate Safari exposing overscroll while the compositor has not moved
+  // layout rects. Restore the real property descriptor after each sample.
+  const emulateScrollY = async (reportedY: number): Promise<void> => {
+    await page.evaluate((y) => {
+      const original = Object.getOwnPropertyDescriptor(window, 'scrollY')
+      if (!original?.configurable) throw new Error('Cannot emulate scrollY in this browser')
+      try {
+        Object.defineProperty(window, 'scrollY', { configurable: true, get: () => y })
+        window.dispatchEvent(new Event('scroll'))
+        document.dispatchEvent(new Event('scrollend'))
+      } finally {
+        Object.defineProperty(window, 'scrollY', original)
+      }
+    }, reportedY)
+  }
+
+  await emulateScrollY(-120)
+  await expect(source).toHaveCSS('opacity', '1')
+  // Out-of-range positive value must be clamped rather than persisted as
+  // a bogus source-document coordinate during scrollend.
+  await emulateScrollY(100000)
+  await page.evaluate(() => document.dispatchEvent(new Event('scrollend')))
+  await expect(source).toHaveCSS('opacity', '1', { timeout: 3000 })
+  await expect(floating).toHaveCSS('opacity', '0')
+
+  // A normal scroll still moves to the dock and returns afterwards.
+  await page.evaluate(() => window.scrollTo({ top: 900, behavior: 'instant' }))
+  await expect(floating).toHaveAttribute('aria-hidden', 'false', { timeout: 3000 })
+  await expect(floating).toHaveCSS('transform', 'none')
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }))
+  await expect(source).toHaveCSS('opacity', '1', { timeout: 3000 })
+})
+
+test('viewport changes during a flick retain a fixed final icon position', async ({ page }) => {
+  await page.setViewportSize({ width: 393, height: 720 })
+  await page.goto('/ru/')
+  const floating = page.locator('.portfolio__floating-brand')
+  await page.evaluate(() => window.scrollTo({ top: 400, behavior: 'instant' }))
+  await page.setViewportSize({ width: 320, height: 640 })
+  await page.evaluate(() => document.dispatchEvent(new Event('scrollend')))
+  await expect(floating).toHaveAttribute('aria-hidden', 'false', { timeout: 3000 })
+  await expect(floating).toHaveCSS('transform', 'none')
+  const rect = (await floating.boundingBox())!
+  expect(rect.x).toBeGreaterThanOrEqual(0)
+  expect(rect.x + rect.width).toBeLessThan(320)
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }))
+  await expect(page.locator('.portfolio__brand svg')).toHaveCSS('opacity', '1', { timeout: 3000 })
+})
+
 test('case-study TOC links scroll to rendered sections', async ({ page }) => {
   await page.goto('/services/order/')
   const toc = page.getByRole('navigation', { name: 'Case study sections' })
